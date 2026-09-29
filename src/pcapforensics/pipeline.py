@@ -7,6 +7,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import policy
+from .config import Config
+from .config import apply as apply_config
 from .index import CaptureIndex, IndexBuilder
 from .models import SEVERITY_ORDER, ArtifactRef, Finding, Report
 from .registry import enabled_detectors
@@ -39,6 +41,7 @@ def analyze(
     min_severity: str | None = None,
     categories: tuple[str, ...] = (),
     use_cache: bool = True,
+    config: Config | None = None,
 ) -> RunResult:
     policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
@@ -62,6 +65,10 @@ def analyze(
         index.add_note(f"[{detector.name}] ran v{detector.version}: {len(found)} finding(s)")
         findings.extend(found)
 
+    if config is not None:
+        findings, config_notes = apply_config(findings, config)
+        for note in config_notes:
+            index.add_note(note)
     kept = policy.apply(findings, categories=categories, min_severity=min_severity)
     if len(kept) < len(findings):
         index.add_note(f"[policy] dropped {len(findings) - len(kept)} finding(s) outside the selected filters")
