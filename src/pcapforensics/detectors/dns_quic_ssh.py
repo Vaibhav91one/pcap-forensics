@@ -298,7 +298,7 @@ class DnsQuicSshDetector(Detector):
                         scope=f"{session.key}|ssh|{kind}",
                         flow_key=session.key,
                         subjects=subjects,
-                        evidence=[ev(session.frame, f"ssh.{kind}_algorithms", ", ".join(hits))],
+                        evidence=[ev(min((session.offered_in[h][0] for h in hits if session.offered_in.get(h)), default=session.frame), f"ssh.{kind}_algorithms", ", ".join(hits))],
                         remediation="Restrict Match/HostKeyAlgorithms in sshd_config and client config to modern algorithms.",
                         references=["RFC 9142", "CVE-2023-48795"],
                         tags=["ssh", "crypto"],

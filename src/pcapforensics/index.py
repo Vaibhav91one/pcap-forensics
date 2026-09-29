@@ -833,16 +833,22 @@ class IndexBuilder:
                 sess.client_version = version
             elif version:
                 sess.server_version = version
-            if first(row, "ssh.kex_algorithms"):
-                sess.kex_algorithms = many(row, "ssh.kex_algorithms")
-            if first(row, "ssh.server_host_key_algorithms"):
-                sess.host_key_algorithms = many(row, "ssh.server_host_key_algorithms")
-            if first(row, "ssh.encryption_algorithms_client_to_server"):
-                sess.ciphers = many(row, "ssh.encryption_algorithms_client_to_server")
-            if first(row, "ssh.mac_algorithms_client_to_server"):
-                sess.macs = many(row, "ssh.mac_algorithms_client_to_server")
-            if first(row, "ssh.compression_algorithms_client_to_server"):
-                sess.compression = many(row, "ssh.compression_algorithms_client_to_server")
+            for attr, field in (
+                ("kex_algorithms", "ssh.kex_algorithms"),
+                ("host_key_algorithms", "ssh.server_host_key_algorithms"),
+                ("ciphers", "ssh.encryption_algorithms_client_to_server"),
+                ("macs", "ssh.mac_algorithms_client_to_server"),
+                ("compression", "ssh.compression_algorithms_client_to_server"),
+            ):
+                values = many(row, field)
+                if not values:
+                    continue
+                current = getattr(sess, attr)
+                for value in values:
+                    if value not in current:
+                        current.append(value)
+                    if frame not in sess.offered_in.setdefault(value, []):
+                        sess.offered_in[value].append(frame)
 
     # -- QUIC --------------------------------------------------------------
     def _build_quic(self, index: CaptureIndex, rows: list[Row]) -> None:
