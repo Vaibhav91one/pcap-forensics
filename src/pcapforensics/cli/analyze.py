@@ -7,6 +7,7 @@ from pathlib import Path
 
 import typer
 
+from ..baseline import load_baseline, new_since, version_drift
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope
 from ..pipeline import analyze
@@ -38,12 +39,20 @@ def analyze_cmd(
     show_score: bool = typer.Option(False, "--score", help="print only the 0-100 health score"),
     as_json: bool = typer.Option(False, "--json", help="print only the JSON envelope (score, categories, report)"),
     json_out: Path = typer.Option(None, "--json-out", help="also write the JSON envelope to this file"),
+    baseline_path: Path = typer.Option(
+        None, "--baseline", exists=True, dir_okay=False, help="earlier report.json or envelope: report only new findings"
+    ),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    try:
+        baseline = load_baseline(baseline_path) if baseline_path is not None else None
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]--baseline {baseline_path}: not a pcap-doctor report ({type(exc).__name__})[/red]")
         raise typer.Exit(code=2) from exc
     try:
         result = analyze(
@@ -58,15 +67,25 @@ def analyze_cmd(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
+    # The artifacts on disk stay complete; with a baseline everything shown or gated is the new findings only.
+    shown = result.report
+    if baseline is not None:
+        shown = shown.model_copy(update={"findings": new_since(baseline, shown.findings)})
+        for name in version_drift(baseline, result.report):
+            typer.echo(f"warning: detector {name} changed version since the baseline; its findings may all be new", err=True)
     envelope = json_envelope(result.report) if (as_json or json_out) else None
+    if envelope is not None and baseline is not None:
+        envelope["new_findings"] = [f.id for f in shown.findings]
     if json_out is not None:
         json_out.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
     if as_json:
         typer.echo(json.dumps(envelope, indent=2))
     elif show_score:
-        typer.echo(score(result.report.findings)[0])
+        typer.echo(score(shown.findings)[0])
     elif not quiet:
-        render(console, result.report, verbose=verbose)
+        if baseline is not None:
+            console.print(f"{len(shown.findings)} new finding(s) since the baseline ({len(result.report.findings)} in total)")
+        render(console, shown, verbose=verbose)
         console.print()
         for artifact in result.artifacts:
             console.print(f"  wrote {artifact}")
@@ -74,7 +93,7 @@ def analyze_cmd(
     tripped = (
         []
         if threshold is None
-        else [f for f in result.report.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
+        else [f for f in shown.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
     )
     if tripped and not (quiet or show_score or as_json):
         console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
