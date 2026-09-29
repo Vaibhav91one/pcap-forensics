@@ -313,14 +313,3 @@ class TransportExposureDetector(Detector):
     def _subjects(index: CaptureIndex, key: str) -> list[str]:
         flow = index.flows.get(key)
         return [flow.endpoint_a, flow.endpoint_b] if flow else []
-
-
-def credential_shape(value: str) -> str:
-    """Describe a credential without ever returning it.
-
-    Nothing in this project decodes or re-emits secret material: reports must
-    stay safe to paste into a ticket.
-    """
-    scheme = value.split(None, 1)[0] if " " in value else value
-    length = len(value.split(None, 1)[1]) if " " in value else 0
-    return f"{scheme} <redacted {length} chars>"
