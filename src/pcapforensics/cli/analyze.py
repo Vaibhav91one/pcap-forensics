@@ -9,6 +9,7 @@ from rich.table import Table
 
 from ..models import SEVERITY_ORDER
 from ..pipeline import analyze
+from ..policy import PolicyError, validate
 from ..tshark import TsharkMissingError
 from ._console import SEVERITY_STYLE, console
 
@@ -17,6 +18,9 @@ def analyze_cmd(
     pcap: Path = typer.Argument(..., exists=True, readable=True, help="pcap or pcapng file"),
     out: Path = typer.Option(None, "--out", "-o", help="output directory (default: <capture>.pf-report)"),
     only: list[str] = typer.Option(None, "--only", help="run only these detector ids (repeatable)"),
+    category: list[str] = typer.Option(
+        None, "--category", help="keep only findings in these categories (repeatable; see `rules`)"
+    ),
     min_severity: str = typer.Option(
         None, "--min-severity", help="drop findings below this severity (critical|high|medium|low|info)"
     ),
@@ -30,11 +34,17 @@ def analyze_cmd(
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
+        validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
+    except PolicyError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+    try:
         result = analyze(
             pcap,
             out,
             only=tuple(only or ()),
             min_severity=min_severity,
+            categories=tuple(category or ()),
             use_cache=not no_cache,
         )
     except TsharkMissingError as exc:
