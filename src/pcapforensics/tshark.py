@@ -268,31 +268,31 @@ QUIC_PASS = PassSpec(
     )),
 )
 
+#: Application fields of the services pass. The index reads exactly these (issue #14).
+SERVICE_FIELDS: tuple[str, ...] = (
+    "ntp.refid",
+    "tftp.source_file",
+    "tftp.destination_file",
+    "ftp.request.command",
+    "ftp.request.arg",
+    "ftp.response.code",
+    "snmp.version",
+    "snmp.community",
+    "snmp.var-bind_str",
+    "ldap.protocolOp",
+    "ldap.name",
+    "ldap.simple",
+    "smtp.req.command",
+    "pop.request.command",
+    "mysql.command",
+    "mysql.query",
+    "mysql.user",
+)
+
 SERVICE_PASS = PassSpec(
     name="services",
     display_filter="ntp || tftp || ftp || ftp-data || telnet || snmp || ldap || smtp || imap || pop || resp || mysql",
-    fields=with_addr((
-        "tcp.srcport",
-        "tcp.dstport",
-        "udp.srcport",
-        "udp.dstport",
-        "ntp.refid",
-        "tftp.source_file",
-        "tftp.destination_file",
-        "ftp.request.command",
-        "ftp.request.arg",
-        "snmp.version",
-        "snmp.community",
-        "snmp.var-bind_str",
-        "ldap.protocolOp",
-        "ldap.name",
-        "ldap.version",
-        "smtp.req.command",
-        "pop.request.command",
-        "mysql.command",
-        "mysql.query",
-        "mysql.user",
-    )),
+    fields=with_addr(("tcp.srcport", "tcp.dstport", "udp.srcport", "udp.dstport", *SERVICE_FIELDS)),
 )
 
 #: DTLS carries the same handshake fields under a ``dtls.`` prefix. The index

@@ -300,6 +300,31 @@ def fixture_http_bare_token() -> bytes:
     )
 
 
+def fixture_ftp_ldap_creds() -> bytes:
+    """An FTP login and an LDAP simple bind, both in cleartext (issue #14)."""
+
+    def tlv(tag: int, body: bytes) -> bytes:
+        return bytes([tag, len(body)]) + body
+
+    bind = tlv(0x60, tlv(0x02, b"\x03") + tlv(0x04, b"cn=admin,dc=example,dc=org") + tlv(0x80, b"pf-ldap-pw-4e1d"))
+    ldap = tlv(0x30, tlv(0x02, b"\x01") + bind)
+    packets = [
+        eth_ip_tcp(CLIENT, SERVER, 42200, 21, 1, 0, 0x02, b""),
+        eth_ip_tcp(SERVER, CLIENT, 21, 42200, 1, 2, 0x12, b""),
+        eth_ip_tcp(SERVER, CLIENT, 21, 42200, 2, 2, 0x18, b"220 ftp ready\r\n"),
+        eth_ip_tcp(CLIENT, SERVER, 42200, 21, 2, 17, 0x18, b"USER admin\r\n"),
+        eth_ip_tcp(SERVER, CLIENT, 21, 42200, 17, 14, 0x18, b"331 password required\r\n"),
+        eth_ip_tcp(CLIENT, SERVER, 42200, 21, 14, 40, 0x18, b"PASS pf-ftp-pw-7c2a\r\n"),
+        eth_ip_tcp(SERVER, CLIENT, 21, 42200, 40, 35, 0x18, b"230 logged in\r\n"),
+        eth_ip_tcp(CLIENT, SERVER, 42300, 389, 1, 0, 0x02, b""),
+        eth_ip_tcp(SERVER, CLIENT, 389, 42300, 1, 2, 0x12, b""),
+        eth_ip_tcp(CLIENT, SERVER, 42300, 389, 2, 2, 0x18, ldap),
+    ]
+    return _pcap_header() + b"".join(
+        _packet(p, 1_700_001_500.0 + i * 0.02) for i, p in enumerate(packets)
+    )
+
+
 # --------------------------------------------------------------------------
 # DNS
 # --------------------------------------------------------------------------
@@ -517,6 +542,7 @@ def fixture_beaconing() -> bytes:
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
     "http_bare_token.pcap": fixture_http_bare_token,
+    "ftp_ldap_creds.pcap": fixture_ftp_ldap_creds,
     "dns_tunnel.pcap": fixture_dns_tunnel,
     "sip_rtp.pcap": fixture_sip_rtp,
     "syn_scan.pcap": fixture_syn_scan,

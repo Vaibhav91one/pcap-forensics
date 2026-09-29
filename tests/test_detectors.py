@@ -136,6 +136,17 @@ def test_scheme_less_authorization_never_reaches_a_report(analyze_capture) -> No
     assert "redacted" in joined, "the redaction notice is missing"
 
 
+def test_ftp_and_ldap_passwords_are_reported_and_redacted(analyze_capture) -> None:
+    """FTP PASS and LDAP simple-bind passwords are credentials; USER is not; no password text survives (issue #14)."""
+    result = analyze_capture(fixture("ftp_ldap_creds.pcap"))
+    creds = {f.evidence[0].field for f in result.report.findings if f.code == "CLEARTEXT_CREDENTIAL"}
+    assert creds == {"ftp.request.arg", "ldap.simple"}
+    joined = "".join(path.read_text() for path in result.artifacts).lower()
+    assert "pf-ftp-pw" not in joined, "FTP password leaked into a report"
+    assert "pf-ldap-pw" not in joined, "LDAP password leaked into a report"
+    assert "redacted" in joined
+
+
 def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> None:
     """The resolver is the side on port 53/853, not the one that sorts last; internal and multicast never count (issue #6)."""
     result = analyze_capture(fixture("dns_external.pcap"))
