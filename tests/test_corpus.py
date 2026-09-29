@@ -171,6 +171,19 @@ def test_sip_only_capture_has_no_media_findings(analyze_capture) -> None:
     assert result.report.stats.rtp_streams == 0
 
 
+# ---------------------------------------------------------------- services
+def test_ntp_capture_is_a_cleartext_service(analyze_capture) -> None:
+    pcap = capture("ntp.pcap")
+    assert tshark_fields(pcap, "ntp", "frame.number"), "tshark found no NTP either"
+    assert "CLEARTEXT_SERVICE" in codes(analyze_capture(pcap))
+
+
+def test_tftp_capture_is_a_cleartext_service(analyze_capture) -> None:
+    pcap = capture("tftp.pcap")
+    assert tshark_fields(pcap, "tftp", "frame.number"), "tshark found no TFTP either"
+    assert "CLEARTEXT_SERVICE" in codes(analyze_capture(pcap))
+
+
 # --------------------------------------------------------------------- dns
 def test_mdns_capture_lists_the_resolver(analyze_capture) -> None:
     pcap = capture("dns_port.pcap")
