@@ -1,0 +1,6257 @@
+{
+  "description": "TLS/DTLS cipher suites with names from tshark and derived weakness tags.",
+  "name_source": "tshark -G values (tls.handshake.ciphersuite), vendored in cipher_names.tsv",
+  "policy_provenance": [
+    "RFC 8996 Appendix A - prohibited cipher suites",
+    "NIST SP 800-52r2 - allowed cipher suites for TLS",
+    "RFC 7457 Sweet32, RFC 7465 RC4, RFC 6194 SHA-1 - why the legacy tier exists",
+    "Project policy - the deprecation column is ours, see docs/cipher-policy.md"
+  ],
+  "schema": "1.0.0",
+  "suites": {
+    "0": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x0000",
+      "id": 0,
+      "kx": "NULL",
+      "mac": "NULL",
+      "name": "TLS_NULL_WITH_NULL_NULL",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "1": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x0001",
+      "id": 1,
+      "kx": "RSA",
+      "mac": "MD5",
+      "name": "TLS_RSA_WITH_NULL_MD5",
+      "tags": [
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "STATIC_RSA"
+      ]
+    },
+    "10": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x000a",
+      "id": 10,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "100": {
+      "deprecation": "prohibited",
+      "enc": "RC4_56",
+      "forward_secrecy": false,
+      "hex": "0x0064",
+      "id": 100,
+      "kx": "RSA_EXPORT1024",
+      "mac": "SHA1",
+      "name": "TLS_RSA_EXPORT1024_WITH_RC4_56_SHA",
+      "tags": [
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "101": {
+      "deprecation": "prohibited",
+      "enc": "RC4_56",
+      "forward_secrecy": true,
+      "hex": "0x0065",
+      "id": 101,
+      "kx": "DHE_DSS_EXPORT1024",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_EXPORT1024_WITH_RC4_56_SHA",
+      "tags": [
+        "EXPORT_GRADE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "102": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": true,
+      "hex": "0x0066",
+      "id": 102,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_RC4_128_SHA",
+      "tags": [
+        "PFS",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "103": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0067",
+      "id": 103,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "104": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0068",
+      "id": 104,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "105": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0069",
+      "id": 105,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "106": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x006a",
+      "id": 106,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "107": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x006b",
+      "id": 107,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "10794": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x2a2a",
+      "id": 10794,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "108": {
+      "deprecation": "prohibited",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x006c",
+      "id": 108,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "109": {
+      "deprecation": "prohibited",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x006d",
+      "id": 109,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "11": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x000b",
+      "id": 11,
+      "kx": "DH_DSS",
+      "mac": "none",
+      "name": "TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "12": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x000c",
+      "id": 12,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "128": {
+      "deprecation": "prohibited",
+      "enc": "28147_CNT_IMIT",
+      "forward_secrecy": false,
+      "hex": "0x0080",
+      "id": 128,
+      "kx": "GOSTR341094",
+      "mac": "none",
+      "name": "TLS_GOSTR341094_WITH_28147_CNT_IMIT",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "129": {
+      "deprecation": "prohibited",
+      "enc": "28147_CNT_IMIT",
+      "forward_secrecy": false,
+      "hex": "0x0081",
+      "id": 129,
+      "kx": "GOSTR341001",
+      "mac": "none",
+      "name": "TLS_GOSTR341001_WITH_28147_CNT_IMIT",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "13": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x000d",
+      "id": 13,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "130": {
+      "deprecation": "prohibited",
+      "enc": "NULL_GOSTR3411",
+      "forward_secrecy": false,
+      "hex": "0x0082",
+      "id": 130,
+      "kx": "GOSTR341094",
+      "mac": "none",
+      "name": "TLS_GOSTR341094_WITH_NULL_GOSTR3411",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "131": {
+      "deprecation": "prohibited",
+      "enc": "NULL_GOSTR3411",
+      "forward_secrecy": false,
+      "hex": "0x0083",
+      "id": 131,
+      "kx": "GOSTR341001",
+      "mac": "none",
+      "name": "TLS_GOSTR341001_WITH_NULL_GOSTR3411",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "132": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0084",
+      "id": 132,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "133": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0085",
+      "id": 133,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "134": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0086",
+      "id": 134,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "135": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0087",
+      "id": 135,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "136": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0088",
+      "id": 136,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "137": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0089",
+      "id": 137,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "138": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x008a",
+      "id": 138,
+      "kx": "PSK",
+      "mac": "SHA1",
+      "name": "TLS_PSK_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "139": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x008b",
+      "id": 139,
+      "kx": "PSK",
+      "mac": "SHA1",
+      "name": "TLS_PSK_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "14": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x000e",
+      "id": 14,
+      "kx": "DH_RSA",
+      "mac": "none",
+      "name": "TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "140": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x008c",
+      "id": 140,
+      "kx": "PSK",
+      "mac": "SHA1",
+      "name": "TLS_PSK_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "141": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x008d",
+      "id": 141,
+      "kx": "PSK",
+      "mac": "SHA1",
+      "name": "TLS_PSK_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "142": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": true,
+      "hex": "0x008e",
+      "id": 142,
+      "kx": "DHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_DHE_PSK_WITH_RC4_128_SHA",
+      "tags": [
+        "PFS",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "143": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0x008f",
+      "id": 143,
+      "kx": "DHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "144": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0090",
+      "id": 144,
+      "kx": "DHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "145": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0091",
+      "id": 145,
+      "kx": "DHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "146": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0092",
+      "id": 146,
+      "kx": "RSA_PSK",
+      "mac": "SHA1",
+      "name": "TLS_RSA_PSK_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "147": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0093",
+      "id": 147,
+      "kx": "RSA_PSK",
+      "mac": "SHA1",
+      "name": "TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "148": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0094",
+      "id": 148,
+      "kx": "RSA_PSK",
+      "mac": "SHA1",
+      "name": "TLS_RSA_PSK_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "149": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0095",
+      "id": 149,
+      "kx": "RSA_PSK",
+      "mac": "SHA1",
+      "name": "TLS_RSA_PSK_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "14906": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x3a3a",
+      "id": 14906,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "15": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x000f",
+      "id": 15,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "150": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0096",
+      "id": 150,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_SEED_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SEED",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "151": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0097",
+      "id": 151,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_SEED_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SEED",
+        "SHA_MAC"
+      ]
+    },
+    "152": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0098",
+      "id": 152,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_SEED_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SEED",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "153": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0099",
+      "id": 153,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_SEED_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SEED",
+        "SHA_MAC"
+      ]
+    },
+    "154": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": true,
+      "hex": "0x009a",
+      "id": 154,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_SEED_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SEED",
+        "SHA_MAC"
+      ]
+    },
+    "155": {
+      "deprecation": "prohibited",
+      "enc": "SEED_CBC",
+      "forward_secrecy": false,
+      "hex": "0x009b",
+      "id": 155,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_SEED_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SEED",
+        "SHA_MAC"
+      ]
+    },
+    "156": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x009c",
+      "id": 156,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "157": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x009d",
+      "id": 157,
+      "kx": "RSA",
+      "mac": "SHA384",
+      "name": "TLS_RSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "158": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0x009e",
+      "id": 158,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "159": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0x009f",
+      "id": 159,
+      "kx": "DHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "16": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0010",
+      "id": 16,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "160": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a0",
+      "id": 160,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "161": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a1",
+      "id": 161,
+      "kx": "DH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DH_RSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "162": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0x00a2",
+      "id": 162,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "163": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0x00a3",
+      "id": 163,
+      "kx": "DHE_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "164": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a4",
+      "id": 164,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "165": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a5",
+      "id": 165,
+      "kx": "DH_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DH_DSS_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "166": {
+      "deprecation": "prohibited",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a6",
+      "id": 166,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "167": {
+      "deprecation": "prohibited",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a7",
+      "id": 167,
+      "kx": "DH_anon",
+      "mac": "SHA384",
+      "name": "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "168": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a8",
+      "id": 168,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "169": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00a9",
+      "id": 169,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "17": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": true,
+      "hex": "0x0011",
+      "id": 17,
+      "kx": "DHE_DSS",
+      "mac": "none",
+      "name": "TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "PFS"
+      ]
+    },
+    "170": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0x00aa",
+      "id": 170,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "171": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0x00ab",
+      "id": 171,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "172": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00ac",
+      "id": 172,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "173": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0x00ad",
+      "id": 173,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "174": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00ae",
+      "id": 174,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "175": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00af",
+      "id": 175,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "176": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x00b0",
+      "id": 176,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_NULL_SHA256",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "177": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x00b1",
+      "id": 177,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_NULL_SHA384",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "178": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00b2",
+      "id": 178,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "179": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00b3",
+      "id": 179,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "18": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0012",
+      "id": 18,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "180": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0x00b4",
+      "id": 180,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_NULL_SHA256",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS"
+      ]
+    },
+    "181": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0x00b5",
+      "id": 181,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_NULL_SHA384",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS"
+      ]
+    },
+    "182": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00b6",
+      "id": 182,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "183": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00b7",
+      "id": 183,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "184": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x00b8",
+      "id": 184,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_NULL_SHA256",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "185": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x00b9",
+      "id": 185,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_NULL_SHA384",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION"
+      ]
+    },
+    "186": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00ba",
+      "id": 186,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "187": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00bb",
+      "id": 187,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "188": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00bc",
+      "id": 188,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "189": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00bd",
+      "id": 189,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "19": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0013",
+      "id": 19,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "190": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00be",
+      "id": 190,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "19018": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x4a4a",
+      "id": 19018,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "191": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00bf",
+      "id": 191,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "192": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00c0",
+      "id": 192,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "193": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00c1",
+      "id": 193,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "194": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00c2",
+      "id": 194,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "195": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00c3",
+      "id": 195,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "196": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x00c4",
+      "id": 196,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "197": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x00c5",
+      "id": 197,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "198": {
+      "deprecation": "deprecated",
+      "enc": "SM4_GCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0x00c6",
+      "id": 198,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "TLS_SM4_GCM_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "199": {
+      "deprecation": "deprecated",
+      "enc": "SM4_CCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0x00c7",
+      "id": 199,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "TLS_SM4_CCM_SM3",
+      "tags": [
+        "IOT",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "2": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x0002",
+      "id": 2,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "20": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": true,
+      "hex": "0x0014",
+      "id": 20,
+      "kx": "DHE_RSA",
+      "mac": "none",
+      "name": "TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "PFS"
+      ]
+    },
+    "21": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0015",
+      "id": 21,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "22": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0016",
+      "id": 22,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "22016": {
+      "deprecation": "signalling",
+      "enc": "FALLBACK_SCSV",
+      "forward_secrecy": false,
+      "hex": "0x5600",
+      "id": 22016,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "TLS_FALLBACK_SCSV",
+      "tags": [
+        "SIGNALING"
+      ]
+    },
+    "23": {
+      "deprecation": "prohibited",
+      "enc": "RC4_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0017",
+      "id": 23,
+      "kx": "DH_anon",
+      "mac": "none",
+      "name": "TLS_DH_anon_EXPORT_WITH_RC4_40_MD5",
+      "tags": [
+        "ANONYMOUS",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "23130": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x5a5a",
+      "id": 23130,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "24": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0018",
+      "id": 24,
+      "kx": "DH_anon",
+      "mac": "MD5",
+      "name": "TLS_DH_anon_WITH_RC4_128_MD5",
+      "tags": [
+        "ANONYMOUS",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY",
+        "RC4"
+      ]
+    },
+    "25": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0019",
+      "id": 25,
+      "kx": "DH_anon",
+      "mac": "none",
+      "name": "TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "255": {
+      "deprecation": "signalling",
+      "enc": "EMPTY_RENEGOTIATION_INFO_SCSV",
+      "forward_secrecy": false,
+      "hex": "0x00ff",
+      "id": 255,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "TLS_EMPTY_RENEGOTIATION_INFO_SCSV",
+      "tags": [
+        "SIGNALING"
+      ]
+    },
+    "2570": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x0a0a",
+      "id": 2570,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "26": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x001a",
+      "id": 26,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_DES_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "27": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x001b",
+      "id": 27,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "27242": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x6a6a",
+      "id": 27242,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "28": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x001c",
+      "id": 28,
+      "kx": "FORTEZZA_KEA",
+      "mac": "SHA1",
+      "name": "SSL_FORTEZZA_KEA_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC"
+      ]
+    },
+    "29": {
+      "deprecation": "deprecated",
+      "enc": "FORTEZZA_CBC",
+      "forward_secrecy": false,
+      "hex": "0x001d",
+      "id": 29,
+      "kx": "FORTEZZA_KEA",
+      "mac": "SHA1",
+      "name": "SSL_FORTEZZA_KEA_WITH_FORTEZZA_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "3": {
+      "deprecation": "prohibited",
+      "enc": "RC4_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0003",
+      "id": 3,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_EXPORT_WITH_RC4_40_MD5",
+      "tags": [
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "30": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x001e",
+      "id": 30,
+      "kx": "KRB5",
+      "mac": "SHA1",
+      "name": "TLS_KRB5_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "31": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x001f",
+      "id": 31,
+      "kx": "KRB5",
+      "mac": "SHA1",
+      "name": "TLS_KRB5_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "31354": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x7a7a",
+      "id": 31354,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "32": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0020",
+      "id": 32,
+      "kx": "KRB5",
+      "mac": "SHA1",
+      "name": "TLS_KRB5_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "33": {
+      "deprecation": "prohibited",
+      "enc": "IDEA_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0021",
+      "id": 33,
+      "kx": "KRB5",
+      "mac": "SHA1",
+      "name": "TLS_KRB5_WITH_IDEA_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "IDEA",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "34": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0022",
+      "id": 34,
+      "kx": "KRB5",
+      "mac": "MD5",
+      "name": "TLS_KRB5_WITH_DES_CBC_MD5",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "35": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0023",
+      "id": 35,
+      "kx": "KRB5",
+      "mac": "MD5",
+      "name": "TLS_KRB5_WITH_3DES_EDE_CBC_MD5",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "35466": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x8a8a",
+      "id": 35466,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "36": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0024",
+      "id": 36,
+      "kx": "KRB5",
+      "mac": "MD5",
+      "name": "TLS_KRB5_WITH_RC4_128_MD5",
+      "tags": [
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY",
+        "RC4"
+      ]
+    },
+    "37": {
+      "deprecation": "prohibited",
+      "enc": "IDEA_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0025",
+      "id": 37,
+      "kx": "KRB5",
+      "mac": "MD5",
+      "name": "TLS_KRB5_WITH_IDEA_CBC_MD5",
+      "tags": [
+        "CBC_MODE",
+        "IDEA",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "38": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC_40_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0026",
+      "id": 38,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "39": {
+      "deprecation": "prohibited",
+      "enc": "RC2_CBC_40_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0027",
+      "id": 39,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "RC2"
+      ]
+    },
+    "39578": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x9a9a",
+      "id": 39578,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "4": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0004",
+      "id": 4,
+      "kx": "RSA",
+      "mac": "MD5",
+      "name": "TLS_RSA_WITH_RC4_128_MD5",
+      "tags": [
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "STATIC_RSA"
+      ]
+    },
+    "40": {
+      "deprecation": "prohibited",
+      "enc": "RC4_40_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0028",
+      "id": 40,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+      "tags": [
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "41": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0029",
+      "id": 41,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "42": {
+      "deprecation": "prohibited",
+      "enc": "RC2_CBC_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x002a",
+      "id": 42,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "RC2"
+      ]
+    },
+    "423": {
+      "deprecation": "deprecated",
+      "enc": "ssl_31_ciphersuite",
+      "forward_secrecy": false,
+      "hex": "0x01a7",
+      "id": 423,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ssl_31_ciphersuite",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "43": {
+      "deprecation": "prohibited",
+      "enc": "RC4_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x002b",
+      "id": 43,
+      "kx": "KRB5",
+      "mac": "none",
+      "name": "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
+      "tags": [
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "43690": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xaaaa",
+      "id": 43690,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "44": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x002c",
+      "id": 44,
+      "kx": "PSK",
+      "mac": "SHA1",
+      "name": "TLS_PSK_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC"
+      ]
+    },
+    "45": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0x002d",
+      "id": 45,
+      "kx": "DHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_DHE_PSK_WITH_NULL_SHA",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "46": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x002e",
+      "id": 46,
+      "kx": "RSA_PSK",
+      "mac": "SHA1",
+      "name": "TLS_RSA_PSK_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC"
+      ]
+    },
+    "47": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x002f",
+      "id": 47,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "47802": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xbaba",
+      "id": 47802,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "48": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0030",
+      "id": 48,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "4865": {
+      "deprecation": "recommended",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0x1301",
+      "id": 4865,
+      "kx": "tls13",
+      "mac": "aead",
+      "name": "TLS_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS",
+        "TLS13"
+      ]
+    },
+    "4866": {
+      "deprecation": "recommended",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0x1302",
+      "id": 4866,
+      "kx": "tls13",
+      "mac": "aead",
+      "name": "TLS_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS",
+        "TLS13"
+      ]
+    },
+    "4867": {
+      "deprecation": "recommended",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0x1303",
+      "id": 4867,
+      "kx": "tls13",
+      "mac": "aead",
+      "name": "TLS_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS",
+        "TLS13"
+      ]
+    },
+    "4868": {
+      "deprecation": "recommended",
+      "enc": "AES_128_CCM",
+      "forward_secrecy": true,
+      "hex": "0x1304",
+      "id": 4868,
+      "kx": "tls13",
+      "mac": "aead",
+      "name": "TLS_AES_128_CCM_SHA256",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS",
+        "TLS13"
+      ]
+    },
+    "4869": {
+      "deprecation": "recommended",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0x1305",
+      "id": 4869,
+      "kx": "tls13",
+      "mac": "aead",
+      "name": "TLS_AES_128_CCM_8_SHA256",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS",
+        "TLS13"
+      ]
+    },
+    "49": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0031",
+      "id": 49,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49153": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0xc001",
+      "id": 49153,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC"
+      ]
+    },
+    "49154": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0xc002",
+      "id": 49154,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "49155": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc003",
+      "id": 49155,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49156": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc004",
+      "id": 49156,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49157": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc005",
+      "id": 49157,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49158": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0xc006",
+      "id": 49158,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49159": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": true,
+      "hex": "0xc007",
+      "id": 49159,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+      "tags": [
+        "PFS",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "49160": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc008",
+      "id": 49160,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49161": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc009",
+      "id": 49161,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49162": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc00a",
+      "id": 49162,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49163": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0xc00b",
+      "id": 49163,
+      "kx": "ECDH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_RSA_WITH_NULL_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49164": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0xc00c",
+      "id": 49164,
+      "kx": "ECDH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49165": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc00d",
+      "id": 49165,
+      "kx": "ECDH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49166": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc00e",
+      "id": 49166,
+      "kx": "ECDH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49167": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc00f",
+      "id": 49167,
+      "kx": "ECDH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49168": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0xc010",
+      "id": 49168,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_RSA_WITH_NULL_SHA",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49169": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": true,
+      "hex": "0xc011",
+      "id": 49169,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+      "tags": [
+        "PFS",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "49170": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc012",
+      "id": 49170,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49171": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc013",
+      "id": 49171,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49172": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc014",
+      "id": 49172,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49173": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0xc015",
+      "id": 49173,
+      "kx": "ECDH_anon",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_anon_WITH_NULL_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "SHA_MAC"
+      ]
+    },
+    "49174": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0xc016",
+      "id": 49174,
+      "kx": "ECDH_anon",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_anon_WITH_RC4_128_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "49175": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc017",
+      "id": 49175,
+      "kx": "ECDH_anon",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49176": {
+      "deprecation": "prohibited",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc018",
+      "id": 49176,
+      "kx": "ECDH_anon",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49177": {
+      "deprecation": "prohibited",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc019",
+      "id": 49177,
+      "kx": "ECDH_anon",
+      "mac": "SHA1",
+      "name": "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49178": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01a",
+      "id": 49178,
+      "kx": "SRP_SHA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49179": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01b",
+      "id": 49179,
+      "kx": "SRP_SHA_RSA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49180": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01c",
+      "id": 49180,
+      "kx": "SRP_SHA_DSS",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49181": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01d",
+      "id": 49181,
+      "kx": "SRP_SHA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49182": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01e",
+      "id": 49182,
+      "kx": "SRP_SHA_RSA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49183": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc01f",
+      "id": 49183,
+      "kx": "SRP_SHA_DSS",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49184": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc020",
+      "id": 49184,
+      "kx": "SRP_SHA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49185": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc021",
+      "id": 49185,
+      "kx": "SRP_SHA_RSA",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "49186": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc022",
+      "id": 49186,
+      "kx": "SRP_SHA_DSS",
+      "mac": "SHA1",
+      "name": "TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "49187": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc023",
+      "id": 49187,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49188": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc024",
+      "id": 49188,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49189": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc025",
+      "id": 49189,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49190": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc026",
+      "id": 49190,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49191": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc027",
+      "id": 49191,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49192": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc028",
+      "id": 49192,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49193": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc029",
+      "id": 49193,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49194": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc02a",
+      "id": 49194,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49195": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc02b",
+      "id": 49195,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49196": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc02c",
+      "id": 49196,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49197": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc02d",
+      "id": 49197,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49198": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc02e",
+      "id": 49198,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49199": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc02f",
+      "id": 49199,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49200": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc030",
+      "id": 49200,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49201": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc031",
+      "id": 49201,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49202": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc032",
+      "id": 49202,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49203": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": true,
+      "hex": "0xc033",
+      "id": 49203,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_PSK_WITH_RC4_128_SHA",
+      "tags": [
+        "PFS",
+        "RC4",
+        "SHA_MAC"
+      ]
+    },
+    "49204": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc034",
+      "id": 49204,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49205": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc035",
+      "id": 49205,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49206": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc036",
+      "id": 49206,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49207": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc037",
+      "id": 49207,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49208": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc038",
+      "id": 49208,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49209": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0xc039",
+      "id": 49209,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA1",
+      "name": "TLS_ECDHE_PSK_WITH_NULL_SHA",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "49210": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0xc03a",
+      "id": 49210,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_NULL_SHA256",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS"
+      ]
+    },
+    "49211": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": true,
+      "hex": "0xc03b",
+      "id": 49211,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_PSK_WITH_NULL_SHA384",
+      "tags": [
+        "NULL_ENCRYPTION",
+        "PFS"
+      ]
+    },
+    "49212": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc03c",
+      "id": 49212,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49213": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc03d",
+      "id": 49213,
+      "kx": "RSA",
+      "mac": "SHA384",
+      "name": "TLS_RSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49214": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc03e",
+      "id": 49214,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49215": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc03f",
+      "id": 49215,
+      "kx": "DH_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49216": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc040",
+      "id": 49216,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49217": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc041",
+      "id": 49217,
+      "kx": "DH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49218": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc042",
+      "id": 49218,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49219": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc043",
+      "id": 49219,
+      "kx": "DHE_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49220": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc044",
+      "id": 49220,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49221": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc045",
+      "id": 49221,
+      "kx": "DHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49222": {
+      "deprecation": "prohibited",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc046",
+      "id": 49222,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49223": {
+      "deprecation": "prohibited",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc047",
+      "id": 49223,
+      "kx": "DH_anon",
+      "mac": "SHA384",
+      "name": "TLS_DH_anon_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49224": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc048",
+      "id": 49224,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49225": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc049",
+      "id": 49225,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49226": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc04a",
+      "id": 49226,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49227": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc04b",
+      "id": 49227,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49228": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc04c",
+      "id": 49228,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49229": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc04d",
+      "id": 49229,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49230": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc04e",
+      "id": 49230,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49231": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc04f",
+      "id": 49231,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49232": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc050",
+      "id": 49232,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49233": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc051",
+      "id": 49233,
+      "kx": "RSA",
+      "mac": "SHA384",
+      "name": "TLS_RSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49234": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc052",
+      "id": 49234,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49235": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc053",
+      "id": 49235,
+      "kx": "DHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49236": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc054",
+      "id": 49236,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49237": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc055",
+      "id": 49237,
+      "kx": "DH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49238": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc056",
+      "id": 49238,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49239": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc057",
+      "id": 49239,
+      "kx": "DHE_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49240": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc058",
+      "id": 49240,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49241": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc059",
+      "id": 49241,
+      "kx": "DH_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49242": {
+      "deprecation": "prohibited",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc05a",
+      "id": 49242,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49243": {
+      "deprecation": "prohibited",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc05b",
+      "id": 49243,
+      "kx": "DH_anon",
+      "mac": "SHA384",
+      "name": "TLS_DH_anon_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49244": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc05c",
+      "id": 49244,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49245": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc05d",
+      "id": 49245,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49246": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc05e",
+      "id": 49246,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49247": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc05f",
+      "id": 49247,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49248": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc060",
+      "id": 49248,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49249": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc061",
+      "id": 49249,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49250": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc062",
+      "id": 49250,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49251": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc063",
+      "id": 49251,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49252": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc064",
+      "id": 49252,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49253": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc065",
+      "id": 49253,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49254": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc066",
+      "id": 49254,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49255": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc067",
+      "id": 49255,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49256": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc068",
+      "id": 49256,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49257": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc069",
+      "id": 49257,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49258": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc06a",
+      "id": 49258,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49259": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc06b",
+      "id": 49259,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49260": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc06c",
+      "id": 49260,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49261": {
+      "deprecation": "acceptable",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc06d",
+      "id": 49261,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49262": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc06e",
+      "id": 49262,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49263": {
+      "deprecation": "deprecated",
+      "enc": "ARIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc06f",
+      "id": 49263,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49264": {
+      "deprecation": "legacy",
+      "enc": "ARIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc070",
+      "id": 49264,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49265": {
+      "deprecation": "legacy",
+      "enc": "ARIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc071",
+      "id": 49265,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49266": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc072",
+      "id": 49266,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49267": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc073",
+      "id": 49267,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49268": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc074",
+      "id": 49268,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49269": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc075",
+      "id": 49269,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49270": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc076",
+      "id": 49270,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49271": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc077",
+      "id": 49271,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49272": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc078",
+      "id": 49272,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49273": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc079",
+      "id": 49273,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49274": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc07a",
+      "id": 49274,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49275": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc07b",
+      "id": 49275,
+      "kx": "RSA",
+      "mac": "SHA384",
+      "name": "TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49276": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc07c",
+      "id": 49276,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49277": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc07d",
+      "id": 49277,
+      "kx": "DHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49278": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc07e",
+      "id": 49278,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49279": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc07f",
+      "id": 49279,
+      "kx": "DH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49280": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc080",
+      "id": 49280,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49281": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc081",
+      "id": 49281,
+      "kx": "DHE_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49282": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc082",
+      "id": 49282,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49283": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc083",
+      "id": 49283,
+      "kx": "DH_DSS",
+      "mac": "SHA384",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49284": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc084",
+      "id": 49284,
+      "kx": "DH_anon",
+      "mac": "SHA256",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49285": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc085",
+      "id": 49285,
+      "kx": "DH_anon",
+      "mac": "SHA384",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "ANONYMOUS",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49286": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc086",
+      "id": 49286,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49287": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc087",
+      "id": 49287,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49288": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc088",
+      "id": 49288,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49289": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc089",
+      "id": 49289,
+      "kx": "ECDH_ECDSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49290": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc08a",
+      "id": 49290,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49291": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc08b",
+      "id": 49291,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49292": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc08c",
+      "id": 49292,
+      "kx": "ECDH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49293": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc08d",
+      "id": 49293,
+      "kx": "ECDH_RSA",
+      "mac": "SHA384",
+      "name": "TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49294": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc08e",
+      "id": 49294,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49295": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc08f",
+      "id": 49295,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49296": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc090",
+      "id": 49296,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49297": {
+      "deprecation": "acceptable",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xc091",
+      "id": 49297,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "49298": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc092",
+      "id": 49298,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49299": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc093",
+      "id": 49299,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49300": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc094",
+      "id": 49300,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49301": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc095",
+      "id": 49301,
+      "kx": "PSK",
+      "mac": "SHA384",
+      "name": "TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49302": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc096",
+      "id": 49302,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49303": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc097",
+      "id": 49303,
+      "kx": "DHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49304": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc098",
+      "id": 49304,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49305": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0xc099",
+      "id": 49305,
+      "kx": "RSA_PSK",
+      "mac": "SHA384",
+      "name": "TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49306": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc09a",
+      "id": 49306,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49307": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0xc09b",
+      "id": 49307,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "49308": {
+      "deprecation": "deprecated",
+      "enc": "AES_128",
+      "forward_secrecy": false,
+      "hex": "0xc09c",
+      "id": 49308,
+      "kx": "RSA",
+      "mac": "aead",
+      "name": "TLS_RSA_WITH_AES_128_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49309": {
+      "deprecation": "deprecated",
+      "enc": "AES_256",
+      "forward_secrecy": false,
+      "hex": "0xc09d",
+      "id": 49309,
+      "kx": "RSA",
+      "mac": "aead",
+      "name": "TLS_RSA_WITH_AES_256_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49310": {
+      "deprecation": "acceptable",
+      "enc": "AES_128",
+      "forward_secrecy": true,
+      "hex": "0xc09e",
+      "id": 49310,
+      "kx": "DHE_RSA",
+      "mac": "aead",
+      "name": "TLS_DHE_RSA_WITH_AES_128_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49311": {
+      "deprecation": "acceptable",
+      "enc": "AES_256",
+      "forward_secrecy": true,
+      "hex": "0xc09f",
+      "id": 49311,
+      "kx": "DHE_RSA",
+      "mac": "aead",
+      "name": "TLS_DHE_RSA_WITH_AES_256_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49312": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": false,
+      "hex": "0xc0a0",
+      "id": 49312,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49313": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CCM_8",
+      "forward_secrecy": false,
+      "hex": "0xc0a1",
+      "id": 49313,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_WITH_AES_256_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49314": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0a2",
+      "id": 49314,
+      "kx": "DHE_RSA",
+      "mac": "none",
+      "name": "TLS_DHE_RSA_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49315": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0a3",
+      "id": 49315,
+      "kx": "DHE_RSA",
+      "mac": "none",
+      "name": "TLS_DHE_RSA_WITH_AES_256_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49316": {
+      "deprecation": "deprecated",
+      "enc": "AES_128",
+      "forward_secrecy": false,
+      "hex": "0xc0a4",
+      "id": 49316,
+      "kx": "PSK",
+      "mac": "aead",
+      "name": "TLS_PSK_WITH_AES_128_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49317": {
+      "deprecation": "deprecated",
+      "enc": "AES_256",
+      "forward_secrecy": false,
+      "hex": "0xc0a5",
+      "id": 49317,
+      "kx": "PSK",
+      "mac": "aead",
+      "name": "TLS_PSK_WITH_AES_256_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49318": {
+      "deprecation": "acceptable",
+      "enc": "AES_128",
+      "forward_secrecy": true,
+      "hex": "0xc0a6",
+      "id": 49318,
+      "kx": "DHE_PSK",
+      "mac": "aead",
+      "name": "TLS_DHE_PSK_WITH_AES_128_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49319": {
+      "deprecation": "acceptable",
+      "enc": "AES_256",
+      "forward_secrecy": true,
+      "hex": "0xc0a7",
+      "id": 49319,
+      "kx": "DHE_PSK",
+      "mac": "aead",
+      "name": "TLS_DHE_PSK_WITH_AES_256_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49320": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": false,
+      "hex": "0xc0a8",
+      "id": 49320,
+      "kx": "PSK",
+      "mac": "none",
+      "name": "TLS_PSK_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49321": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CCM_8",
+      "forward_secrecy": false,
+      "hex": "0xc0a9",
+      "id": 49321,
+      "kx": "PSK",
+      "mac": "none",
+      "name": "TLS_PSK_WITH_AES_256_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49322": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0aa",
+      "id": 49322,
+      "kx": "PSK_DHE",
+      "mac": "none",
+      "name": "TLS_PSK_DHE_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49323": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0ab",
+      "id": 49323,
+      "kx": "PSK_DHE",
+      "mac": "none",
+      "name": "TLS_PSK_DHE_WITH_AES_256_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49324": {
+      "deprecation": "acceptable",
+      "enc": "AES_128",
+      "forward_secrecy": true,
+      "hex": "0xc0ac",
+      "id": 49324,
+      "kx": "ECDHE_ECDSA",
+      "mac": "aead",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49325": {
+      "deprecation": "acceptable",
+      "enc": "AES_256",
+      "forward_secrecy": true,
+      "hex": "0xc0ad",
+      "id": 49325,
+      "kx": "ECDHE_ECDSA",
+      "mac": "aead",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49326": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0ae",
+      "id": 49326,
+      "kx": "ECDHE_ECDSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49327": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xc0af",
+      "id": 49327,
+      "kx": "ECDHE_ECDSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "49328": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc0b0",
+      "id": 49328,
+      "kx": "ECCPWD",
+      "mac": "SHA256",
+      "name": "TLS_ECCPWD_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49329": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": false,
+      "hex": "0xc0b1",
+      "id": 49329,
+      "kx": "ECCPWD",
+      "mac": "SHA384",
+      "name": "TLS_ECCPWD_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49330": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CCM",
+      "forward_secrecy": false,
+      "hex": "0xc0b2",
+      "id": 49330,
+      "kx": "ECCPWD",
+      "mac": "SHA256",
+      "name": "TLS_ECCPWD_WITH_AES_128_CCM_SHA256",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49331": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CCM",
+      "forward_secrecy": false,
+      "hex": "0xc0b3",
+      "id": 49331,
+      "kx": "ECCPWD",
+      "mac": "SHA384",
+      "name": "TLS_ECCPWD_WITH_AES_256_CCM_SHA384",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49332": {
+      "deprecation": "deprecated",
+      "enc": "SHA256",
+      "forward_secrecy": false,
+      "hex": "0xc0b4",
+      "id": 49332,
+      "kx": "implicit-rsa",
+      "mac": "SHA256",
+      "name": "TLS_SHA256_SHA256",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49333": {
+      "deprecation": "deprecated",
+      "enc": "SHA384",
+      "forward_secrecy": false,
+      "hex": "0xc0b5",
+      "id": 49333,
+      "kx": "implicit-rsa",
+      "mac": "SHA384",
+      "name": "TLS_SHA384_SHA384",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "49407": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": false,
+      "hex": "0xc0ff",
+      "id": 49407,
+      "kx": "ECJPAKE",
+      "mac": "none",
+      "name": "TLS_ECJPAKE_WITH_AES_128_CCM_8",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49408": {
+      "deprecation": "prohibited",
+      "enc": "KUZNYECHIK_CTR_OMAC",
+      "forward_secrecy": false,
+      "hex": "0xc100",
+      "id": 49408,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49409": {
+      "deprecation": "prohibited",
+      "enc": "MAGMA_CTR_OMAC",
+      "forward_secrecy": false,
+      "hex": "0xc101",
+      "id": 49409,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49410": {
+      "deprecation": "prohibited",
+      "enc": "28147_CNT_IMIT",
+      "forward_secrecy": false,
+      "hex": "0xc102",
+      "id": 49410,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_28147_CNT_IMIT",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49411": {
+      "deprecation": "prohibited",
+      "enc": "KUZNYECHIK_MGM_L",
+      "forward_secrecy": false,
+      "hex": "0xc103",
+      "id": 49411,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49412": {
+      "deprecation": "prohibited",
+      "enc": "MAGMA_MGM_L",
+      "forward_secrecy": false,
+      "hex": "0xc104",
+      "id": 49412,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_MAGMA_MGM_L",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49413": {
+      "deprecation": "prohibited",
+      "enc": "KUZNYECHIK_MGM_S",
+      "forward_secrecy": false,
+      "hex": "0xc105",
+      "id": 49413,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "49414": {
+      "deprecation": "prohibited",
+      "enc": "MAGMA_MGM_S",
+      "forward_secrecy": false,
+      "hex": "0xc106",
+      "id": 49414,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_MAGMA_MGM_S",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "5": {
+      "deprecation": "prohibited",
+      "enc": "RC4_128",
+      "forward_secrecy": false,
+      "hex": "0x0005",
+      "id": 5,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_RC4_128_SHA",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "RC4",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "50": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0032",
+      "id": 50,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "51": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0033",
+      "id": 51,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "51914": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xcaca",
+      "id": 51914,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "52": {
+      "deprecation": "prohibited",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0034",
+      "id": 52,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_AES_128_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "52243": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xcc13",
+      "id": 52243,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52244": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xcc14",
+      "id": 52244,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52245": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xcc15",
+      "id": 52245,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52392": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xcca8",
+      "id": 52392,
+      "kx": "ECDHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52393": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xcca9",
+      "id": 52393,
+      "kx": "ECDHE_ECDSA",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52394": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xccaa",
+      "id": 52394,
+      "kx": "DHE_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52395": {
+      "deprecation": "deprecated",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": false,
+      "hex": "0xccab",
+      "id": 52395,
+      "kx": "PSK",
+      "mac": "SHA256",
+      "name": "TLS_PSK_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "52396": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xccac",
+      "id": 52396,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52397": {
+      "deprecation": "acceptable",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": true,
+      "hex": "0xccad",
+      "id": 52397,
+      "kx": "DHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "52398": {
+      "deprecation": "deprecated",
+      "enc": "CHACHA20_POLY1305",
+      "forward_secrecy": false,
+      "hex": "0xccae",
+      "id": 52398,
+      "kx": "RSA_PSK",
+      "mac": "SHA256",
+      "name": "TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256",
+      "tags": [
+        "AEAD",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "53": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0035",
+      "id": 53,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "53249": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_GCM",
+      "forward_secrecy": true,
+      "hex": "0xd001",
+      "id": 53249,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "53250": {
+      "deprecation": "acceptable",
+      "enc": "AES_256_GCM",
+      "forward_secrecy": true,
+      "hex": "0xd002",
+      "id": 53250,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA384",
+      "name": "TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384",
+      "tags": [
+        "AEAD",
+        "PFS"
+      ]
+    },
+    "53251": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_CCM_8",
+      "forward_secrecy": true,
+      "hex": "0xd003",
+      "id": 53251,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "53253": {
+      "deprecation": "acceptable",
+      "enc": "AES_128_CCM",
+      "forward_secrecy": true,
+      "hex": "0xd005",
+      "id": 53253,
+      "kx": "ECDHE_PSK",
+      "mac": "SHA256",
+      "name": "TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256",
+      "tags": [
+        "AEAD",
+        "IOT",
+        "PFS"
+      ]
+    },
+    "54": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0036",
+      "id": 54,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "55": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0037",
+      "id": 55,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "56": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0038",
+      "id": 56,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "56026": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xdada",
+      "id": 56026,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57": {
+      "deprecation": "legacy",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0039",
+      "id": 57,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "57345": {
+      "deprecation": "legacy",
+      "enc": "ECDHE_SM1_SM3",
+      "forward_secrecy": true,
+      "hex": "0xe001",
+      "id": 57345,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECDHE_SM1_SM3",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "57347": {
+      "deprecation": "deprecated",
+      "enc": "ECC_SM1_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe003",
+      "id": 57347,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECC_SM1_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57349": {
+      "deprecation": "deprecated",
+      "enc": "IBSDH_SM1_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe005",
+      "id": 57349,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBSDH_SM1_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57351": {
+      "deprecation": "deprecated",
+      "enc": "IBC_SM1_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe007",
+      "id": 57351,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBC_SM1_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57353": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM1_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe009",
+      "id": 57353,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "RSA_SM1_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57354": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM1_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe00a",
+      "id": 57354,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "RSA_SM1_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57361": {
+      "deprecation": "legacy",
+      "enc": "ECDHE_SM4_CBC_SM3",
+      "forward_secrecy": true,
+      "hex": "0xe011",
+      "id": 57361,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECDHE_SM4_CBC_SM3",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "57363": {
+      "deprecation": "deprecated",
+      "enc": "ECC_SM4_CBC_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe013",
+      "id": 57363,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECC_SM4_CBC_SM3",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57365": {
+      "deprecation": "deprecated",
+      "enc": "IBSDH_SM4_CBC_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe015",
+      "id": 57365,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBSDH_SM4_CBC_SM3",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57367": {
+      "deprecation": "deprecated",
+      "enc": "IBC_SM4_CBC_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe017",
+      "id": 57367,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBC_SM4_CBC_SM3",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57369": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM4_CBC_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe019",
+      "id": 57369,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "RSA_SM4_CBC_SM3",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57370": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM4_CBC_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe01a",
+      "id": 57370,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "RSA_SM4_CBC_SHA1",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57372": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM4_CBC",
+      "forward_secrecy": false,
+      "hex": "0xe01c",
+      "id": 57372,
+      "kx": "implicit-rsa",
+      "mac": "SHA256",
+      "name": "RSA_SM4_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57425": {
+      "deprecation": "legacy",
+      "enc": "ECDHE_SM4_GCM_SM3",
+      "forward_secrecy": true,
+      "hex": "0xe051",
+      "id": 57425,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECDHE_SM4_GCM_SM3",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "57427": {
+      "deprecation": "deprecated",
+      "enc": "ECC_SM4_GCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe053",
+      "id": 57427,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "ECC_SM4_GCM_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57429": {
+      "deprecation": "deprecated",
+      "enc": "IBSDH_SM4_GCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe055",
+      "id": 57429,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBSDH_SM4_GCM_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57431": {
+      "deprecation": "deprecated",
+      "enc": "IBC_SM4_GCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe057",
+      "id": 57431,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "IBC_SM4_GCM_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57433": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM4_GCM_SM3",
+      "forward_secrecy": false,
+      "hex": "0xe059",
+      "id": 57433,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "RSA_SM4_GCM_SM3",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "57434": {
+      "deprecation": "deprecated",
+      "enc": "RSA_SM4_GCM",
+      "forward_secrecy": false,
+      "hex": "0xe05a",
+      "id": 57434,
+      "kx": "implicit-rsa",
+      "mac": "SHA256",
+      "name": "RSA_SM4_GCM_SHA256",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "58": {
+      "deprecation": "prohibited",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x003a",
+      "id": 58,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_AES_256_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "58384": {
+      "deprecation": "deprecated",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe410",
+      "id": 58384,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "58385": {
+      "deprecation": "deprecated",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe411",
+      "id": 58385,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_WITH_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "58386": {
+      "deprecation": "legacy",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe412",
+      "id": 58386,
+      "kx": "ECDHE_RSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_RSA_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58387": {
+      "deprecation": "legacy",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe413",
+      "id": 58387,
+      "kx": "ECDHE_RSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_RSA_WITH_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58388": {
+      "deprecation": "legacy",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe414",
+      "id": 58388,
+      "kx": "ECDHE_ECDSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_ECDSA_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58389": {
+      "deprecation": "legacy",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe415",
+      "id": 58389,
+      "kx": "ECDHE_ECDSA",
+      "mac": "none",
+      "name": "TLS_ECDHE_ECDSA_WITH_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58390": {
+      "deprecation": "deprecated",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe416",
+      "id": 58390,
+      "kx": "PSK",
+      "mac": "none",
+      "name": "TLS_PSK_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "58391": {
+      "deprecation": "deprecated",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe417",
+      "id": 58391,
+      "kx": "PSK",
+      "mac": "none",
+      "name": "TLS_PSK_WITH_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "58392": {
+      "deprecation": "legacy",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe418",
+      "id": 58392,
+      "kx": "ECDHE_PSK",
+      "mac": "none",
+      "name": "TLS_ECDHE_PSK_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58393": {
+      "deprecation": "legacy",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe419",
+      "id": 58393,
+      "kx": "ECDHE_PSK",
+      "mac": "none",
+      "name": "TLS_ECDHE_PSK_WITH_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58394": {
+      "deprecation": "deprecated",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe41a",
+      "id": 58394,
+      "kx": "RSA_PSK",
+      "mac": "none",
+      "name": "TLS_RSA_PSK_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "58395": {
+      "deprecation": "deprecated",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": false,
+      "hex": "0xe41b",
+      "id": 58395,
+      "kx": "RSA_PSK",
+      "mac": "none",
+      "name": "TLS_RSA_PSK_WITH_SALSA20_SHA1",
+      "tags": [
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "58396": {
+      "deprecation": "legacy",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe41c",
+      "id": 58396,
+      "kx": "DHE_PSK",
+      "mac": "none",
+      "name": "TLS_DHE_PSK_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58397": {
+      "deprecation": "legacy",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe41d",
+      "id": 58397,
+      "kx": "DHE_PSK",
+      "mac": "none",
+      "name": "TLS_DHE_PSK_WITH_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58398": {
+      "deprecation": "legacy",
+      "enc": "ESTREAM_SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe41e",
+      "id": 58398,
+      "kx": "DHE_RSA",
+      "mac": "none",
+      "name": "TLS_DHE_RSA_WITH_ESTREAM_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "58399": {
+      "deprecation": "legacy",
+      "enc": "SALSA20_SHA1",
+      "forward_secrecy": true,
+      "hex": "0xe41f",
+      "id": 58399,
+      "kx": "DHE_RSA",
+      "mac": "none",
+      "name": "TLS_DHE_RSA_WITH_SALSA20_SHA1",
+      "tags": [
+        "PFS"
+      ]
+    },
+    "59": {
+      "deprecation": "prohibited",
+      "enc": "NULL",
+      "forward_secrecy": false,
+      "hex": "0x003b",
+      "id": 59,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_NULL_SHA256",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "NULL_ENCRYPTION",
+        "STATIC_RSA"
+      ]
+    },
+    "6": {
+      "deprecation": "prohibited",
+      "enc": "RC2_CBC_40_MD5_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0006",
+      "id": 6,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "RC2",
+        "STATIC_RSA"
+      ]
+    },
+    "60": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x003c",
+      "id": 60,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "60138": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xeaea",
+      "id": 60138,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "61": {
+      "deprecation": "deprecated",
+      "enc": "AES_256_CBC",
+      "forward_secrecy": false,
+      "hex": "0x003d",
+      "id": 61,
+      "kx": "RSA",
+      "mac": "SHA256",
+      "name": "TLS_RSA_WITH_AES_256_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "62": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x003e",
+      "id": 62,
+      "kx": "DH_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DH_DSS_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "63": {
+      "deprecation": "deprecated",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x003f",
+      "id": 63,
+      "kx": "DH_RSA",
+      "mac": "SHA256",
+      "name": "TLS_DH_RSA_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "64": {
+      "deprecation": "legacy",
+      "enc": "AES_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0040",
+      "id": 64,
+      "kx": "DHE_DSS",
+      "mac": "SHA256",
+      "name": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+      "tags": [
+        "CBC_MODE",
+        "PFS"
+      ]
+    },
+    "64250": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0xfafa",
+      "id": 64250,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "65": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0041",
+      "id": 65,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "65278": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0xfefe",
+      "id": 65278,
+      "kx": "RSA_FIPS",
+      "mac": "SHA1",
+      "name": "SSL_RSA_FIPS_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "65279": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xfeff",
+      "id": 65279,
+      "kx": "RSA_FIPS",
+      "mac": "SHA1",
+      "name": "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "65413": {
+      "deprecation": "prohibited",
+      "enc": "28147_CNT_IMIT",
+      "forward_secrecy": false,
+      "hex": "0xff85",
+      "id": 65413,
+      "kx": "GOSTR341112_256",
+      "mac": "none",
+      "name": "TLS_GOSTR341112_256_WITH_28147_CNT_IMIT",
+      "tags": [
+        "GOST",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "65504": {
+      "deprecation": "prohibited",
+      "enc": "3DES_EDE_CBC",
+      "forward_secrecy": false,
+      "hex": "0xffe0",
+      "id": 65504,
+      "kx": "RSA_FIPS",
+      "mac": "SHA1",
+      "name": "SSL_RSA_FIPS_WITH_3DES_EDE_CBC_SHA",
+      "tags": [
+        "3DES",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "65505": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0xffe1",
+      "id": 65505,
+      "kx": "RSA_FIPS",
+      "mac": "SHA1",
+      "name": "SSL_RSA_FIPS_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "66": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0042",
+      "id": 66,
+      "kx": "DH_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "6682": {
+      "deprecation": "deprecated",
+      "enc": "Reserved (GREASE)",
+      "forward_secrecy": false,
+      "hex": "0x1a1a",
+      "id": 6682,
+      "kx": "implicit-rsa",
+      "mac": "none",
+      "name": "Reserved (GREASE)",
+      "tags": [
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "67": {
+      "deprecation": "deprecated",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0043",
+      "id": 67,
+      "kx": "DH_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "68": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0044",
+      "id": 68,
+      "kx": "DHE_DSS",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "69": {
+      "deprecation": "legacy",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0045",
+      "id": 69,
+      "kx": "DHE_RSA",
+      "mac": "SHA1",
+      "name": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    },
+    "7": {
+      "deprecation": "prohibited",
+      "enc": "IDEA_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0007",
+      "id": 7,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_IDEA_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "IDEA",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "70": {
+      "deprecation": "prohibited",
+      "enc": "CAMELLIA_128_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0046",
+      "id": 70,
+      "kx": "DH_anon",
+      "mac": "SHA1",
+      "name": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",
+      "tags": [
+        "ANONYMOUS",
+        "CBC_MODE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "8": {
+      "deprecation": "prohibited",
+      "enc": "DES40_CBC_SHA_EXPORT",
+      "forward_secrecy": false,
+      "hex": "0x0008",
+      "id": 8,
+      "kx": "RSA",
+      "mac": "none",
+      "name": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "STATIC_RSA"
+      ]
+    },
+    "9": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0009",
+      "id": 9,
+      "kx": "RSA",
+      "mac": "SHA1",
+      "name": "TLS_RSA_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC",
+        "STATIC_RSA"
+      ]
+    },
+    "96": {
+      "deprecation": "prohibited",
+      "enc": "RC4_56",
+      "forward_secrecy": false,
+      "hex": "0x0060",
+      "id": 96,
+      "kx": "RSA_EXPORT1024",
+      "mac": "MD5",
+      "name": "TLS_RSA_EXPORT1024_WITH_RC4_56_MD5",
+      "tags": [
+        "EXPORT_GRADE",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY"
+      ]
+    },
+    "97": {
+      "deprecation": "prohibited",
+      "enc": "RC2_CBC_56",
+      "forward_secrecy": false,
+      "hex": "0x0061",
+      "id": 97,
+      "kx": "RSA_EXPORT1024",
+      "mac": "MD5",
+      "name": "TLS_RSA_EXPORT1024_WITH_RC2_CBC_56_MD5",
+      "tags": [
+        "CBC_MODE",
+        "EXPORT_GRADE",
+        "MD5_MAC",
+        "NO_FORWARD_SECRECY",
+        "RC2"
+      ]
+    },
+    "98": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": false,
+      "hex": "0x0062",
+      "id": 98,
+      "kx": "RSA_EXPORT1024",
+      "mac": "SHA1",
+      "name": "TLS_RSA_EXPORT1024_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "EXPORT_GRADE",
+        "NO_FORWARD_SECRECY",
+        "SHA_MAC"
+      ]
+    },
+    "99": {
+      "deprecation": "prohibited",
+      "enc": "DES_CBC",
+      "forward_secrecy": true,
+      "hex": "0x0063",
+      "id": 99,
+      "kx": "DHE_DSS_EXPORT1024",
+      "mac": "SHA1",
+      "name": "TLS_DHE_DSS_EXPORT1024_WITH_DES_CBC_SHA",
+      "tags": [
+        "CBC_MODE",
+        "DES",
+        "EXPORT_GRADE",
+        "PFS",
+        "SHA_MAC"
+      ]
+    }
+  }
+}
