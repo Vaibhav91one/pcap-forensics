@@ -33,8 +33,14 @@ def capture_argv(
 class Watcher:
     """Analyze each ring file once it is closed; emit every finding id only the first time it appears."""
 
-    def __init__(self, ring: Path, analyze_fn: Callable[[Path], Report], emit: Callable[[Finding, Path], None]) -> None:
-        self.ring, self.analyze_fn, self.emit = ring, analyze_fn, emit
+    def __init__(
+        self,
+        ring: Path,
+        analyze_fn: Callable[[Path], Report],
+        emit: Callable[[Finding, Path], None],
+        on_error: Callable[[Path, Exception], None] | None = None,
+    ) -> None:
+        self.ring, self.analyze_fn, self.emit, self.on_error = ring, analyze_fn, emit, on_error
         self.done: set[str] = set()
         self.seen: set[str] = set()
 
@@ -47,7 +53,14 @@ class Watcher:
         new = 0
         for path in self.closed(final=final):
             self.done.add(path.name)
-            for finding in self.analyze_fn(path).findings:
+            try:
+                report = self.analyze_fn(path)
+            except Exception as exc:  # one unreadable ring file must not end the watch
+                if self.on_error is None:
+                    raise
+                self.on_error(path, exc)
+                continue
+            for finding in report.findings:
                 if finding.id not in self.seen:
                     self.seen.add(finding.id)
                     self.emit(finding, path)
@@ -80,18 +93,24 @@ def watch(
     def analyze_file(path: Path) -> Report:
         return analyze(path, path.with_suffix(".pf-report"), use_cache=False).report
 
-    watcher = Watcher(ring, analyze_file, _emit)
+    def skip(path: Path, exc: Exception) -> None:
+        console.print(f"[yellow]skipped {path.name}: {escape(str(exc).splitlines()[0] if str(exc) else type(exc).__name__)}[/yellow]")
+
+    watcher = Watcher(ring, analyze_file, _emit, skip)
     console.print(f"watching {escape(interface)}: a ring file every {seconds}s in {ring} (Ctrl-C to stop)")
     proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    interrupted = False
     try:
         while proc.poll() is None:
             time.sleep(POLL_SECONDS)
             watcher.step()
     except KeyboardInterrupt:
-        proc.terminate()
-        proc.communicate()  # reaps the process and closes its pipes
-    else:
-        error = proc.communicate()[1].strip()
+        interrupted = True
+    finally:  # whatever happens here, never leave the capture running behind us
+        if proc.poll() is None:
+            proc.terminate()
+        error = proc.communicate()[1].strip()  # reaps the process and closes its pipes
+    if not interrupted:
         console.print(f"[red]{argv[0]} exited with {proc.returncode}: {escape(error) or 'no error text'}[/red]")
         console.print("[red]capturing usually needs the wireshark/access_bpf group or root[/red]")
         raise typer.Exit(code=2) from None

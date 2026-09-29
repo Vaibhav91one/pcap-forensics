@@ -12,7 +12,7 @@ from ..data_ciphers import registry, registry_provenance
 from ..index import IndexBuilder
 from ..registry import all_detectors
 from ..tshark import TsharkRunner, tshark_version
-from ._console import console
+from ._console import console, tshark_errors
 
 
 def flows(
@@ -20,7 +20,8 @@ def flows(
     top: int = typer.Option(30, "--top", help="how many flows to print"),
 ) -> None:
     """Print the top conversations by volume."""
-    index = IndexBuilder(TsharkRunner(pcap)).build()
+    with tshark_errors():
+        index = IndexBuilder(TsharkRunner(pcap)).build()
     table = Table(title=f"{len(index.flows)} flows in {pcap.name}")
     table.add_column("conversation", no_wrap=True)
     table.add_column("app", no_wrap=True)
@@ -42,7 +43,8 @@ def flows(
 
 def ciphers(pcap: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     """Print the crypto matrix: sender -> recipient, suite, version, PFS."""
-    index = IndexBuilder(TsharkRunner(pcap)).build()
+    with tshark_errors():
+        index = IndexBuilder(TsharkRunner(pcap)).build()
     table = Table(title=f"{len(index.tls)} TLS sessions in {pcap.name}")
     table.add_column("conversation", no_wrap=True)
     table.add_column("proto", no_wrap=True)

@@ -41,7 +41,11 @@ def why(
 ) -> None:
     """Explain one finding: what was seen, the evidence, and how to fix it."""
     path = _find_report(report_path)
-    report = Report.model_validate_json(path.read_text(encoding="utf-8"))
+    try:
+        report = Report.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:  # pydantic's ValidationError is a ValueError
+        console.print(f"[red]{escape(str(path))}: not a pcap-doctor report.json ({type(exc).__name__})[/red]")
+        raise typer.Exit(code=2) from exc
     matches = _match(report, query)
     if len(matches) != 1:
         hint = "give a longer id or a single frame" if matches else "check the frame number or id"

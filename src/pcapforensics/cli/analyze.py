@@ -15,8 +15,7 @@ from ..output import json_envelope, sarif
 from ..pipeline import analyze
 from ..policy import PolicyError, validate
 from ..scoring import score
-from ..tshark import TsharkMissingError
-from ._console import console
+from ._console import console, tshark_errors
 from ._summary import render
 
 
@@ -70,7 +69,7 @@ def analyze_cmd(
     except (OSError, ValueError) as exc:
         console.print(f"[red]--baseline {baseline_path}: not a pcap-doctor report ({type(exc).__name__})[/red]")
         raise typer.Exit(code=2) from exc
-    try:
+    with tshark_errors():
         result = analyze(
             pcap,
             out,
@@ -80,9 +79,6 @@ def analyze_cmd(
             use_cache=not no_cache,
             config=config,
         )
-    except TsharkMissingError as exc:
-        console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=2) from exc
 
     # The artifacts on disk stay complete; with a baseline everything shown or gated is the new findings only.
     shown = result.report
@@ -94,8 +90,10 @@ def analyze_cmd(
     if envelope is not None and baseline is not None:
         envelope["new_findings"] = [f.id for f in shown.findings]
     if json_out is not None:
+        json_out.parent.mkdir(parents=True, exist_ok=True)  # like --out: never a traceback for a new folder
         json_out.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
     if sarif_out is not None:
+        sarif_out.parent.mkdir(parents=True, exist_ok=True)
         sarif_out.write_text(json.dumps(sarif(shown, artifact_uri=pcap.as_posix()), indent=2) + "\n", encoding="utf-8")
     if as_json:
         typer.echo(json.dumps(envelope, indent=2))
