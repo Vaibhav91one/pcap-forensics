@@ -31,6 +31,7 @@ from .models import (
     SipMessage,
     SshSession,
     Stats,
+    TelnetLogin,
     TlsAlert,
     TlsSession,
     endpoints_of,
@@ -240,6 +241,7 @@ class CaptureIndex:
         self.ssh: list[SshSession] = []
         self.quic: list[QuicSession] = []
         self.services: list[ServiceHit] = []
+        self.telnet_logins: list[TelnetLogin] = []
         self.notes: list[str] = []
         self.dropped_fields: list[str] = []
         self.pass_stats: dict[str, dict[str, int | float | str]] = {}
@@ -341,6 +343,7 @@ class IndexBuilder:
         self._build_ssh(index, runner.run("ssh"))
         self._build_quic(index, runner.run("quic"))
         self._build_services(index, runner.run("services"))
+        self._build_telnet(index, runner.run("telnet"))
 
         index.dropped_fields = list(runner.dropped_fields)
         index.pass_stats = {k: dict(v) for k, v in runner.stats.items()}
@@ -912,6 +915,22 @@ class IndexBuilder:
             if hit.sensitive and not (flow and flow.encrypted):
                 index.mark_cleartext(key, f"{app} plaintext")
 
+    def _build_telnet(self, index: CaptureIndex, rows: list[Row]) -> None:
+        scanners: dict[str, TelnetLoginScanner] = {}
+        for row in rows:
+            key = self._stream_key(index, row)
+            payload = first(row, "tcp.payload")
+            if not key or not payload:
+                continue
+            scanner = scanners.setdefault(key, TelnetLoginScanner(key))
+            login = scanner.feed(
+                to_int(first(row, "tcp.srcport")) == 23,
+                bytes.fromhex(payload),
+                to_int(first(row, "frame.number")) or 0,
+            )
+            if login:
+                index.telnet_logins.append(login)
+
     # -- stats -------------------------------------------------------------
     def compute_stats(self, findings: list[Finding]) -> Stats:
         index = self.index
@@ -941,6 +960,88 @@ class IndexBuilder:
             findings_by_detector=dict(sorted(det.items())),
             app_protocols=dict(apps.most_common()),
         )
+
+
+#: Server prompts that precede a typed username or password (compared case-insensitively).
+TELNET_USER_PROMPTS = ("login:", "username:")
+TELNET_PASSWORD_PROMPTS = ("password:",)
+
+
+def strip_telnet_iac(data: bytes) -> bytes:
+    """Remove Telnet IAC command and option sequences (RFC 854), keeping IAC IAC as a literal 0xFF."""
+    out = bytearray()
+    i = 0
+    while i < len(data):
+        byte = data[i]
+        if byte != 0xFF:
+            out.append(byte)
+            i += 1
+            continue
+        if i + 1 >= len(data):
+            break
+        command = data[i + 1]
+        if command == 0xFF:
+            out.append(0xFF)
+            i += 2
+        elif command == 0xFA:
+            end = data.find(b"\xff\xf0", i + 2)
+            i = len(data) if end < 0 else end + 2
+        elif command in (0xFB, 0xFC, 0xFD, 0xFE):
+            i += 3
+        else:
+            i += 2
+    return bytes(out)
+
+
+class TelnetLoginScanner:
+    """Rebuilds typed login lines from one Telnet stream. Keeps the password's length, never its text."""
+
+    def __init__(self, key: str) -> None:
+        self.key = key
+        self.server_tail = ""
+        self.expect: str | None = None
+        self.typed: list[str] = []
+        self.typed_frame = 0
+        self.user: str | None = None
+        self.user_frame: int | None = None
+
+    def feed(self, from_server: bool, data: bytes, frame: int) -> TelnetLogin | None:
+        text = strip_telnet_iac(data).decode("latin-1")
+        if from_server:
+            self.server_tail = (self.server_tail + text)[-64:]
+            tail = self.server_tail.rstrip().lower()
+            if tail.endswith(TELNET_PASSWORD_PROMPTS):
+                self.expect, self.typed = "password", []
+            elif tail.endswith(TELNET_USER_PROMPTS):
+                self.expect, self.typed = "user", []
+            return None
+        if self.expect is None:
+            return None
+        for char in text:
+            if char in "\r\n":
+                if not self.typed:
+                    continue
+                line = "".join(self.typed)
+                self.typed = []
+                if self.expect == "user":
+                    self.user, self.user_frame, self.expect = line, self.typed_frame, None
+                    continue
+                self.expect = None
+                return TelnetLogin(
+                    key=self.key,
+                    user=self.user,
+                    user_frame=self.user_frame,
+                    password_length=len(line),
+                    password_frame=self.typed_frame,
+                )
+            elif char in "\x08\x7f":
+                if self.typed:
+                    self.typed.pop()
+            elif char.isprintable():
+                if not self.typed:
+                    self.typed_frame = frame
+                self.typed.append(char)
+        return None
 
 
 #: Service-detail fields that carry credentials in cleartext and must never

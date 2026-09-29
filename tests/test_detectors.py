@@ -147,6 +147,24 @@ def test_ftp_and_ldap_passwords_are_reported_and_redacted(analyze_capture) -> No
     assert "redacted" in joined
 
 
+def test_telnet_login_password_is_reported_and_never_shown(analyze_capture) -> None:
+    """A typed Telnet password is a credential; only its length is kept; a shell with no login prompt is not (issue #37)."""
+    result = analyze_capture(fixture("telnet_login.pcap"))
+    (cred,) = [f for f in result.report.findings if f.code == "CLEARTEXT_CREDENTIAL"]
+    assert cred.flow_key and ":42400<->" in cred.flow_key
+    assert (cred.evidence[0].frame, cred.evidence[0].field, cred.evidence[0].value) == (17, "telnet.data", "<redacted 16 chars>")
+    assert "CLEARTEXT_SERVICE" in codes(result)
+    joined = "".join(path.read_text() for path in result.artifacts).lower()
+    assert "pf-telnet-pw" not in joined, "Telnet password leaked into a report"
+
+
+def test_strip_telnet_iac() -> None:
+    """IAC option and sub-negotiation sequences are removed; IAC IAC is a literal 0xFF (issue #37)."""
+    from pcapforensics.index import strip_telnet_iac
+
+    assert strip_telnet_iac(b"\xff\xfb\x01ab\xff\xffc\xff\xfa\x18\x01\xff\xf0d") == b"ab\xffcd"
+
+
 def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> None:
     """The resolver is the side on port 53/853, not the one that sorts last; internal and multicast never count (issue #6)."""
     result = analyze_capture(fixture("dns_external.pcap"))

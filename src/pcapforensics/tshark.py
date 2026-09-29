@@ -287,12 +287,19 @@ SERVICE_FIELDS: tuple[str, ...] = (
     "mysql.command",
     "mysql.query",
     "mysql.user",
+    "telnet.cmd",
 )
 
 SERVICE_PASS = PassSpec(
     name="services",
     display_filter="ntp || tftp || ftp || ftp-data || telnet || snmp || ldap || smtp || imap || pop || resp || mysql",
     fields=with_addr(("tcp.srcport", "tcp.dstport", "udp.srcport", "udp.dstport", *SERVICE_FIELDS)),
+)
+
+TELNET_PASS = PassSpec(
+    name="telnet",
+    display_filter="telnet && tcp.len > 0",
+    fields=with_addr(("tcp.stream", "tcp.srcport", "tcp.dstport", "tcp.payload")),
 )
 
 #: DTLS carries the same handshake fields under a ``dtls.`` prefix. The index
@@ -324,6 +331,7 @@ PASSES: dict[str, PassSpec] = {
         SSH_PASS,
         QUIC_PASS,
         SERVICE_PASS,
+        TELNET_PASS,
         IPV6_ADDR_PASS,
     )
 }
