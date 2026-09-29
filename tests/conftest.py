@@ -72,3 +72,11 @@ def fixture(name: str) -> Path:
     if not path.exists():
         pytest.skip(f"fixture {name} missing; run: python scripts/make_fixtures.py")
     return path
+
+
+@pytest.fixture()
+def cli_runner():
+    """Invoke the typer app in-process (no subprocess, no installed entry point needed)."""
+    from typer.testing import CliRunner
+
+    return CliRunner()

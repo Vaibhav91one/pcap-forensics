@@ -1,4 +1,4 @@
-"""``pf`` command line."""
+"""Read-only inspection commands: flows, ciphers, detectors, suites, doctor, schema."""
 
 from __future__ import annotations
 
@@ -6,89 +6,15 @@ import json
 from pathlib import Path
 
 import typer
-from rich.console import Console
 from rich.table import Table
 
-from .data_ciphers import registry, registry_provenance
-from .index import IndexBuilder
-from .models import SEVERITY_ORDER
-from .pipeline import analyze
-from .registry import all_detectors
-from .tshark import TsharkMissingError, TsharkRunner, tshark_version
-
-app = typer.Typer(add_completion=False, no_args_is_help=True, help="Offline pcap forensics.")
-console = Console()
-
-SEVERITY_STYLE = {
-    "critical": "bold red",
-    "high": "red",
-    "medium": "yellow",
-    "low": "cyan",
-    "info": "dim",
-}
+from ..data_ciphers import registry, registry_provenance
+from ..index import IndexBuilder
+from ..registry import all_detectors
+from ..tshark import TsharkRunner, tshark_version
+from ._console import console
 
 
-@app.command()
-def analyze_cmd(
-    pcap: Path = typer.Argument(..., exists=True, readable=True, help="pcap or pcapng file"),
-    out: Path = typer.Option(None, "--out", "-o", help="output directory (default: <capture>.pf-report)"),
-    only: list[str] = typer.Option(None, "--only", help="run only these detector ids (repeatable)"),
-    min_severity: str = typer.Option(
-        None, "--min-severity", help="drop findings below this severity (critical|high|medium|low|info)"
-    ),
-    fail_on: str = typer.Option(
-        "none",
-        "--fail-on",
-        help="exit non-zero when a finding at or above this severity exists (none|critical|high|medium|low|info)",
-    ),
-    no_cache: bool = typer.Option(False, "--no-cache", help="ignore the tshark pass cache"),
-    quiet: bool = typer.Option(False, "--quiet", "-q", help="suppress the console summary"),
-) -> None:
-    """Analyze a capture and write the four report artifacts."""
-    try:
-        result = analyze(
-            pcap,
-            out,
-            only=tuple(only or ()),
-            min_severity=min_severity,
-            use_cache=not no_cache,
-        )
-    except TsharkMissingError as exc:
-        console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=2) from exc
-
-    if not quiet:
-        report = result.report
-        console.print(f"[bold]capture[/bold] {report.capture.name}: {report.stats.packets:,} packets, "
-                      f"{report.stats.flows} flows, {report.stats.hosts} hosts")
-        table = Table(title=f"{len(report.findings)} finding(s)", show_lines=False)
-        table.add_column("sev", no_wrap=True)
-        table.add_column("code", no_wrap=True)
-        table.add_column("title")
-        table.add_column("conf", no_wrap=True)
-        for finding in sorted(report.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9))[:25]:
-            style = SEVERITY_STYLE.get(finding.severity, "")
-            table.add_row(
-                f"[{style}]{finding.severity}[/{style}]",
-                finding.code,
-                finding.title,
-                finding.confidence,
-            )
-        console.print(table)
-        for artifact in result.artifacts:
-            console.print(f"  wrote {artifact}")
-    threshold = None if fail_on == "none" else SEVERITY_ORDER.get(fail_on)
-    tripped = (
-        []
-        if threshold is None
-        else [f for f in result.report.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
-    )
-    if tripped and not quiet:
-        console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
-    raise typer.Exit(code=1 if tripped else 0)
-
-
-@app.command()
 def flows(
     pcap: Path = typer.Argument(..., exists=True, readable=True),
     top: int = typer.Option(30, "--top", help="how many flows to print"),
@@ -114,7 +40,6 @@ def flows(
     console.print(table)
 
 
-@app.command()
 def ciphers(pcap: Path = typer.Argument(..., exists=True, readable=True)) -> None:
     """Print the crypto matrix: sender -> recipient, suite, version, PFS."""
     index = IndexBuilder(TsharkRunner(pcap)).build()
@@ -137,7 +62,6 @@ def ciphers(pcap: Path = typer.Argument(..., exists=True, readable=True)) -> Non
     console.print(table)
 
 
-@app.command()
 def detectors() -> None:
     """List detectors and their versions."""
     table = Table(title="detectors")
@@ -150,7 +74,6 @@ def detectors() -> None:
     console.print(table)
 
 
-@app.command()
 def suites() -> None:
     """Print the cipher-suite registry summary and its policy provenance."""
     payload = registry()
@@ -172,7 +95,6 @@ def suites() -> None:
         console.print(f"  provenance: {line}")
 
 
-@app.command()
 def doctor() -> None:
     """Check that the environment can run an analysis."""
     ok = True
@@ -182,7 +104,7 @@ def doctor() -> None:
     except Exception as exc:
         ok = False
         console.print(f"[red]tshark unavailable:[/red] {exc}")
-    from .tshark import default_prefs, valid_fields
+    from ..tshark import default_prefs, valid_fields
 
     try:
         console.print(f"[green]fields[/green] {len(valid_fields())} known to this build")
@@ -197,17 +119,13 @@ def doctor() -> None:
     raise typer.Exit(code=0 if ok else 2)
 
 
-@app.command()
 def schema() -> None:
     """Print the JSON schema version of report.json."""
-    from .models import SCHEMA_VERSION
+    from ..models import SCHEMA_VERSION
 
     console.print(json.dumps({"schema_version": SCHEMA_VERSION}, indent=2))
 
 
-# `pf analyze` reads better than `pf analyze-cmd`
-app.command("analyze")(analyze_cmd)
-
-
-if __name__ == "__main__":  # pragma: no cover
-    app()
+def register(app: typer.Typer) -> None:
+    for command in (flows, ciphers, detectors, suites, doctor, schema):
+        app.command()(command)
