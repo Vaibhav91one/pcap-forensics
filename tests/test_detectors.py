@@ -178,6 +178,18 @@ def test_ssh_weak_algorithms_are_flagged_only_on_the_legacy_session(analyze_capt
     assert not [f for f in ssh if f.flow_key and ":43200<->" in f.flow_key], "modern SSH session flagged"
 
 
+def test_ssh_evidence_cites_the_kexinit_and_keeps_client_only_offers(analyze_capture) -> None:
+    """Evidence points at the KEXINIT that offered the algorithm; the server's KEXINIT does not erase the client's offer (issue #25)."""
+    result = analyze_capture(fixture("ssh_weak.pcap"))
+    ssh = [f for f in result.report.findings if f.code.startswith("SSH_WEAK_")]
+    legacy = [f for f in ssh if f.flow_key and ":43100<->" in f.flow_key]
+    assert legacy
+    assert all(f.evidence[0].frame == 6 for f in legacy), [f.evidence[0].frame for f in legacy]
+    (client_only,) = [f for f in ssh if f.flow_key and ":43300<->" in f.flow_key]
+    assert client_only.code == "SSH_WEAK_KEX"
+    assert client_only.evidence[0].frame == 20
+
+
 def test_syn_scan_shape(analyze_capture) -> None:
     result = analyze_capture(fixture("syn_scan.pcap"))
     assert "SYN_SCAN_SHAPE" in codes(result)

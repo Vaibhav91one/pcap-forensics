@@ -471,22 +471,24 @@ def ssh_kexinit(kex: str, hostkey: str, cipher: str, mac: str) -> bytes:
 
 
 def fixture_ssh_weak() -> bytes:
-    """Two SSH handshakes: one offering only legacy algorithms, one offering only modern ones."""
+    """SSH handshakes: legacy-only, modern-only, and one where only the client offers a legacy key exchange."""
     sessions = [
-        (43100, "diffie-hellman-group1-sha1", "ssh-dss", "aes128-cbc,chacha20-poly1305@openssh.com", "hmac-md5"),
-        (43200, "curve25519-sha256", "ssh-ed25519", "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
+        (43100, "diffie-hellman-group1-sha1", "diffie-hellman-group1-sha1", "ssh-dss", "aes128-cbc,chacha20-poly1305@openssh.com", "hmac-md5"),
+        (43200, "curve25519-sha256", "curve25519-sha256", "ssh-ed25519", "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
+        (43300, "diffie-hellman-group1-sha1,curve25519-sha256", "curve25519-sha256", "ssh-ed25519", "aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
     ]
     packets = []
-    for sport, kex, hostkey, cipher, mac in sessions:
-        kexinit = ssh_kexinit(kex, hostkey, cipher, mac)
+    for sport, client_kex, server_kex, hostkey, cipher, mac in sessions:
+        client_kexinit = ssh_kexinit(client_kex, hostkey, cipher, mac)
+        server_kexinit = ssh_kexinit(server_kex, hostkey, cipher, mac)
         packets += [
             eth_ip_tcp(CLIENT, SERVER, sport, 22, 1, 0, 0x02, b""),
             eth_ip_tcp(SERVER, CLIENT, 22, sport, 1, 2, 0x12, b""),
             eth_ip_tcp(CLIENT, SERVER, sport, 22, 2, 2, 0x10, b""),
             eth_ip_tcp(CLIENT, SERVER, sport, 22, 2, 2, 0x18, b"SSH-2.0-OpenSSH_7.4\r\n"),
             eth_ip_tcp(SERVER, CLIENT, 22, sport, 2, 23, 0x18, b"SSH-2.0-OpenSSH_7.4\r\n"),
-            eth_ip_tcp(CLIENT, SERVER, sport, 22, 23, 23, 0x18, kexinit),
-            eth_ip_tcp(SERVER, CLIENT, 22, sport, 23, 23 + len(kexinit), 0x18, kexinit),
+            eth_ip_tcp(CLIENT, SERVER, sport, 22, 23, 23, 0x18, client_kexinit),
+            eth_ip_tcp(SERVER, CLIENT, 22, sport, 23, 23 + len(client_kexinit), 0x18, server_kexinit),
         ]
     return _pcap_header() + b"".join(
         _packet(p, 1_700_000_800.0 + i * 0.01) for i, p in enumerate(packets)
