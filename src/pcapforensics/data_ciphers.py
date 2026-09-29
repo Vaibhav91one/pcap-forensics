@@ -153,7 +153,7 @@ def weakness_reasons(cipher_id: int | None) -> list[str]:
         if text:  # informational-only tags (PFS, TLS13) are not weaknesses
             reasons.append(text)
     if suite.deprecation == "prohibited":
-        reasons.insert(0, "suite is prohibited by policy (RFC 8996 territory)")
+        reasons.insert(0, "suite is prohibited by policy (RFC 9325 section 4.1)")
     elif suite.deprecation == "deprecated":
         head = "static RSA key exchange" if suite.kx == "rsa" else f"non-ephemeral key exchange ({suite.kx})"
         reasons.insert(0, f"suite is deprecated: {head}")
