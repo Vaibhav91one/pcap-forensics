@@ -231,7 +231,7 @@ class TransportExposureDetector(Detector):
                         scope=f"{flow.key}|port",
                         flow_key=flow.key,
                         subjects=[host],
-                        evidence=[ev(flow.stream_index or 0, "tcp.port", f"{host}:{port}")],
+                        evidence=[ev(flow.first_frame, "tcp.port", f"{host}:{port}")],
                         remediation="Confirm the service is intended here; if so, wrap it in TLS and firewall the port.",
                         references=[],
                         tags=["network", "exposure"],
@@ -241,9 +241,14 @@ class TransportExposureDetector(Detector):
 
     def _syn_only(self, index: CaptureIndex) -> list[Finding]:
         counts: Counter[str] = Counter()
+        first_frames: dict[str, int] = {}
         for flow in index.flows.values():
             if flow.proto == "tcp" and flow.handshake_completed is False:
                 counts[flow.endpoint_a] += 1
+                if flow.first_frame and (
+                    flow.endpoint_a not in first_frames or flow.first_frame < first_frames[flow.endpoint_a]
+                ):
+                    first_frames[flow.endpoint_a] = flow.first_frame
         out: list[Finding] = []
         for ip, count in counts.most_common(10):
             if count < 5:
@@ -260,7 +265,7 @@ class TransportExposureDetector(Detector):
                     ),
                     scope=f"synscan|{ip}",
                     subjects=[ip],
-                    evidence=[ev(0, "tcp.flags.syn", f"{count} unanswered SYNs")],
+                    evidence=[ev(first_frames.get(ip, 0), "tcp.flags.syn", f"{count} unanswered SYNs")],
                     remediation="Block or rate-limit the source; if this was authorised testing, record the window.",
                     references=[],
                     tags=["network", "scan"],
