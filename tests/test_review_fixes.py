@@ -48,7 +48,17 @@ def test_why_with_a_malformed_report_exits_2(cli_runner, tmp_path) -> None:
     bad = tmp_path / "report.json"
     bad.write_text('{"not": "a report"}')
     result = cli_runner.invoke(app, ["why", "1", "--report", str(bad)])
-    assert result.exit_code == 2 and "not a pcap-doctor" in result.output
+    assert result.exit_code == 2 and "not a pcap-doctor report.json" in " ".join(result.output.split())  # rich wraps
+
+
+@requires_tshark
+@pytest.mark.parametrize("option", ["--json-out", "--sarif"])
+def test_output_files_get_their_parent_directories(cli_runner, tmp_path, cache_dir, option: str) -> None:
+    target = tmp_path / "new" / "dir" / "out.json"
+    args = ["analyze", str(FIXTURES / "strong_tls13.pcap"), "-o", str(tmp_path / "r"), "-q", option, str(target)]
+    result = cli_runner.invoke(app, args)
+    assert result.exit_code == 0, result.output
+    assert target.is_file()
 
 
 def test_clean_drops_invisible_and_bidi_characters() -> None:

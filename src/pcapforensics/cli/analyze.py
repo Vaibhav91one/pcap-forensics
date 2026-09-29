@@ -90,8 +90,10 @@ def analyze_cmd(
     if envelope is not None and baseline is not None:
         envelope["new_findings"] = [f.id for f in shown.findings]
     if json_out is not None:
+        json_out.parent.mkdir(parents=True, exist_ok=True)  # like --out: never a traceback for a new folder
         json_out.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
     if sarif_out is not None:
+        sarif_out.parent.mkdir(parents=True, exist_ok=True)
         sarif_out.write_text(json.dumps(sarif(shown, artifact_uri=pcap.as_posix()), indent=2) + "\n", encoding="utf-8")
     if as_json:
         typer.echo(json.dumps(envelope, indent=2))
