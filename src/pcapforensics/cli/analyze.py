@@ -9,6 +9,7 @@ import typer
 
 from ..baseline import load_baseline, new_since, version_drift
 from ..config import load as load_config
+from ..handoff import offer
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
@@ -49,6 +50,10 @@ def analyze_cmd(
         None, "--config", exists=True, dir_okay=False, help="config file (default: ./pcap-doctor.toml or [tool.pcap-doctor] in ./pyproject.toml)"
     ),
     profile: str = typer.Option(None, "--profile", help="start from a preset (ota); config and flags override it"),
+    no_handoff: bool = typer.Option(False, "--no-handoff", help="never offer to hand a finding to an AI agent"),
+    safe: bool = typer.Option(
+        False, "--safe", help="launch AI agents with their approval prompts (also PCAP_DOCTOR_HANDOFF_SAFE=1)"
+    ),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
@@ -111,6 +116,8 @@ def analyze_cmd(
     )
     if tripped and not (quiet or show_score or as_json):
         console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
+    if not (quiet or show_score or as_json or no_handoff):
+        offer(console, shown, safe=safe)
     raise typer.Exit(code=1 if tripped else 0)
 
 
