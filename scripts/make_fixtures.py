@@ -325,6 +325,43 @@ def fixture_ftp_ldap_creds() -> bytes:
     )
 
 
+def fixture_telnet_login() -> bytes:
+    """Telnet login typed one key per packet: echoed username, unechoed password with a backspace (issue #37)."""
+    seq = {"c": 1, "s": 1}
+    packets: list[bytes] = []
+
+    def send(from_client: bool, payload: bytes, sport: int) -> None:
+        side, other = ("c", "s") if from_client else ("s", "c")
+        src, dst, sp, dp = (CLIENT, SERVER, sport, 23) if from_client else (SERVER, CLIENT, 23, sport)
+        packets.append(eth_ip_tcp(src, dst, sp, dp, seq[side], seq[other], 0x18, payload))
+        seq[side] += len(payload)
+
+    for sport, prompts in ((42400, True), (42500, False)):
+        seq.update(c=1, s=1)
+        packets.append(eth_ip_tcp(CLIENT, SERVER, sport, 23, 0, 0, 0x02, b""))
+        packets.append(eth_ip_tcp(SERVER, CLIENT, 23, sport, 0, 1, 0x12, b""))
+        send(False, b"\xff\xfb\x01\xff\xfb\x03", sport)
+        if prompts:
+            send(False, b"\r\nrouter login: ", sport)
+            for ch in b"admin":
+                send(True, bytes([ch]), sport)
+                send(False, bytes([ch]), sport)
+            send(True, b"\r\n", sport)
+            send(False, b"\r\nPassword: ", sport)
+            for ch in b"pf-telnet-pw-5X\x7f5e":
+                send(True, bytes([ch]), sport)
+            send(True, b"\r\n", sport)
+            send(False, b"\r\nWelcome\r\n# ", sport)
+        else:
+            send(False, b"\r\nBusyBox v1.36 built-in shell\r\n# ", sport)
+            for ch in b"ls\r\n":
+                send(True, bytes([ch]), sport)
+                send(False, bytes([ch]), sport)
+    return _pcap_header() + b"".join(
+        _packet(p, 1_700_001_600.0 + i * 0.05) for i, p in enumerate(packets)
+    )
+
+
 # --------------------------------------------------------------------------
 # DNS
 # --------------------------------------------------------------------------
@@ -544,6 +581,7 @@ STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
     "http_bare_token.pcap": fixture_http_bare_token,
     "ftp_ldap_creds.pcap": fixture_ftp_ldap_creds,
+    "telnet_login.pcap": fixture_telnet_login,
     "dns_tunnel.pcap": fixture_dns_tunnel,
     "sip_rtp.pcap": fixture_sip_rtp,
     "syn_scan.pcap": fixture_syn_scan,
