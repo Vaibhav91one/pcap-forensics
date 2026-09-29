@@ -4,6 +4,41 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+`report.json` `schema_version` is `1.3.0` (additive: `Flow.first_frame`, `Flow` burst statistics,
+`RtpStream.first_frame`, `SshSession.offered_in`).
+
+### Added
+
+- `SSH_TERRAPIN_EXPOSED`: chacha20-poly1305, or an EtM MAC with a CBC cipher, offered without strict
+  key exchange on both sides (#24).
+- FTP `PASS` arguments and LDAP simple-bind passwords are reported as `CLEARTEXT_CREDENTIAL` (#14).
+
+### Fixed — secrets
+
+- SNMP community strings and MySQL queries are redacted where the index builds service details (#1).
+- A scheme-less `Authorization` value (bare token) no longer appears in a finding title or evidence (#15).
+
+### Fixed — evidence and correctness
+
+- Every finding cites a real frame: RTP, SYN scan, odd-port, beaconing and DNS resolver evidence no
+  longer cite frame 0 or a stream index (#4, #6); SSH evidence cites the KEXINIT, not the banner (#25).
+- The server's SSH KEXINIT no longer overwrites the client's offer (#25).
+- `BEACONING_SHAPE` measures regularity of gaps between bursts; the old check could never fail (#10).
+- `SERVICE_ON_ODD_PORT` no longer reports a client's ephemeral port (#16).
+- `DNS_EXTERNAL_RESOLVER` finds the resolver by port and covers IPv6 and all private ranges (#6);
+  `DNS_TUNNEL_SHAPE` names the querying host and no longer counts responses as queries (#18).
+- `chacha20-poly1305@openssh.com` is no longer listed as a weak SSH cipher (#2).
+- Invalid or wrong finding references replaced (e.g. `CWE- exfil`, RFC 8999 on TLS findings) (#3).
+- The service field list is shared with the tshark pass; four names that are not tshark fields were removed (#14).
+- `WELL_KNOWN_PORTS`: 506/522/1194 mapped to the wrong service (#23).
+
+### Fixed — project
+
+- CI could never pass (non-existent tshark preference, fixture drift check on randomly captured TLS
+  fixtures); it now runs the full suite (#12).
+
 ## [0.1.0] — 2026-09-29
 
 First working release. `report.json` `schema_version` is `1.0.0`.
