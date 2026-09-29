@@ -116,6 +116,15 @@ def test_reports_never_contain_the_credential(analyze_capture, tmp_path: Path) -
     assert "redacted" in joined, "the redaction notice is missing"
 
 
+def test_service_credentials_are_redacted(analyze_capture) -> None:
+    """SNMP community strings must never reach a report (issue #1)."""
+    result = analyze_capture(fixture("snmp_creds.pcap"))
+    assert {"CLEARTEXT_SERVICE", "CLEARTEXT_CREDENTIAL"} <= codes(result)
+    joined = "".join(path.read_text() for path in result.artifacts)
+    assert "pf-s3cr3t-7f" not in joined, "raw SNMP community leaked into a report"
+    assert "redacted" in joined, "the redaction notice is missing"
+
+
 def test_syn_scan_shape(analyze_capture) -> None:
     result = analyze_capture(fixture("syn_scan.pcap"))
     assert "SYN_SCAN_SHAPE" in codes(result)
