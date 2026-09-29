@@ -145,6 +145,29 @@ def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> Non
     assert found[("2606:4700:4700::1111",)].evidence[0].frame == 7
 
 
+def test_dns_tunnel_is_attributed_to_the_querying_host() -> None:
+    """The querier is the side not on port 53, whatever the address order; responses are not queries (issue #18)."""
+    from pcapforensics.detectors.dns_quic_ssh import DnsQuicSshDetector
+    from pcapforensics.index import CaptureIndex
+    from pcapforensics.models import CaptureInfo, DnsQuery, Flow, endpoints_of, flow_key
+
+    info = CaptureInfo(
+        path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
+        packets=48, bytes=0, first_seen=0.0, last_seen=0.0, duration=0.0,
+    )
+    index = CaptureIndex(info)
+    key = flow_key("udp", "10.0.0.10", 40000, "1.1.1.1", 53)
+    _proto, a, port_a, b, port_b = endpoints_of(key)
+    index.flows[key] = Flow(key=key, proto="udp", endpoint_a=a, port_a=port_a, endpoint_b=b, port_b=port_b, app_proto="dns", first_frame=1)
+    for i in range(24):
+        name = f"q{i:02d}a7f3c9.b5d2e8f4.c1a9e7b3.d6f2a8c4.tunnel.example"
+        index.dns.append(DnsQuery(key=key, frame=2 * i + 1, name=name, qtype="TXT"))
+        index.dns.append(DnsQuery(key=key, frame=2 * i + 2, name=name, qtype="TXT", is_response=True))
+    (finding,) = [f for f in DnsQuicSshDetector().detect(index) if f.code == "DNS_TUNNEL_SHAPE"]
+    assert finding.subjects == ["10.0.0.10"]
+    assert all(item.frame % 2 == 1 for item in finding.evidence), "a response was counted as a query"
+
+
 def test_ssh_weak_algorithms_are_flagged_only_on_the_legacy_session(analyze_capture) -> None:
     """Legacy KEXINIT raises all four SSH_WEAK_* codes; a modern one raises none (issue #8)."""
     result = analyze_capture(fixture("ssh_weak.pcap"))

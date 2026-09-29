@@ -16,7 +16,7 @@ from collections import Counter, defaultdict
 from typing import ClassVar
 
 from ..index import CaptureIndex
-from ..models import DnsQuery, Finding
+from ..models import DnsQuery, Finding, Flow
 from .base import Detector, ev
 
 LABEL_RE = re.compile(r"^[a-z0-9_\-*.]{1,63}$", re.IGNORECASE)
@@ -62,6 +62,15 @@ def shannon_entropy(text: str) -> float:
     counts = Counter(text)
     length = len(text)
     return -sum((c / length) * math.log2(c / length) for c in counts.values())
+
+
+def _dns_sides(flow: Flow) -> tuple[str, str]:
+    """(querier, resolver): the resolver is the side on a DNS port, whatever the address order."""
+    if flow.port_b in RESOLVER_PORTS:
+        return flow.endpoint_a, flow.endpoint_b
+    if flow.port_a in RESOLVER_PORTS:
+        return flow.endpoint_b, flow.endpoint_a
+    return flow.endpoint_a, flow.endpoint_b
 
 
 class DnsQuicSshDetector(Detector):
@@ -128,7 +137,10 @@ class DnsQuicSshDetector(Detector):
     def _dns_tunnelling(self, index: CaptureIndex) -> list[Finding]:
         by_host: dict[str, list[DnsQuery]] = defaultdict(list)
         for query in index.dns:
-            host = index.flows[query.key].endpoint_a if query.key in index.flows else "?"
+            if query.is_response:
+                continue
+            flow = index.flows.get(query.key) if query.key in index.flows else None
+            host = _dns_sides(flow)[0] if flow is not None else "?"
             by_host[host].append(query)
         out: list[Finding] = []
         for host, queries in by_host.items():
@@ -144,6 +156,8 @@ class DnsQuicSshDetector(Detector):
             entropies = [shannon_entropy(q.name.replace(".", "")) for q in long_queries]
             high_entropy = sum(1 for e in entropies if e > 3.5)
             severity = "high" if high_entropy >= 8 else "medium"
+            first_flow = index.flows.get(queries[0].key) if queries[0].key in index.flows else None
+            resolver = _dns_sides(first_flow)[1] if first_flow is not None else "?"
             out.append(
                 self.finding(
                     code="DNS_TUNNEL_SHAPE",
@@ -152,7 +166,7 @@ class DnsQuicSshDetector(Detector):
                     confidence="low" if high_entropy < 8 else "medium",
                     summary=(
                         f"{host} sent {len(queries)} DNS queries ({len(unique_subdomains)} distinct leading labels) "
-                        f"to {index.flows[queries[0].key].endpoint_b if queries[0].key in index.flows else '?'}. "
+                        f"to {resolver}. "
                         f"{len(txt)} of type TXT/NULL, {len(long_queries)} with >= {TUNNEL_MIN_LABELS} labels, "
                         f"{high_entropy} of those above 3.5 bits/char entropy. That is the shape of DNS "
                         "tunnelling (iodine, dnscat) but also of aggressive CDN, RPKI or service discovery."
