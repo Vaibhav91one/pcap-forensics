@@ -2,7 +2,7 @@
   "description": "TLS/DTLS cipher suites with names from tshark and derived weakness tags.",
   "name_source": "tshark -G values (tls.handshake.ciphersuite), vendored in cipher_names.tsv",
   "policy_provenance": [
-    "RFC 8996 Appendix A - prohibited cipher suites",
+    "RFC 9325 section 4.1 - cipher suites that MUST NOT or SHOULD NOT be negotiated",
     "NIST SP 800-52r2 - allowed cipher suites for TLS",
     "RFC 7457 Sweet32, RFC 7465 RC4, RFC 6194 SHA-1 - why the legacy tier exists",
     "Project policy - the deprecation column is ours, see docs/cipher-policy.md"
