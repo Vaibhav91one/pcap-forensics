@@ -146,8 +146,8 @@ Assert on codes, never on prose. Wording is not behaviour, and a rewording shoul
 
 ```bash
 make verify
-pf doctor
-pf analyze tests/fixtures/my_case.pcap -o /tmp/x   # read your own report
+pcap-doctor doctor
+pcap-doctor analyze tests/fixtures/my_case.pcap -o /tmp/x   # read your own report
 ```
 
 Then read your own `03-findings.md` as if you were the analyst receiving it at 2am. If you would

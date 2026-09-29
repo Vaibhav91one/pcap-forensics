@@ -97,10 +97,39 @@ start. Nothing below may edit the core.
 | 48 | `integration: pyshark adapter for notebooks` | behind the same source interface; never on the critical path |
 | 49 | `feature: HTTP/2 and HTTP/3 header inspection` | needs a keylog for h3; h2 is feasible now |
 | 50 | `feature: pcapng multi-interface correlation` | one capture, several interfaces, interface id in the flow key |
-| 51 | `feature: baseline and diff mode` | `pf analyze --baseline last.json` to show only new findings |
-| 52 | `feature: SARIF output` | for code-scanning ingestion in CI |
+| 51 | `feature: baseline and diff mode` | done in pcap-doctor #55: `pcap-doctor analyze --baseline last.json` |
+| 52 | `feature: SARIF output` | done in pcap-doctor #56: `--sarif`, and uploaded by the GitHub Action (#63) |
 | 53 | `research: certificate pinning violations` | JA3/JA4 against an allowlist |
 | 54 | `research: better server/client orientation` | replace the port heuristic with SDP/JA3S/kex evidence |
+
+## pcap-doctor (v0.2.0) — done
+
+The React-Doctor-style rebuild. Each row was one issue, one worktree, one pull request.
+
+| # | Title | Where it lives |
+|---|---|---|
+| 45 | `core: split cli.py into self-registering command modules` | `cli/` |
+| 46 | `rebrand to pcap-doctor, keep pf` | `pyproject.toml`, `cli/__init__.py` |
+| 47 | `rule catalog with user-facing categories` | `rules.py` |
+| 48 | `local 0-100 health score` | `scoring.py` |
+| 49 | `per-code rule docs and a fenced fix-prompt builder` | `rule_docs/`, `prompts.py` |
+| 50 | `PyPI release with trusted publishing` | `.github/workflows/release.yml` |
+| 51 | `npx pcap-doctor launcher` | `npm/` |
+| 52 | `policy step, strict options, --category` | `policy.py` |
+| 53 | `score line and grouped summary` | `cli/_summary.py` |
+| 54 | `--json / --json-out envelope` | `output.py` |
+| 55 | `--baseline: only new findings` | `baseline.py` |
+| 56 | `--sarif: SARIF 2.1.0` | `output.py` |
+| 57 | `config file: disable, severity, allow` | `config.py` |
+| 58 | `--profile ota` | `config.py` |
+| 59 | `AI handoff menu and agent guidance` | `handoff.py` |
+| 60 | `why <frame or id>` | `cli/why.py` |
+| 61 | `rules list / rules explain` | `cli/rules.py` |
+| 62 | `install agent guides` | `cli/install.py`, `templates/agent-guide.md` |
+| 63 | `ci install and the GitHub Action` | `cli/ci.py`, `action.yml`, `scripts/pcap-doctor-action.sh` |
+| 64 | `watch -i IFACE` | `cli/watch.py` |
+| 65 | `docs and the v0.2.0 release` | `README.md`, `CHANGELOG.md` |
+| 72 | `fix: RFC citations in TLS text` | `detectors/tls_cipher.py` |
 
 ## Standing tasks (no issue needed)
 

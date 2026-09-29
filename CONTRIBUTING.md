@@ -58,7 +58,7 @@ make fixtures  # synthetic fixtures
 2. Write the test first and watch it fail on the current code; then make the change.
 3. If you add a fixture, generate it with `scripts/make_fixtures.py` and check that it regenerates
    byte-for-byte.
-4. Run `make verify` and `pf doctor`.
+4. Run `make verify` and `pcap-doctor doctor`.
 5. Open the pull request with the template: what you saw, what you changed, what you verified, and
    what you deliberately did not do. Reference the issue with `Closes #N`.
 6. CI must be green before review. Pull requests are squash-merged one at a time, and the next

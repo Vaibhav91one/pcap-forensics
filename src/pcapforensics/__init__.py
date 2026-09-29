@@ -1,4 +1,4 @@
-"""pcap-forensics: offline capture triage."""
+"""pcap-doctor: offline capture triage."""
 
 from .models import SCHEMA_VERSION, TOOL_VERSION
 

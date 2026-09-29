@@ -58,7 +58,7 @@ class Watcher:
 def _emit(finding: Finding, path: Path) -> None:
     console.print(
         f"{datetime.now():%H:%M:%S} [bold]{finding.severity:<8}[/bold] {finding.code}  {escape(finding.title)}"
-        f"  [dim]{path.name} · pcap-doctor why {finding.id[-16:]} --report {path.with_suffix('.pf-report')}/report.json[/dim]",
+        f"  [dim]{path.name} · pcap-doctor why {finding.id} --report {path.with_suffix('.pf-report')}/report.json[/dim]",
         highlight=False,
     )
 

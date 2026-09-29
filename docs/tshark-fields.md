@@ -63,7 +63,7 @@ which yields exact subject, issuer, validity, public key size, signature algorit
 ## Checking your own build
 
 ```bash
-pf doctor                                     # field and preference inventory
+pcap-doctor doctor                                     # field and preference inventory
 tshark -G fields | rg 'tls.handshake.cipher'  # does this build name it the way we expect?
 tshark -r capture.pcap -Y 'tls.handshake.type==2' -T fields -e tls.handshake.ciphersuite
 make typecheck                                 # nothing here is typed against a generated stub

@@ -55,7 +55,7 @@ def analyze_cmd(
         False, "--safe", help="launch AI agents with their approval prompts (also PCAP_DOCTOR_HANDOFF_SAFE=1)"
     ),
 ) -> None:
-    """Analyze a capture and write the four report artifacts."""
+    """Analyze a capture, write the report files and print a scored summary."""
     try:
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
         config = load_config(config_path, profile=profile)
