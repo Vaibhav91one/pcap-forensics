@@ -371,6 +371,7 @@ class IndexBuilder:
             app = app_proto_from(first(row, "frame.protocols"))
             if flow is None:
                 _pa, ea, ppa, eb, ppb = endpoints_of(key)
+                frame = to_int(first(row, "frame.number")) or 0
                 flow = Flow(
                     key=key,
                     proto="tcp" if proto == "tcp" else "udp",
@@ -380,6 +381,7 @@ class IndexBuilder:
                     port_b=ppb,
                     app_proto=app,
                     first_seen=ts,
+                    first_frame=frame,
                     last_seen=ts,
                 )
                 index.flows[key] = flow
@@ -785,6 +787,7 @@ class IndexBuilder:
                     to_ip=dst,
                     payload_type=to_int_auto(first(row, "rtp.p_type")),
                     payload_name=RTP_PAYLOAD_TYPES.get(to_int_auto(first(row, "rtp.p_type")) or -1),
+                    first_frame=to_int(first(row, "frame.number")) or 0,
                 ),
             )
             ts = to_float(first(row, "frame.time_epoch")) or 0.0

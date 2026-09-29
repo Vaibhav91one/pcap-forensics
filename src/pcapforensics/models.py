@@ -12,7 +12,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.0.0"
+SCHEMA_VERSION = "1.1.0"
 TOOL_VERSION = "0.1.0"
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
@@ -75,6 +75,7 @@ class Flow(BaseModel):
     packets_a_to_b: int = 0
     bytes_a_to_b: int = 0
     first_seen: float = 0.0
+    first_frame: int = 0
     last_seen: float = 0.0
     duration: float = 0.0
     stream_index: int | None = None
@@ -269,6 +270,7 @@ class RtpStream(BaseModel):
     packets: int = 0
     bytes: int = 0
     first_seen: float = 0.0
+    first_frame: int = 0
     last_seen: float = 0.0
     from_ip: str | None = None
     to_ip: str | None = None
