@@ -1,0 +1,25 @@
+# Written by `pcap-doctor ci install`. On each pull request that touches a capture, report and gate only the
+# findings that are new compared with the base branch's copy of that capture.
+name: pcap-doctor
+
+on:
+  pull_request:
+    paths:
+      - "**/*.pcap"
+      - "**/*.pcapng"
+      - ".github/workflows/pcap-doctor.yml"
+
+permissions:
+  contents: read
+  pull-requests: write # one summary comment, updated in place
+  security-events: write # SARIF upload to code scanning
+
+jobs:
+  pcap-doctor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: Vaibhav91one/pcap-forensics@__REF__
+        with:
+          captures: "__CAPTURES__"
+          fail-on: __FAIL_ON__

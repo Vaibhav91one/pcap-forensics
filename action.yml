@@ -1,0 +1,76 @@
+name: pcap-doctor
+description: Analyze pcap/pcapng captures in a pull request; report and gate only the findings that are new since the base branch.
+author: Vaibhav91one
+branding:
+  icon: activity
+  color: gray-dark
+
+inputs:
+  captures:
+    description: 'Captures to analyze: bash globstar patterns, space separated (for example "captures/**/*.pcap").'
+    required: true
+  fail-on:
+    description: Fail when a new finding is at or above this severity (none, critical, high, medium, low, info).
+    default: high
+  comment:
+    description: Post or update one summary comment on the pull request (needs pull-requests write).
+    default: "true"
+  upload-sarif:
+    description: Upload the findings to GitHub code scanning (needs security-events write).
+    default: "true"
+
+outputs:
+  summary:
+    description: Path of the markdown summary.
+    value: ${{ steps.run.outputs.summary }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install tshark
+      shell: bash
+      run: command -v tshark >/dev/null || { sudo apt-get update -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq tshark; }
+
+    - uses: astral-sh/setup-uv@v5
+
+    - name: Install pcap-doctor from this action's ref
+      shell: bash
+      run: |
+        uv venv -q "$RUNNER_TEMP/pcap-doctor-venv"
+        uv pip install -q --python "$RUNNER_TEMP/pcap-doctor-venv/bin/python" "$GITHUB_ACTION_PATH"
+
+    - name: Analyze captures
+      id: run
+      shell: bash
+      env:
+        CAPTURES: ${{ inputs.captures }}
+        FAIL_ON: ${{ inputs.fail-on }}
+        BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        OUT: ${{ runner.temp }}/pcap-doctor
+        PCAP_DOCTOR: ${{ runner.temp }}/pcap-doctor-venv/bin/pcap-doctor
+      run: '"$GITHUB_ACTION_PATH/scripts/pcap-doctor-action.sh"'
+
+    - name: Comment on the pull request
+      if: always() && inputs.comment == 'true' && github.event_name == 'pull_request' && steps.run.outputs.summary != ''
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        PR: ${{ github.event.pull_request.number }}
+        SUMMARY: ${{ steps.run.outputs.summary }}
+      run: |
+        # Update this action's own comment (found by its marker) instead of adding one per push.
+        id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+          --jq '.[] | select(.body | startswith("<!-- pcap-doctor -->")) | .id' | tail -n 1)
+        if [ -n "$id" ]; then
+          gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@"$SUMMARY" >/dev/null
+        else
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$SUMMARY"
+        fi || echo "::warning::could not comment on the pull request (fork PRs get a read-only token)"
+
+    - name: Upload SARIF to code scanning
+      if: always() && inputs.upload-sarif == 'true' && steps.run.outputs.sarif != ''
+      uses: github/codeql-action/upload-sarif@v3
+      continue-on-error: true  # private repositories need GitHub Advanced Security for code scanning
+      with:
+        sarif_file: ${{ steps.run.outputs.sarif }}
+        category: pcap-doctor
