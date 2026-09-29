@@ -1,7 +1,7 @@
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo-light.svg">
-  <img alt="pcap-forensics" src="./docs/assets/logo-light.svg" width="300" height="56">
+  <img alt="pcap-forensics" src="./docs/assets/logo-light.svg" width="360" height="56">
 </picture>
 
 [![CI](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml/badge.svg)](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml)
