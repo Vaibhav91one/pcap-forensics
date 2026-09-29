@@ -26,10 +26,18 @@ CIPHER_POLICY_DOC = "docs/cipher-policy.md"
 
 VERSION_FINDING = {
     "SSL 3.0": ("critical", "SSL 3.0 is broken by POODLE (CVE-2014-3566)"),
-    "TLS 1.0": ("high", "TLS 1.0 is deprecated by RFC 8999 and banned by PCI DSS 4.0"),
-    "TLS 1.1": ("high", "TLS 1.1 is deprecated by RFC 8999 and banned by PCI DSS 4.0"),
+    "TLS 1.0": ("high", "TLS 1.0 is deprecated by RFC 8996 and banned by PCI DSS 4.0"),
+    "TLS 1.1": ("high", "TLS 1.1 is deprecated by RFC 8996 and banned by PCI DSS 4.0"),
     "DTLS 1.0": ("high", "DTLS 1.0 is obsolete; RFC 9147 defines DTLS 1.2 and 1.3 only"),
 }
+
+
+def version_references(version: str) -> list[str]:
+    """References for a deprecated-version finding: every RFC its text cites, plus the policy doc."""
+    refs = ["RFC 8996", "RFC 9325"]
+    if version.startswith("DTLS"):
+        refs.append("RFC 9147")
+    return [*refs, CIPHER_POLICY_DOC]
 
 
 class TlsCipherDetector(Detector):
@@ -116,7 +124,7 @@ class TlsCipherDetector(Detector):
                         ),
                     ],
                     remediation="Raise the minimum to TLS 1.2 and prefer TLS 1.3; disable SSLv3/TLS1.0/1.1.",
-                    references=["RFC 8996", "RFC 9325", CIPHER_POLICY_DOC],
+                    references=version_references(negotiated or ""),
                     tags=["tls", "version"],
                 )
             )

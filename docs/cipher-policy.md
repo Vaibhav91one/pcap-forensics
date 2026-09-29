@@ -95,7 +95,7 @@ capture never showed.
 
 ## 6. Provenance
 
-* **RFC 8996** Appendix A — the prohibited suite set (TLS 1.3 datalogue updates).
+* **RFC 9325** section 4.1 — suites that MUST NOT be negotiated (NULL, RC4, under 112-bit/export) or SHOULD NOT be (under 128-bit, static RSA, non-ephemeral DH).
 * **NIST SP 800-52r2** — allowed cipher suites for TLS: static-RSA and 3DES restrictions.
 * **RFC 7457** (Sweet32, 3DES/CBC birthday exposure), **RFC 7465** (RC4 prohibition),
   **RFC 6194** (SHA-1), **RFC 5246** (TLS 1.2 suite list).

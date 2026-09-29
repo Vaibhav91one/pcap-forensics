@@ -21,7 +21,7 @@ hand-verified expectations in ``tests/test_cipher_registry.py``.
 
 Policy provenance (also in ``docs/cipher-policy.md``):
 
-* RFC 8996 App. A -- prohibited suite set,
+* RFC 9325 section 4.1 -- suites that MUST NOT / SHOULD NOT be negotiated,
 * NIST SP 800-52r2 -- CBC / 3DES / static-RSA restrictions,
 * RFC 7457 (Sweet32), RFC 7465 (RC4), RFC 6194 (SHA-1),
 * the ``deprecation`` column is this project's policy, not a verbatim RFC column.
@@ -273,7 +273,7 @@ def main() -> None:
         "description": "TLS/DTLS cipher suites with names from tshark and derived weakness tags.",
         "name_source": "tshark -G values (tls.handshake.ciphersuite), vendored in cipher_names.tsv",
         "policy_provenance": [
-            "RFC 8996 Appendix A - prohibited cipher suites",
+            "RFC 9325 section 4.1 - cipher suites that MUST NOT or SHOULD NOT be negotiated",
             "NIST SP 800-52r2 - allowed cipher suites for TLS",
             "RFC 7457 Sweet32, RFC 7465 RC4, RFC 6194 SHA-1 - why the legacy tier exists",
             "Project policy - the deprecation column is ours, see docs/cipher-policy.md",
