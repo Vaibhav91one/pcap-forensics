@@ -394,6 +394,44 @@ def fixture_snmp_creds() -> bytes:
     return _pcap_header() + _packet(eth_ip_udp(CLIENT, SERVER, 42001, 161, snmp), 1_700_000_600.0)
 
 
+def eth_ip6_udp(src: str, dst: str, sport: int, dport: int, payload: bytes) -> bytes:
+    import socket
+
+    udp = struct.pack("!HHHH", sport, dport, 8 + len(payload), 0)
+    ip = struct.pack(
+        "!IHBB16s16s",
+        0x60000000,
+        len(udp) + len(payload),
+        17,
+        64,
+        socket.inet_pton(socket.AF_INET6, src),
+        socket.inet_pton(socket.AF_INET6, dst),
+    )
+    eth = b"\x00\x11\x22\x33\x44\x55" + b"\x66\x77\x88\x99\xaa\xbb" + b"\x86\xdd"
+    return eth + ip + udp + payload
+
+
+def fixture_dns_external() -> bytes:
+    """Queries to public resolvers over IPv4 and IPv6, plus an internal resolver and mDNS that must not count."""
+    v6_client, v6_resolver = "fd00::10", "2606:4700:4700::1111"
+    packets = []
+    for i in range(3):
+        packets.append(eth_ip_udp(CLIENT, "1.1.1.1", 41000 + i, 53, dns_query("example.com", 0x3000 + i)))
+        packets.append(
+            eth_ip_udp("1.1.1.1", CLIENT, 53, 41000 + i, dns_response("example.com", 0x3000 + i, "93.184.216.34"))
+        )
+    packets.append(eth_ip6_udp(v6_client, v6_resolver, 41010, 53, dns_query("example.org", 0x3010)))
+    packets.append(
+        eth_ip6_udp(v6_resolver, v6_client, 53, 41010, dns_response("example.org", 0x3010, "93.184.216.34"))
+    )
+    packets.append(eth_ip_udp(CLIENT, "10.0.0.53", 41020, 53, dns_query("intranet.example", 0x3020)))
+    packets.append(
+        eth_ip_udp("10.0.0.53", CLIENT, 53, 41020, dns_response("intranet.example", 0x3020, "10.0.0.80"))
+    )
+    packets.append(eth_ip_udp(CLIENT, "224.0.0.251", 5353, 5353, dns_query("printer.local", 0)))
+    return _pcap_header() + b"".join(_packet(p, 1_700_000_700.0 + i * 0.01) for i, p in enumerate(packets))
+
+
 #: Fixtures built from bytes, no external process.
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
@@ -401,6 +439,7 @@ STATIC_FIXTURES = {
     "sip_rtp.pcap": fixture_sip_rtp,
     "syn_scan.pcap": fixture_syn_scan,
     "snmp_creds.pcap": fixture_snmp_creds,
+    "dns_external.pcap": fixture_dns_external,
 }
 
 #: Fixtures captured from a real OpenSSL handshake. Cipher strings are passed to

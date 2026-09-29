@@ -9,6 +9,7 @@ Three different questions:
 
 from __future__ import annotations
 
+import ipaddress
 import math
 import re
 from collections import Counter, defaultdict
@@ -52,6 +53,8 @@ WEAK_SSH_MACS = {
     "umac-128@openssh.com",
 }
 WEAK_SSH_HOSTKEYS = {"ssh-rsa", "ssh-dss", "ssh-rsa-sha256@libssh.org"}
+
+RESOLVER_PORTS = frozenset({53, 853})
 
 
 def shannon_entropy(text: str) -> float:
@@ -169,29 +172,49 @@ class DnsQuicSshDetector(Detector):
 
     def _dns_bypass(self, index: CaptureIndex) -> list[Finding]:
         out: list[Finding] = []
-        for host, count in Counter(
-            index.flows[q.key].endpoint_b for q in index.dns if q.key in index.flows
-        ).most_common(10):
-            if host.count(".") == 3 and not host.startswith(("192.", "10.", "127.")):
-                out.append(
-                    self.finding(
-                        code="DNS_EXTERNAL_RESOLVER",
-                        title=f"{host} answered {count} DNS queries (external resolver in use)",
-                        severity="low",
-                        confidence="medium",
-                        summary=(
-                            f"{count} queries in this capture were answered by the public resolver {host}. "
-                            "Internal names may be leaked, and policy bypass is possible if the internal "
-                            "resolver was meant to be authoritative."
-                        ),
-                        scope=f"dnsresolver|{host}",
-                        subjects=[host],
-                        evidence=[ev(0, "ip.dst", host)],
-                        remediation="Force DNS through the internal resolver; block outbound port 53/853 at the perimeter.",
-                        references=[],
-                        tags=["dns", "policy"],
-                    )
+        counts: Counter[str] = Counter()
+        first_frame: dict[str, int] = {}
+        for q in index.dns:
+            if q.is_response or q.key not in index.flows:
+                continue
+            flow = index.flows[q.key]
+            if flow.port_b in RESOLVER_PORTS:
+                host = flow.endpoint_b
+            elif flow.port_a in RESOLVER_PORTS:
+                host = flow.endpoint_a
+            else:
+                continue
+            counts[host] += 1
+            prev = first_frame.get(host)
+            if prev is None or q.frame < prev:
+                first_frame[host] = q.frame
+        for host, count in counts.most_common(10):
+            try:
+                ip = ipaddress.ip_address(host)
+            except ValueError:
+                continue
+            if not (ip.is_global and not ip.is_multicast):
+                continue
+            first = first_frame[host]
+            out.append(
+                self.finding(
+                    code="DNS_EXTERNAL_RESOLVER",
+                    title=f"{host} answered {count} DNS queries (external resolver in use)",
+                    severity="low",
+                    confidence="medium",
+                    summary=(
+                        f"{count} queries in this capture were answered by the public resolver {host}. "
+                        "Internal names may be leaked, and policy bypass is possible if the internal "
+                        "resolver was meant to be authoritative."
+                    ),
+                    scope=f"dnsresolver|{host}",
+                    subjects=[host],
+                    evidence=[ev(first, "ipv6.dst" if ip.version == 6 else "ip.dst", host)],
+                    remediation="Force DNS through the internal resolver; block outbound port 53/853 at the perimeter.",
+                    references=[],
+                    tags=["dns", "policy"],
                 )
+            )
         return out
 
     # -- QUIC ---------------------------------------------------------------
