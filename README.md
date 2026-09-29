@@ -171,7 +171,8 @@ The score is a local, deterministic function of the findings: `100 - Σ penalty`
 - Multiplied by confidence: high 1.0, medium 0.75, low 0.5.
 - Labels: **Great** ≥ 90, **Good** ≥ 75, **Needs work** ≥ 50, **Critical** below.
 
-`--score` prints only the number, for scripts. With `--baseline`, the score covers the new findings.
+`--score` prints only the number, for scripts. With `--baseline`, `--score` and the console summary
+cover the new findings only; the JSON envelope keeps the full report's score and lists `new_findings`.
 
 ---
 

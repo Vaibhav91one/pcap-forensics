@@ -15,8 +15,7 @@ from ..output import json_envelope, sarif
 from ..pipeline import analyze
 from ..policy import PolicyError, validate
 from ..scoring import score
-from ..tshark import TsharkMissingError
-from ._console import console
+from ._console import console, tshark_errors
 from ._summary import render
 
 
@@ -70,7 +69,7 @@ def analyze_cmd(
     except (OSError, ValueError) as exc:
         console.print(f"[red]--baseline {baseline_path}: not a pcap-doctor report ({type(exc).__name__})[/red]")
         raise typer.Exit(code=2) from exc
-    try:
+    with tshark_errors():
         result = analyze(
             pcap,
             out,
@@ -80,9 +79,6 @@ def analyze_cmd(
             use_cache=not no_cache,
             config=config,
         )
-    except TsharkMissingError as exc:
-        console.print(f"[red]{exc}[/red]")
-        raise typer.Exit(code=2) from exc
 
     # The artifacts on disk stay complete; with a baseline everything shown or gated is the new findings only.
     shown = result.report
