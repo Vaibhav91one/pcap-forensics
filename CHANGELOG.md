@@ -6,11 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-`report.json` `schema_version` is `1.3.0` (additive: `Flow.first_frame`, `Flow` burst statistics,
-`RtpStream.first_frame`, `SshSession.offered_in`).
+`report.json` `schema_version` is `1.4.0` (additive: `Flow.first_frame`, `Flow` burst statistics,
+`RtpStream.first_frame`, `SshSession.offered_in`, `TelnetLogin`).
 
 ### Added
 
+- Telnet logins: passwords typed after a `Password:` prompt are reported as `CLEARTEXT_CREDENTIAL`
+  (length and frame only, never the text); Telnet sessions now raise `CLEARTEXT_SERVICE` (#37).
 - `SSH_TERRAPIN_EXPOSED`: chacha20-poly1305, or an EtM MAC with a CBC cipher, offered without strict
   key exchange on both sides (#24).
 - FTP `PASS` arguments and LDAP simple-bind passwords are reported as `CLEARTEXT_CREDENTIAL` (#14).

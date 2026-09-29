@@ -42,6 +42,7 @@ class TransportExposureDetector(Detector):
         findings += self._http_cookies(index)
         findings += self._cleartext_services(index)
         findings += self._service_credentials(index)
+        findings += self._telnet_logins(index)
         findings += self._nonstandard_ports(index)
         findings += self._syn_only(index)
         findings += self._beaconing(index)
@@ -213,6 +214,34 @@ class TransportExposureDetector(Detector):
                         tags=["cleartext", "credential"],
                     )
                 )
+        return out
+
+    def _telnet_logins(self, index: CaptureIndex) -> list[Finding]:
+        out: list[Finding] = []
+        for login in index.telnet_logins:
+            evidence = [ev(login.password_frame, "telnet.data", f"<redacted {login.password_length} chars>")]
+            if login.user and login.user_frame:
+                evidence.append(ev(login.user_frame, "telnet.data", login.user))
+            who = f" for user {login.user!r}" if login.user else ""
+            out.append(
+                self.finding(
+                    code="CLEARTEXT_CREDENTIAL",
+                    title=f"Telnet password exposed in cleartext on {login.key}",
+                    severity="critical",
+                    confidence="high",
+                    summary=(
+                        f"A Telnet login{who} typed its password ({login.password_length} characters) in cleartext, "
+                        f"starting at frame {login.password_frame}. Treat the credential as compromised."
+                    ),
+                    scope=f"{login.key}|telnet-login|{login.password_frame}",
+                    flow_key=login.key,
+                    subjects=self._subjects(index, login.key),
+                    evidence=evidence,
+                    remediation="Disable Telnet and use SSH; rotate the exposed password.",
+                    references=["CWE-319", "CWE-523"],
+                    tags=["cleartext", "credential", "telnet"],
+                )
+            )
         return out
 
     # -- network shape ------------------------------------------------------

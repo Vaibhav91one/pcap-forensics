@@ -171,7 +171,7 @@ graph TB
 | Id | Module | Owns |
 |---|---|---|
 | `d1.tls_cipher` | `detectors/tls_cipher.py` | negotiated version, chosen suite, offered-but-unused weak suites, forward secrecy, certificate expiry/key/signature/self-signed, alerts, truncated handshakes, JA3 fleet clustering |
-| `d2.transport_exposure` | `detectors/transport_exposure.py` | HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
+| `d2.transport_exposure` | `detectors/transport_exposure.py` | HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries, Telnet logins; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
 | `d3.sip_rtp` | `detectors/sip_rtp.py` | SIP call graph, cleartext REGISTER/INVITE with auth headers, SDP offered without `a=crypto` (no SRTP possible), RTP media in the clear, media volume anomalies |
 | `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers (IPv4 and IPv6), QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key offers, Terrapin exposure (CVE-2023-48795) |
 
@@ -386,8 +386,9 @@ Stated plainly, because a triage tool that hides its limits is worse than useles
   odd port is reported as such instead of being silently trusted.
 * **Capture point matters.** This tool sees the traffic it is given. It cannot know what the
   capture point did not record.
-* **Telnet logins are not detected yet.** A Telnet session is reported as cleartext, but typed
-  usernames and passwords need keystroke-stream reassembly (issue #37).
+* **Telnet logins are found by prompt matching.** Typed keystrokes are rebuilt from the client stream
+  and a password is recognised after a `Password:` prompt; logins without such a prompt are missed.
+  The password itself is never stored, only its length and frame.
 * **Redis is classified by port only.** tshark has no RESP dissector, so Redis commands are not
   parsed and cannot be checked for secrets.
 * **JA3 clustering is v1.** It groups by fingerprint, not by a maintained JA3 database.

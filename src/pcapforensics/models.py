@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.3.0"
+SCHEMA_VERSION = "1.4.0"
 TOOL_VERSION = "0.1.0"
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
@@ -328,6 +328,16 @@ class ServiceHit(BaseModel):
     protocol: str
     detail: str | None = None
     sensitive: bool = False
+
+
+class TelnetLogin(BaseModel):
+    """A login typed over Telnet. The password itself is never stored: only its length and first frame."""
+
+    key: str
+    user: str | None = None
+    user_frame: int | None = None
+    password_length: int
+    password_frame: int
 
 
 class Host(BaseModel):
