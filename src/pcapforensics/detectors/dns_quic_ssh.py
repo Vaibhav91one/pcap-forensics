@@ -169,15 +169,6 @@ class DnsQuicSshDetector(Detector):
 
     def _dns_bypass(self, index: CaptureIndex) -> list[Finding]:
         out: list[Finding] = []
-        for query in index.dns:
-            if query.name.lower() in {"cloudflare-dns.com", "dns.google", "doh.dns.sb", "dns.quad9.net"}:
-                continue
-            flow = index.flows.get(query.key)
-            if flow is None:
-                continue
-            dst_port = flow.port_b if flow.endpoint_a == _client_of(index, query.key) else flow.port_a
-            if dst_port in {53, 5353} and flow.endpoint_b not in {flow.endpoint_a}:
-                continue
         for host, count in Counter(
             index.flows[q.key].endpoint_b for q in index.dns if q.key in index.flows
         ).most_common(10):
@@ -280,16 +271,6 @@ class DnsQuicSshDetector(Detector):
             if session.compression and any(c.startswith("zlib") for c in session.compression):
                 index.add_note(f"[{self.name}] SSH compression offered on {session.key}: {session.compression}")
         return out
-
-
-def _client_of(index: CaptureIndex, key: str) -> str:
-    from ..models import endpoints_of
-
-    flow = index.flows.get(key)
-    if flow is None:
-        return ""
-    _p, a, _ap, b, _bp = endpoints_of(key)
-    return a if flow.app_proto == "dns" else b
 
 
 def analyse_labels(name: str) -> dict[str, float | int]:
