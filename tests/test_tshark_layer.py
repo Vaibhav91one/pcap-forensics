@@ -15,6 +15,7 @@ import pytest
 from conftest import fixture, requires_tshark
 from pcapforensics.tshark import (
     PASSES,
+    SERVICE_FIELDS,
     TsharkRunner,
     default_prefs,
     parse_cipher_ids,
@@ -223,3 +224,13 @@ def test_unreadable_capture_raises_a_useful_error(tmp_path: Path) -> None:
 def test_shutil_present() -> None:
     """The environment probe itself is part of the contract."""
     assert shutil.which("capinfos") or shutil.which("tshark")
+
+
+@requires_tshark
+def test_every_service_field_is_a_real_tshark_field() -> None:
+    """The index can only read what tshark can emit (issue #14)."""
+    import subprocess
+
+    out = subprocess.run(["tshark", "-G", "fields"], capture_output=True, text=True, check=True).stdout
+    known = {line.split("\t")[2] for line in out.splitlines() if line.count("\t") >= 2}
+    assert [field for field in SERVICE_FIELDS if field not in known] == []

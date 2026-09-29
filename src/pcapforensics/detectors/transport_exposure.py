@@ -174,6 +174,12 @@ class TransportExposureDetector(Detector):
         return out
 
     def _service_credentials(self, index: CaptureIndex) -> list[Finding]:
+        labels = {
+            "snmp.community": "SNMP community",
+            "ldap.simple": "LDAP bind password",
+            "mysql.query": "MySQL query",
+            "ftp.request.arg": "FTP password",
+        }
         out: list[Finding] = []
         for hit in index.services:
             fields: dict[str, str] = {}
@@ -181,16 +187,18 @@ class TransportExposureDetector(Detector):
                 if "=" in part:
                     name, _, raw_value = part.partition("=")
                     fields[name] = raw_value
-            for field in ("snmp.community", "ldap.bindRequest.name", "redis.command", "mysql.query", "ftp.request.arg"):
+            command = (fields.get("ftp.request.command") or "").upper()
+            for field in ("snmp.community", "ldap.simple", "mysql.query", "ftp.request.arg"):
+                if field == "ftp.request.arg" and command != "PASS":
+                    continue
                 value: str | None = fields.get(field)
                 if not value:
                     continue
-                severity = "critical" if field in {"snmp.community", "redis.command", "mysql.query"} else "high"
                 out.append(
                     self.finding(
                         code="CLEARTEXT_CREDENTIAL",
-                        title=f"{field.split('.')[-1]} exposed in cleartext on {hit.key}",
-                        severity=severity,  # type: ignore[arg-type]
+                        title=f"{labels[field]} exposed in cleartext on {hit.key}",
+                        severity="critical",
                         confidence="high",
                         summary=(
                             f"Frame {hit.frame}: {field}={value!r} was observed in cleartext. "

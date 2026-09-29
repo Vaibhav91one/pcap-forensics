@@ -37,6 +37,7 @@ from .models import (
     flow_key,
 )
 from .tshark import (
+    SERVICE_FIELDS,
     Row,
     TsharkRunner,
     parse_cipher_ids,
@@ -885,29 +886,17 @@ class IndexBuilder:
             frame = to_int(first(row, "frame.number")) or 0
             protocols = {
                 field: first(row, field)
-                for field in (
-                    "ntp.refid",
-                    "tftp.source_file",
-                    "tftp.destination_file",
-                    "ftp.request.command",
-                    "ftp.response.code",
-                    "telnet.command",
-                    "snmp.version",
-                    "snmp.community",
-                    "snmp.var-bind_str",
-                    "ldap.protocolOp",
-                    "ldap.bindRequest.name",
-                    "smtp.request.command",
-                    "redis.command",
-                    "mysql.query",
-                )
+                for field in SERVICE_FIELDS
                 if first(row, field)
             }
             if not protocols:
                 continue
             protocol = next(iter(protocols))
             detail = " | ".join(
-                f"{k}=<redacted {len(v)} chars>" if k in REDACTED_SERVICE_FIELDS else f"{k}={v}"
+                f"{k}=<redacted {len(v)} chars>"
+                if k in REDACTED_SERVICE_FIELDS
+                or (k == "ftp.request.arg" and (protocols.get("ftp.request.command") or "").upper() == "PASS")
+                else f"{k}={v}"
                 for k, v in protocols.items()
             )
             flow = index.flows.get(key)
@@ -956,7 +945,7 @@ class IndexBuilder:
 
 #: Service-detail fields that carry credentials in cleartext and must never
 #: reach a report verbatim. Values are replaced with a length-only placeholder.
-REDACTED_SERVICE_FIELDS: frozenset[str] = frozenset({"snmp.community", "redis.command", "mysql.query"})
+REDACTED_SERVICE_FIELDS: frozenset[str] = frozenset({"snmp.community", "mysql.query", "ldap.simple"})
 
 
 def redact_auth(value: str) -> str:
