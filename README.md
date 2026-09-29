@@ -303,7 +303,7 @@ sequenceDiagram
   I-->>D: frozen read-only view
   D->>D: decide, attach frame-numbered evidence
   D-->>P: list[Finding]
-  Note over P: one detector raising is caught;<br/>the other detectors still run
+  Note over P: one detector raising is caught,<br/>the other detectors still run
   P->>R: sort by severity, then confidence
   R-->>U: 6 artifacts + exit code
 ```

@@ -46,6 +46,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed — project
 
+- Mermaid: `04-diagrams.md` emitted an invalid RTP gantt for captures without RTP (28 of 179 generated
+  diagrams failed to render), and the README's sequence diagram broke on a `;` (#43).
 - CI could never pass (non-existent tshark preference, fixture drift check on randomly captured TLS
   fixtures); it now runs the full suite (#12).
 
