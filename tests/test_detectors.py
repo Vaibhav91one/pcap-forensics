@@ -125,6 +125,15 @@ def test_service_credentials_are_redacted(analyze_capture) -> None:
     assert "redacted" in joined, "the redaction notice is missing"
 
 
+def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> None:
+    """The resolver is the side on port 53/853, not the one that sorts last; internal and multicast never count (issue #6)."""
+    result = analyze_capture(fixture("dns_external.pcap"))
+    found = {tuple(f.subjects): f for f in result.report.findings if f.code == "DNS_EXTERNAL_RESOLVER"}
+    assert set(found) == {("1.1.1.1",), ("2606:4700:4700::1111",)}
+    assert found[("1.1.1.1",)].evidence[0].frame == 1
+    assert found[("2606:4700:4700::1111",)].evidence[0].frame == 7
+
+
 def test_syn_scan_shape(analyze_capture) -> None:
     result = analyze_capture(fixture("syn_scan.pcap"))
     assert "SYN_SCAN_SHAPE" in codes(result)
