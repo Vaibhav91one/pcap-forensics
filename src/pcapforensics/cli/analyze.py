@@ -9,7 +9,7 @@ import typer
 
 from ..baseline import load_baseline, new_since, version_drift
 from ..models import SEVERITY_ORDER
-from ..output import json_envelope
+from ..output import json_envelope, sarif
 from ..pipeline import analyze
 from ..policy import PolicyError, validate
 from ..scoring import score
@@ -42,6 +42,7 @@ def analyze_cmd(
     baseline_path: Path = typer.Option(
         None, "--baseline", exists=True, dir_okay=False, help="earlier report.json or envelope: report only new findings"
     ),
+    sarif_out: Path = typer.Option(None, "--sarif", help="also write the shown findings as SARIF 2.1.0 to this file"),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
@@ -78,6 +79,8 @@ def analyze_cmd(
         envelope["new_findings"] = [f.id for f in shown.findings]
     if json_out is not None:
         json_out.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
+    if sarif_out is not None:
+        sarif_out.write_text(json.dumps(sarif(shown, artifact_uri=pcap.as_posix()), indent=2) + "\n", encoding="utf-8")
     if as_json:
         typer.echo(json.dumps(envelope, indent=2))
     elif show_score:
