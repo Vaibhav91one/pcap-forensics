@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from . import policy
 from .index import CaptureIndex, IndexBuilder
 from .models import SEVERITY_ORDER, ArtifactRef, Finding, Report
 from .registry import enabled_detectors
@@ -36,8 +37,10 @@ def analyze(
     *,
     only: tuple[str, ...] = (),
     min_severity: str | None = None,
+    categories: tuple[str, ...] = (),
     use_cache: bool = True,
 ) -> RunResult:
+    policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
     outdir = Path(outdir or pcap.with_suffix(".pf-report"))
     outdir.mkdir(parents=True, exist_ok=True)
@@ -59,9 +62,10 @@ def analyze(
         index.add_note(f"[{detector.name}] ran v{detector.version}: {len(found)} finding(s)")
         findings.extend(found)
 
-    if min_severity:
-        threshold = SEVERITY_ORDER.get(min_severity, 99)
-        findings = [f for f in findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
+    kept = policy.apply(findings, categories=categories, min_severity=min_severity)
+    if len(kept) < len(findings):
+        index.add_note(f"[policy] dropped {len(findings) - len(kept)} finding(s) outside the selected filters")
+    findings = kept
 
     stats = builder.compute_stats(findings)
     report = Report(
