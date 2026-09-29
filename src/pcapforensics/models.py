@@ -9,12 +9,16 @@ from __future__ import annotations
 import hashlib
 import math
 from enum import StrEnum
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
 SCHEMA_VERSION = "1.4.0"
-TOOL_VERSION = "0.1.0"
+try:  # one source of truth: the installed distribution (pyproject.toml)
+    TOOL_VERSION = version("pcap-doctor")
+except PackageNotFoundError:  # running from a source tree that was never installed
+    TOOL_VERSION = "0.0.0+unknown"
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
 Confidence = Literal["high", "medium", "low"]

@@ -11,9 +11,9 @@ Use pcap-doctor to triage a packet capture (.pcap/.pcapng) offline: who talked t
 
 ## Fixing a finding
 
-1. Read the finding in `report.json`: `code`, `severity`, `summary`, `evidence` (frame numbers), `remediation`.
+1. `pcap-doctor why <finding id or frame> --prompt` prints the rule, the fenced evidence and the task for one finding; `pcap-doctor rules explain <CODE>` explains a code.
 2. Find the configuration or code in this repository that produces that traffic and fix it at the source. Change nothing unrelated.
-3. Capture the traffic again, re-run `pcap-doctor analyze`, and confirm the finding code is gone.
+3. Capture the traffic again and run `pcap-doctor analyze <new capture> --baseline <old report.json>`: the finding must not be reported as new.
 
 ## Safety
 

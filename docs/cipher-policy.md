@@ -107,8 +107,8 @@ capture never showed.
 ```bash
 make regenerate                                    # rebuild from the vendored names
 python scripts/gen_cipher_suites.py --refresh      # re-extract names from the local tshark first
-pf suites                                          # dump the registry with its tiers
-pf ciphers capture.pcap                            # see it applied to a capture
+pcap-doctor suites                                          # dump the registry with its tiers
+pcap-doctor ciphers capture.pcap                            # see it applied to a capture
 ```
 
 Never hand-edit `cipher_suites.json`; it is generated, and a test compares it to the names table.

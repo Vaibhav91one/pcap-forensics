@@ -6,6 +6,42 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-09-30
+
+**pcap-forensics is now pcap-doctor**: one command gives a health score, findings grouped by category,
+explanations, a CI gate on new findings, and a handoff to AI coding agents. `pf` stays as an alias.
+`report.json` keeps `schema_version` `1.4.0`: everything new is computed around the report.
+
+### Added — pcap-doctor
+
+- Distribution and command `pcap-doctor`, `--version`; `npx pcap-doctor` launcher (runs the same
+  version through `uvx` or `pipx`); PyPI release by trusted publishing and npm with provenance
+  (#46, #50, #51).
+- The CLI is a package of self-registering command modules (#45).
+- A rule catalog with eight categories, `rules list` / `rules explain`, and a doc per finding code
+  (#47, #49, #61).
+- A local 0-100 health score and a summary grouped by category; `--score`, `--verbose` (#48, #53).
+- `--category`, strict option validation (unknown values exit 2 before tshark runs) (#52).
+- `--json` / `--json-out` envelope, `--sarif` (SARIF 2.1.0), `--baseline` to show and gate only new
+  findings (#54, #55, #56).
+- `pcap-doctor.toml` / `[tool.pcap-doctor]`: `disable`, `[severity]`, `[[allow]]` with a reason,
+  `categories`, `fail_on`, and the `ota` profile (`--config`, `--profile`); every suppression is
+  noted in the report (#57, #58).
+- `why <frame|id>` with `--prompt`; an AI handoff menu after interactive scans (Claude Code, Codex,
+  Cursor; `--safe`, `--no-handoff`), agent guidance inside agent shells, and a fenced
+  untrusted-data prompt builder (#49, #59, #60).
+- `install` writes agent guides (Claude Code skill, Cursor rule, AGENTS.md block) (#62).
+- `ci install` and a composite GitHub Action that compares each capture with its base-branch copy,
+  comments once on the PR and uploads SARIF (#63).
+- `watch -i IFACE`: ring-buffer live capture that prints each finding the first time it appears (#64).
+
+### Fixed — pcap-doctor
+
+- RFC citations in TLS version and cipher-policy text (#72).
+- The tool version in reports now comes from the installed package instead of a hard-coded string (#65).
+
+**MVP hardening since 0.1.0 (issues #1–#44):**
+
 `report.json` `schema_version` is `1.4.0` (additive: `Flow.first_frame`, `Flow` burst statistics,
 `RtpStream.first_frame`, `SshSession.offered_in`, `TelnetLogin`).
 

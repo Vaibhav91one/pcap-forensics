@@ -32,6 +32,8 @@ runs:
       run: command -v tshark >/dev/null || { sudo apt-get update -q && sudo DEBIAN_FRONTEND=noninteractive apt-get install -yq tshark; }
 
     - uses: astral-sh/setup-uv@v5
+      with:
+        enable-cache: false # nothing to key a cache on: the action installs one local path
 
     - name: Install pcap-doctor from this action's ref
       shell: bash
