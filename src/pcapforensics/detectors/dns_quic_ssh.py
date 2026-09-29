@@ -90,6 +90,7 @@ class DnsQuicSshDetector(Detector):
         findings += self._dns_bypass(index)
         findings += self._quic_inventory(index)
         findings += self._ssh_algorithms(index)
+        findings += self._ssh_terrapin(index)
         return findings
 
     # -- DNS ----------------------------------------------------------------
@@ -306,6 +307,49 @@ class DnsQuicSshDetector(Detector):
                 )
             if session.compression and any(c.startswith("zlib") for c in session.compression):
                 index.add_note(f"[{self.name}] SSH compression offered on {session.key}: {session.compression}")
+        return out
+
+    def _ssh_terrapin(self, index: CaptureIndex) -> list[Finding]:
+        out: list[Finding] = []
+        for session in index.ssh:
+            if session.key not in index.flows:
+                continue
+            flow = index.flows[session.key]
+            affected = [c for c in session.ciphers if c == "chacha20-poly1305@openssh.com"]
+            if not affected:
+                cbc = [c for c in session.ciphers if c.endswith("-cbc")]
+                etm = [m for m in session.macs if m.endswith("-etm@openssh.com")] if cbc else []
+                affected = etm
+            if not affected:
+                continue
+            if "kex-strict-c-v00@openssh.com" in session.kex_algorithms and "kex-strict-s-v00@openssh.com" in session.kex_algorithms:
+                continue
+            mode = affected[0]
+            frames = session.offered_in.get(mode) or [session.frame]
+            if mode.startswith("chacha20"):
+                field = "ssh.encryption_algorithms_client_to_server"
+            else:
+                field = "ssh.mac_algorithms_client_to_server"
+            out.append(
+                self.finding(
+                    code="SSH_TERRAPIN_EXPOSED",
+                    title=f"SSH session {session.key} is exposed to Terrapin (CVE-2023-48795)",
+                    severity="medium",
+                    confidence="high" if len(frames) >= 2 else "low",
+                    summary=(
+                        f"{mode} was offered and strict key exchange (kex-strict-c/s-v00@openssh.com) was not offered by both peers, so a "
+                        "man-in-the-middle can drop messages at the start of the secure channel and downgrade extension negotiation. "
+                        "Confidence is high only when both KEXINITs are visible."
+                    ),
+                    scope=f"{session.key}|terrapin",
+                    flow_key=session.key,
+                    subjects=[flow.endpoint_a, flow.endpoint_b],
+                    evidence=[ev(frames[0], field, mode)],
+                    remediation="Upgrade both ends to an SSH implementation with strict key exchange (OpenSSH 9.6+), or disable chacha20-poly1305 and EtM MACs with CBC ciphers.",
+                    references=["CVE-2023-48795", "RFC 4253"],
+                    tags=["ssh", "crypto", "terrapin"],
+                )
+            )
         return out
 
 

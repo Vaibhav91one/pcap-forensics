@@ -496,11 +496,12 @@ def ssh_kexinit(kex: str, hostkey: str, cipher: str, mac: str) -> bytes:
 
 
 def fixture_ssh_weak() -> bytes:
-    """SSH handshakes: legacy-only, modern-only, and one where only the client offers a legacy key exchange."""
+    """SSH handshakes: legacy-only, modern-only, client-only legacy kex, and modern with strict key exchange (Terrapin-safe)."""
     sessions = [
         (43100, "diffie-hellman-group1-sha1", "diffie-hellman-group1-sha1", "ssh-dss", "aes128-cbc,chacha20-poly1305@openssh.com", "hmac-md5"),
         (43200, "curve25519-sha256", "curve25519-sha256", "ssh-ed25519", "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
         (43300, "diffie-hellman-group1-sha1,curve25519-sha256", "curve25519-sha256", "ssh-ed25519", "aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
+        (43400, "curve25519-sha256,kex-strict-c-v00@openssh.com", "curve25519-sha256,kex-strict-s-v00@openssh.com", "ssh-ed25519", "chacha20-poly1305@openssh.com", "hmac-sha2-256-etm@openssh.com"),
     ]
     packets = []
     for sport, client_kex, server_kex, hostkey, cipher, mac in sessions:

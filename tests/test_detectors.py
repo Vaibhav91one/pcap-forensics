@@ -201,6 +201,16 @@ def test_ssh_evidence_cites_the_kexinit_and_keeps_client_only_offers(analyze_cap
     assert client_only.evidence[0].frame == 20
 
 
+def test_terrapin_exposure_needs_an_affected_mode_and_no_strict_kex(analyze_capture) -> None:
+    """chacha20 without kex-strict on both sides is exposed; with it, or with no affected mode, it is not (issue #24)."""
+    result = analyze_capture(fixture("ssh_weak.pcap"))
+    exposed = {f.flow_key.split("<->")[0].rsplit(":", 1)[1]: f for f in result.report.findings if f.code == "SSH_TERRAPIN_EXPOSED" and f.flow_key}
+    assert set(exposed) == {"43100", "43200"}
+    assert exposed["43100"].evidence[0].frame == 6
+    assert exposed["43200"].evidence[0].frame == 13
+    assert all(f.confidence == "high" for f in exposed.values())
+
+
 def test_syn_scan_shape(analyze_capture) -> None:
     result = analyze_capture(fixture("syn_scan.pcap"))
     assert "SYN_SCAN_SHAPE" in codes(result)
