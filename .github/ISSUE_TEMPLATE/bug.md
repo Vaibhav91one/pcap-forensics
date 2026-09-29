@@ -13,7 +13,7 @@ assignees: ''
 **Reproduce**
 
 ```bash
-pf analyze <capture> --out /tmp/x --no-cache
+pcap-doctor analyze <capture> --out /tmp/x --no-cache
 ```
 
 **Wrong output, verbatim**
@@ -26,8 +26,8 @@ pf analyze <capture> --out /tmp/x --no-cache
 
 How you know it is wrong. `tshark -r <capture> -Y '<filter>' -T fields -e <field>` output is ideal.
 
-- [ ] `tshark` version: `pf doctor`
-- [ ] capture sha256: `pf analyze <capture> | head -5`
+- [ ] `tshark` version: `pcap-doctor doctor`
+- [ ] capture sha256: `pcap-doctor analyze <capture> | head -5`
 - [ ] cache cleared or `--no-cache` used
 
 **Scope**

@@ -75,7 +75,7 @@ def render_index(report: Report, index: CaptureIndex) -> Path:
     lines += [
         f"# Capture report -- {cap.name}",
         "",
-        f"_Generated {report.generated_at} by pcap-forensics {report.tool_version} "
+        f"_Generated {report.generated_at} by pcap-doctor {report.tool_version} "
         f"(schema {report.schema_version}, tshark {cap.tshark_version})._",
         "",
         "## At a glance",

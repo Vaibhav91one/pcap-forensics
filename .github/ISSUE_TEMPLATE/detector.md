@@ -50,4 +50,4 @@ What is the consequence if the condition is true and the tool is right?
 - [ ] no secret material can reach an artifact
 - [ ] tests assert on codes, not prose
 - [ ] README detector table has its row
-- [ ] `make verify` green, `pf doctor` passes
+- [ ] `make verify` green, `pcap-doctor doctor` passes

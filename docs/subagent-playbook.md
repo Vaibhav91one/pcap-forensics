@@ -101,15 +101,15 @@ If you need a field that is not in the index, stop, comment on the issue with a 
 (shape + example value + which detectors need it), and do not work around it by re-parsing tshark.
 
 Definition of done: the checklist in AGENTS.md section 3.
-Before you push: `make verify` must be green and `pf doctor` must pass.
+Before you push: `make verify` must be green and `pcap-doctor doctor` must pass.
 ```
 
 ## Definition of done, mechanically
 
 `make verify` is the gate: `ruff check .`, `mypy` (strict), `pytest`. Add to that:
 
-* the new detector is listed by `pf detectors` and reports a version,
-* `pf analyze` on its fixture produces the expected codes,
+* the new detector is listed by `pcap-doctor detectors` and reports a version,
+* `pcap-doctor analyze` on its fixture produces the expected codes,
 * the README detector table has its row,
 * no file outside the allowlist is in the diff (`git diff --name-only base..HEAD`).
 
