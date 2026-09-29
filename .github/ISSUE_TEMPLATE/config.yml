@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Severity and confidence policy
-    url: https://github.com/OWNER/pcap-forensics/blob/main/docs/severity-model.md
+    url: https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/severity-model.md
     about: How to choose severity and confidence for a finding.
   - name: Writing a detector
-    url: https://github.com/OWNER/pcap-forensics/blob/main/docs/detector-authoring.md
+    url: https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/detector-authoring.md
     about: The detector contract, the index API, and the fixture rules.
