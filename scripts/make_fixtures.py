@@ -282,6 +282,24 @@ def fixture_http_basic() -> bytes:
     )
 
 
+def fixture_http_bare_token() -> bytes:
+    """A scheme-less Authorization header (a bare API token) in cleartext HTTP (issue #15)."""
+    request = (
+        b"GET /api/status HTTP/1.1\r\nHost: api.example\r\n"
+        b"Authorization: pf-tok-9f8e7d6c5b4a39281706\r\n\r\n"
+    )
+    response = b"HTTP/1.1 200 OK\r\nServer: nginx\r\nContent-Length: 2\r\n\r\nOK"
+    packets = [
+        eth_ip_tcp(CLIENT, SERVER, 42100, 80, 1, 0, 0x02, b""),
+        eth_ip_tcp(SERVER, CLIENT, 80, 42100, 1, 2, 0x12, b""),
+        eth_ip_tcp(CLIENT, SERVER, 42100, 80, 2, 2, 0x18, request),
+        eth_ip_tcp(SERVER, CLIENT, 80, 42100, 2, 2 + len(request), 0x18, response),
+    ]
+    return _pcap_header() + b"".join(
+        _packet(p, 1_700_001_400.0 + i * 0.02) for i, p in enumerate(packets)
+    )
+
+
 # --------------------------------------------------------------------------
 # DNS
 # --------------------------------------------------------------------------
@@ -496,6 +514,7 @@ def fixture_beaconing() -> bytes:
 #: Fixtures built from bytes, no external process.
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
+    "http_bare_token.pcap": fixture_http_bare_token,
     "dns_tunnel.pcap": fixture_dns_tunnel,
     "sip_rtp.pcap": fixture_sip_rtp,
     "syn_scan.pcap": fixture_syn_scan,
