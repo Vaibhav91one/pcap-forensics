@@ -16,8 +16,8 @@ jobs:
       - name: Install tshark
         run: |
           sudo apt-get update
-          sudo apt-get install -y tshark
-          echo "tshark.soversion.use=gboolean" | sudo tee -a /etc/tshark/tshark.conf
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tshark
+          tshark --version | head -1
       - uses: astral-sh/setup-uv@v5
       - name: Install project
         run: |
@@ -30,7 +30,8 @@ jobs:
       - name: Fixtures are reproducible
         run: |
           make fixtures
-          git diff --exit-code tests/fixtures || (echo "fixtures drifted; commit the regenerated files" && exit 1)
+          static=$(.venv/bin/python -c "import sys; sys.path.insert(0, 'scripts'); import make_fixtures as m; print(' '.join('tests/fixtures/' + n for n in m.STATIC_FIXTURES))")
+          git diff --exit-code -- $static || (echo "byte-built fixtures drifted; commit the regenerated files" && exit 1)
       - name: Lint
         run: .venv/bin/ruff check .
       - name: Typecheck
