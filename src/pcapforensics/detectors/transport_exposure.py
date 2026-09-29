@@ -20,10 +20,6 @@ SENSITIVE_METHODS = {"POST", "PUT", "PATCH", "DELETE", "PROPFIND", "MKCOL"}
 #: that is not on this list gets a second look.
 ODD_PORT_SKIP = {80, 443, 8080, 8443, 5060, 5061, 5353, 853, 784, 8853}
 
-#: Well-known encrypted and web ports. A cleartext protocol on anything above
-#: 1024 that is not on this list gets a second look.
-ODD_PORT_SKIP = {80, 443, 8080, 8443, 5060, 5061, 5353, 853, 784, 8853}
-
 
 class TransportExposureDetector(Detector):
     name: ClassVar[str] = "d2.transport_exposure"
