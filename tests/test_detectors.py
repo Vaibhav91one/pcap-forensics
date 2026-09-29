@@ -339,3 +339,56 @@ def test_every_reference_is_well_formed(analyze_capture, pcap) -> None:
     for finding in result.report.findings:
         for ref in finding.references:
             assert REFERENCE_FORMAT.match(ref), f"{finding.code} cites {ref!r}"
+
+
+def test_odd_port_reports_only_the_likely_server_side() -> None:
+    """Both ports high: only the lower one is reported, at low confidence (issue #16)."""
+    from pcapforensics.detectors.transport_exposure import TransportExposureDetector
+    from pcapforensics.index import CaptureIndex
+    from pcapforensics.models import CaptureInfo, Flow, endpoints_of, flow_key
+
+    info = CaptureInfo(
+        path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
+        packets=2, bytes=0, first_seen=0.0, last_seen=0.0, duration=0.0,
+    )
+    index = CaptureIndex(info)
+    key = flow_key("tcp", "10.0.0.10", 51000, "10.0.0.20", 2121)
+    _proto, a, port_a, b, port_b = endpoints_of(key)
+    index.flows[key] = Flow(
+        key=key, proto="tcp", endpoint_a=a, port_a=port_a, endpoint_b=b, port_b=port_b,
+        app_proto="ftp", first_frame=3, encrypted=False,
+    )
+    findings = [f for f in TransportExposureDetector().detect(index) if f.code == "SERVICE_ON_ODD_PORT"]
+    assert len(findings) == 1
+    (finding,) = findings
+    assert finding.subjects == ["10.0.0.20"]
+    assert finding.confidence == "low"
+    assert (finding.evidence[0].frame, finding.evidence[0].field, finding.evidence[0].value) == (3, "tcp.port", "10.0.0.20:2121")
+
+
+def test_tftp_ephemeral_ports_are_not_an_odd_port_service(analyze_capture) -> None:
+    """tftp.pcap: client 63801 -> server 69 is not a service on an odd port (issue #16)."""
+    pcap = CAPTURES / "tftp.pcap"
+    if not pcap.exists():
+        pytest.skip("tftp.pcap not in corpus")
+    assert "SERVICE_ON_ODD_PORT" not in codes(analyze_capture(pcap))
+
+
+def test_odd_port_ignores_flows_whose_server_port_is_well_known() -> None:
+    """A standard port on either side means the service is not on an odd port (issue #16)."""
+    from pcapforensics.detectors.transport_exposure import TransportExposureDetector
+    from pcapforensics.index import CaptureIndex
+    from pcapforensics.models import CaptureInfo, Flow, endpoints_of, flow_key
+
+    info = CaptureInfo(
+        path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
+        packets=2, bytes=0, first_seen=0.0, last_seen=0.0, duration=0.0,
+    )
+    index = CaptureIndex(info)
+    key = flow_key("tcp", "10.0.0.10", 5000, "10.0.0.20", 11211)
+    _proto, a, port_a, b, port_b = endpoints_of(key)
+    index.flows[key] = Flow(
+        key=key, proto="tcp", endpoint_a=a, port_a=port_a, endpoint_b=b, port_b=port_b,
+        app_proto="redis", first_frame=1, encrypted=False,
+    )
+    assert not [f for f in TransportExposureDetector().detect(index) if f.code == "SERVICE_ON_ODD_PORT"]
