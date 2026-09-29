@@ -475,6 +475,24 @@ def fixture_ssh_weak() -> bytes:
     )
 
 
+def fixture_beaconing() -> bytes:
+    """A request/response every 30 s (a beacon), and the same traffic at irregular gaps (not a beacon)."""
+    import random
+
+    rng = random.Random(7)
+    timed: list[tuple[float, bytes]] = []
+    regular_at = [i * 30.0 for i in range(10)]
+    irregular_at = [0.0]
+    for _ in range(9):
+        irregular_at.append(irregular_at[-1] + rng.uniform(5.0, 60.0))
+    for sport, starts in ((50000, regular_at), (50001, irregular_at)):
+        for t in starts:
+            timed.append((t, eth_ip_udp(CLIENT, "203.0.113.5", sport, 8443, b"ping")))
+            timed.append((t + 0.05, eth_ip_udp("203.0.113.5", CLIENT, 8443, sport, b"pong")))
+    timed.sort(key=lambda item: item[0])
+    return _pcap_header() + b"".join(_packet(p, 1_700_001_000.0 + t) for t, p in timed)
+
+
 #: Fixtures built from bytes, no external process.
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
@@ -484,6 +502,7 @@ STATIC_FIXTURES = {
     "snmp_creds.pcap": fixture_snmp_creds,
     "dns_external.pcap": fixture_dns_external,
     "ssh_weak.pcap": fixture_ssh_weak,
+    "beaconing.pcap": fixture_beaconing,
 }
 
 #: Fixtures captured from a real OpenSSL handshake. Cipher strings are passed to
