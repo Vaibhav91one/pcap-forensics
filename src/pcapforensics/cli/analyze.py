@@ -5,13 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 
 import typer
-from rich.table import Table
 
 from ..models import SEVERITY_ORDER
 from ..pipeline import analyze
 from ..policy import PolicyError, validate
+from ..scoring import score
 from ..tshark import TsharkMissingError
-from ._console import SEVERITY_STYLE, console
+from ._console import console
+from ._summary import render
 
 
 def analyze_cmd(
@@ -31,6 +32,8 @@ def analyze_cmd(
     ),
     no_cache: bool = typer.Option(False, "--no-cache", help="ignore the tshark pass cache"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="suppress the console summary"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="list every finding, not the top 3 per category"),
+    show_score: bool = typer.Option(False, "--score", help="print only the 0-100 health score"),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
@@ -51,24 +54,11 @@ def analyze_cmd(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
-    if not quiet:
-        report = result.report
-        console.print(f"[bold]capture[/bold] {report.capture.name}: {report.stats.packets:,} packets, "
-                      f"{report.stats.flows} flows, {report.stats.hosts} hosts")
-        table = Table(title=f"{len(report.findings)} finding(s)", show_lines=False)
-        table.add_column("sev", no_wrap=True)
-        table.add_column("code", no_wrap=True)
-        table.add_column("title")
-        table.add_column("conf", no_wrap=True)
-        for finding in sorted(report.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9))[:25]:
-            style = SEVERITY_STYLE.get(finding.severity, "")
-            table.add_row(
-                f"[{style}]{finding.severity}[/{style}]",
-                finding.code,
-                finding.title,
-                finding.confidence,
-            )
-        console.print(table)
+    if show_score:
+        typer.echo(score(result.report.findings)[0])
+    elif not quiet:
+        render(console, result.report, verbose=verbose)
+        console.print()
         for artifact in result.artifacts:
             console.print(f"  wrote {artifact}")
     threshold = None if fail_on == "none" else SEVERITY_ORDER.get(fail_on)
@@ -77,7 +67,7 @@ def analyze_cmd(
         if threshold is None
         else [f for f in result.report.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
     )
-    if tripped and not quiet:
+    if tripped and not (quiet or show_score):
         console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
     raise typer.Exit(code=1 if tripped else 0)
 
