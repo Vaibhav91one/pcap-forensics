@@ -392,3 +392,13 @@ def test_odd_port_ignores_flows_whose_server_port_is_well_known() -> None:
         app_proto="redis", first_frame=1, encrypted=False,
     )
     assert not [f for f in TransportExposureDetector().detect(index) if f.code == "SERVICE_ON_ODD_PORT"]
+
+
+def test_beaconing_needs_regular_gaps_not_just_a_low_rate(analyze_capture) -> None:
+    """Same packet count and rate on both flows; only the fixed-period one is a beacon (issue #10)."""
+    result = analyze_capture(fixture("beaconing.pcap"))
+    beacons = {f.flow_key for f in result.report.findings if f.code == "BEACONING_SHAPE"}
+    assert beacons == {"udp:10.0.0.10:50000<->203.0.113.5:8443"}
+    flow = result.index.flows["udp:10.0.0.10:50000<->203.0.113.5:8443"]
+    assert flow.burst_count == 10
+    assert abs(flow.burst_gap_mean - 30.0) < 0.01

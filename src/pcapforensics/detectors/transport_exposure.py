@@ -20,6 +20,11 @@ SENSITIVE_METHODS = {"POST", "PUT", "PATCH", "DELETE", "PROPFIND", "MKCOL"}
 #: that is not on this list gets a second look.
 ODD_PORT_SKIP = {80, 443, 8080, 8443, 5060, 5061, 5353, 853, 784, 8853}
 
+#: A beacon is a scheduled callback: require enough burst gaps to measure a rate
+#: distribution, and require that distribution to be tight (issue #10).
+BEACON_MIN_GAPS = 5
+BEACON_MAX_CV = 0.1
+
 
 class TransportExposureDetector(Detector):
     name: ClassVar[str] = "d2.transport_exposure"
@@ -275,40 +280,28 @@ class TransportExposureDetector(Detector):
         return out
 
     def _beaconing(self, index: CaptureIndex) -> list[Finding]:
-        """Regular inter-arrival times on one flow = scheduled callback."""
-        buckets: dict[str, list[float]] = {}
-        for flow in index.flows.values():
-            if flow.packets < 12 or flow.duration < 30:
-                continue
-            buckets[flow.key] = [flow.first_seen]
+        """Near-constant gaps between bursts on one flow = scheduled callback."""
         out: list[Finding] = []
-        for key in buckets:
-            beacon_flow = index.flows.get(key)
-            if beacon_flow is None or beacon_flow.duration < 60:
+        for flow in index.flows.values():
+            cv = flow.burst_gap_cv
+            if cv is None or flow.burst_count - 1 < BEACON_MIN_GAPS or cv > BEACON_MAX_CV:
                 continue
-            flow = beacon_flow
-            rate = flow.packets / max(flow.duration, 1e-6)
-            if rate > 5 or rate < 0.05:
-                continue
-            jitter_proxy = abs(rate - round(rate, 1))
-            if jitter_proxy > 0.2:
-                continue
+            period = flow.burst_gap_mean
             out.append(
                 self.finding(
                     code="BEACONING_SHAPE",
-                    title=f"Regular traffic on {key} ({rate:.2f} pkt/s for {flow.duration_human})",
+                    title=f"Regular callbacks on {flow.key} (every {period:.1f}s)",
                     severity="medium",
                     confidence="low",
                     summary=(
-                        f"{flow.endpoint_a}:{flow.port_a} <-> {flow.endpoint_b}:{flow.port_b} carried "
-                        f"{flow.packets} packets over {flow.duration_human} at a near-constant rate, which "
-                        "matches implant-style periodic check-ins. Single-flow evidence only; confirm with "
-                        "flow-level timing across the capture."
+                        f"{flow.endpoint_a}:{flow.port_a} <-> {flow.endpoint_b}:{flow.port_b} carried {flow.burst_count} bursts of traffic "
+                        f"{period:.1f}s apart (coefficient of variation {cv:.2f}), which matches implant-style periodic check-ins. "
+                        "Timing alone cannot tell a beacon from a scheduled job; confirm against known schedules."
                     ),
-                    scope=f"{key}|beacon",
-                    flow_key=key,
+                    scope=f"{flow.key}|beacon",
+                    flow_key=flow.key,
                     subjects=[flow.endpoint_a, flow.endpoint_b],
-                    evidence=[ev(flow.first_frame, "frame.time_epoch", f"{rate:.3f} pkt/s")],
+                    evidence=[ev(flow.first_frame, "frame.time_epoch", f"period {period:.1f}s, cv {cv:.2f}, {flow.burst_count} bursts")],
                     remediation="Correlate the interval with known job schedules; if unexplained, isolate the host.",
                     references=[],
                     tags=["network", "beaconing"],
