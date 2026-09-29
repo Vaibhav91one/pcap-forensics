@@ -412,3 +412,14 @@ def test_beaconing_needs_regular_gaps_not_just_a_low_rate(analyze_capture) -> No
     flow = result.index.flows["udp:10.0.0.10:50000<->203.0.113.5:8443"]
     assert flow.burst_count == 10
     assert abs(flow.burst_gap_mean - 30.0) < 0.01
+
+
+def test_well_known_ports_match_iana() -> None:
+    """Pinned against IANA; a wrong entry mislabels flows and skews odd-port suppression (issue #23)."""
+    from pcapforensics.index import WELL_KNOWN_PORTS
+
+    assert WELL_KNOWN_PORTS[5060] == "sip"
+    assert WELL_KNOWN_PORTS[5222] == "xmpp-client"
+    assert WELL_KNOWN_PORTS[1194] == "openvpn"
+    assert 506 not in WELL_KNOWN_PORTS
+    assert 522 not in WELL_KNOWN_PORTS
