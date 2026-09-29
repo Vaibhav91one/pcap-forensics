@@ -13,7 +13,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.2.0"
+SCHEMA_VERSION = "1.3.0"
 TOOL_VERSION = "0.1.0"
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
@@ -303,6 +303,8 @@ class SshSession(BaseModel):
     ciphers: list[str] = Field(default_factory=list)
     macs: list[str] = Field(default_factory=list)
     compression: list[str] = Field(default_factory=list)
+    #: algorithm name -> KEXINIT frames that offered it
+    offered_in: dict[str, list[int]] = Field(default_factory=dict)
     encrypted: bool = True
 
 
