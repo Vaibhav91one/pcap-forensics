@@ -1,0 +1,28 @@
+# Runs this repository's own action (action.yml) on pull requests that change it, against the test fixtures.
+name: action-selftest
+
+on:
+  pull_request:
+    paths:
+      - action.yml
+      - scripts/pcap-doctor-action.sh
+      - src/**
+      - .github/workflows/action-selftest.yml
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: doctor
+        uses: ./
+        with:
+          captures: "tests/fixtures/*.pcap"
+          fail-on: high
+      - name: The summary lists every fixture
+        run: test "$(grep -c '^| `tests/fixtures/' "${{ steps.doctor.outputs.summary }}")" -eq "$(ls tests/fixtures/*.pcap | wc -l)"
