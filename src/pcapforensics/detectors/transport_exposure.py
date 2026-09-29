@@ -208,31 +208,36 @@ class TransportExposureDetector(Detector):
         for flow in index.flows.values():
             if flow.encrypted or flow.app_proto not in {"ftp", "telnet", "tftp", "ntp", "smtp", "ldap", "mysql", "redis"}:
                 continue
-            for host, port, peer, peer_port in (
-                (flow.endpoint_a, flow.port_a, flow.endpoint_b, flow.port_b),
-                (flow.endpoint_b, flow.port_b, flow.endpoint_a, flow.port_a),
-            ):
-                if port < 1024 or port in ODD_PORT_SKIP or port in WELL_KNOWN_PORTS:
-                    continue
-                out.append(
-                    self.finding(
-                        code="SERVICE_ON_ODD_PORT",
-                        title=f"{flow.app_proto} on non-standard port {port} without TLS",
-                        severity="medium",
-                        confidence="medium",
-                        summary=(
-                            f"{host} is serving {flow.app_proto} on port {port} (peer {peer}:{peer_port}) "
-                            "with no encryption layer detected."
-                        ),
-                        scope=f"{flow.key}|port",
-                        flow_key=flow.key,
-                        subjects=[host],
-                        evidence=[ev(flow.first_frame, "tcp.port", f"{host}:{port}")],
-                        remediation="Confirm the service is intended here; if so, wrap it in TLS and firewall the port.",
-                        references=[],
-                        tags=["network", "exposure"],
-                    )
+            # tftp transfers run on ephemeral ports by design (RFC 1350): its data
+            # connections never indicate a service on an odd port.
+            if flow.app_proto == "tftp":
+                continue
+            if any(p < 1024 or p in ODD_PORT_SKIP or p in WELL_KNOWN_PORTS for p in (flow.port_a, flow.port_b)):
+                continue
+            host, port, peer, peer_port = (
+                (flow.endpoint_a, flow.port_a, flow.endpoint_b, flow.port_b)
+                if flow.port_a <= flow.port_b
+                else (flow.endpoint_b, flow.port_b, flow.endpoint_a, flow.port_a)
+            )
+            out.append(
+                self.finding(
+                    code="SERVICE_ON_ODD_PORT",
+                    title=f"{flow.app_proto} on non-standard port {port} without TLS",
+                    severity="medium",
+                    confidence="low",
+                    summary=(
+                        f"{host} is serving {flow.app_proto} on port {port} (peer {peer}:{peer_port}) "
+                        "with no encryption layer detected."
+                    ),
+                    scope=f"{flow.key}|port",
+                    flow_key=flow.key,
+                    subjects=[host],
+                    evidence=[ev(flow.first_frame, f"{flow.proto}.port", f"{host}:{port}")],
+                    remediation="Confirm the service is intended here; if so, wrap it in TLS and firewall the port.",
+                    references=[],
+                    tags=["network", "exposure"],
                 )
+            )
         return out
 
     def _syn_only(self, index: CaptureIndex) -> list[Finding]:
