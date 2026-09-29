@@ -1,0 +1,22 @@
+{
+  "name": "pcap-doctor",
+  "version": "0.1.0",
+  "description": "Offline pcap/pcapng triage: who talked to whom, what crypto was negotiated, what is weak or leaking. Runs the pcap-doctor Python CLI via uvx or pipx.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Vaibhav91one/pcap-forensics.git"
+  },
+  "bin": {
+    "pcap-doctor": "bin/pcap-doctor.js"
+  },
+  "files": [
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test test/"
+  }
+}
