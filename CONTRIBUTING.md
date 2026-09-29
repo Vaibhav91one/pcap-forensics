@@ -3,6 +3,27 @@
 Thanks for taking a look. This project is opinionated on purpose: a triage tool that hedges
 everywhere is not usable during an incident.
 
+- [How to start](#how-to-start)
+- [The shape of a change](#the-shape-of-a-change)
+- [Setup](#setup)
+- [Submit a pull request](#submit-a-pull-request)
+- [Ground rules](#ground-rules)
+- [Adding a detector](#adding-a-detector)
+- [Changing the schema](#changing-the-schema)
+- [Adding a tshark field](#adding-a-tshark-field)
+- [Regenerating the cipher registry](#regenerating-the-cipher-registry)
+- [Style](#style)
+- [Review checklist](#review-checklist)
+- [Other ways to help](#other-ways-to-help)
+
+## How to start
+
+1. Read [`AGENTS.md`](AGENTS.md) §1-§4: who owns which file, what "done" means, and the honesty rules.
+2. Pick an open [issue](https://github.com/Vaibhav91one/pcap-forensics/issues), or open one first.
+   Say what you saw, the capture or input that reproduces it, and what you expected.
+3. Never attach a real capture to a public issue. Captures carry addresses, hostnames and sometimes
+   credentials; describe the traffic, or build a synthetic fixture that reproduces it.
+
 ## The shape of a change
 
 Work is distributed as issues. One issue = one branch = one PR = one concern. If your change
@@ -30,6 +51,18 @@ make fixtures  # synthetic fixtures
 ```
 
 `make verify` is what CI runs and what a PR must be green against.
+
+## Submit a pull request
+
+1. Branch from `main` as `agent/<issue-number>-<slug>`: one issue, one branch.
+2. Write the test first and watch it fail on the current code; then make the change.
+3. If you add a fixture, generate it with `scripts/make_fixtures.py` and check that it regenerates
+   byte-for-byte.
+4. Run `make verify` and `pf doctor`.
+5. Open the pull request with the template: what you saw, what you changed, what you verified, and
+   what you deliberately did not do. Reference the issue with `Closes #N`.
+6. CI must be green before review. Pull requests are squash-merged one at a time, and the next
+   branch rebases onto the result.
 
 ## Ground rules
 
@@ -93,3 +126,11 @@ Reviewers check, in order:
 4. Does it stay inside the file allowlist on the issue?
 5. Do the tests fail without the change?
 6. `make verify` green.
+
+## Other ways to help
+
+- **Report a false positive or a missed finding.** Describe the traffic and the finding code; a
+  synthetic reproduction is worth more than a paragraph.
+- **Check a tshark release.** Run `make verify` against a new tshark version and report any field
+  drift notes it produces.
+- **Improve the docs.** If a finding's remediation did not tell you what to do, that is a bug.

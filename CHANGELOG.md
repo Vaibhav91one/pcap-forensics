@@ -36,6 +36,14 @@ All notable changes to this project are documented here. The format follows
 - The service field list is shared with the tshark pass; four names that are not tshark fields were removed (#14).
 - `WELL_KNOWN_PORTS`: 506/522/1194 mapped to the wrong service (#23).
 
+### Changed — docs
+
+- README redesigned CLI-first: light/dark logo, badges, a numbered get-started path including a CI
+  gate, a table of contents, exit codes, and a privacy/telemetry section; the documented default
+  output folder is corrected to `<capture>.pf-report/` (#41).
+- CONTRIBUTING gains how-to-start, pull-request and other-ways-to-help sections; a pull request
+  template follows the AGENTS.md contract (#41).
+
 ### Fixed — project
 
 - CI could never pass (non-existent tshark preference, fixture drift check on randomly captured TLS
