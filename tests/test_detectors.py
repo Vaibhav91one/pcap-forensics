@@ -324,6 +324,15 @@ def test_mermaid_blocks_are_balanced(analyze_capture) -> None:
         assert body.strip(), "empty mermaid block"
 
 
+
+def test_empty_media_timeline_is_valid_mermaid() -> None:
+    """A gantt task needs a start and a duration; the empty case must not emit a dateless task (issue #43)."""
+    from pcapforensics.render.mermaid import media_timeline
+
+    block = media_timeline([])
+    assert "gantt" not in block
+    assert "no RTP streams detected" in block
+
 def test_index_artifact_is_the_navigation_page(analyze_capture) -> None:
     result = analyze_capture(fixture("weak_tls.pcap"))
     index = (result.outdir / "index.md").read_text()

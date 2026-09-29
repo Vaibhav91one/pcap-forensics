@@ -104,7 +104,8 @@ def detector_bars(findings: list[Finding]) -> str:
 
 def media_timeline(streams: list[RtpStream], window: float = 30.0) -> str:
     if not streams:
-        return "```mermaid\ngantt\n  title RTP media\n  no RTP streams detected :done\n```"
+        # A gantt task needs a start and a duration, so the empty case is a plain node.
+        return "```mermaid\ngraph LR\n  empty[no RTP streams detected]\n```"
     base = min(s.first_seen for s in streams)
     lines = ["```mermaid", "gantt", "  title RTP media windows (30s buckets)"]
     for stream in sorted(streams, key=lambda s: s.first_seen)[:12]:
