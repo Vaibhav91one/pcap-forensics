@@ -1,0 +1,24 @@
+pcap-forensics
+==============
+
+Third-party material bundled or fetched by this project:
+
+* `src/pcapforensics/data/cipher_names.tsv` and `data/cipher_suites.json`
+  Cipher-suite names and ids are derived from Wireshark's value table
+  (`tshark -G values`). Wireshark is distributed under the GPL-2.0-or-later;
+  the extracted *name/id table* is a factual list of IANA-assigned numbers and
+  names, redistributed here under the terms in LICENSE.
+
+* `captures/*`
+  Sample packet captures from the Wireshark project test suite, fetched by
+  `scripts/fetch_captures.sh`, distributed under the BSD 2-Clause License.
+  See LICENSE.
+
+* Standard references cited in findings
+  RFC 8996, RFC 8999, RFC 7457, RFC 7465, RFC 6194, RFC 5280, RFC 5246,
+  RFC 8446, RFC 4568, RFC 3711, RFC 3261, RFC 5764, RFC 7858, RFC 8484,
+  RFC 9000, RFC 9001, RFC 9147, and CWE entries. These are cited, not copied.
+
+* `tls.handshake.ja3` / `ja3s`
+  Implemented by Wireshark; the fingerprints themselves are computed values,
+  not copied data.
