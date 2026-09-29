@@ -388,12 +388,19 @@ def fixture_syn_scan() -> bytes:
     )
 
 
+def fixture_snmp_creds() -> bytes:
+    """SNMPv2c GetRequest carrying a cleartext community string (issue #1)."""
+    snmp = bytes.fromhex("302c020101040c70662d7333637233742d3766a01902012b020100020100300e300c06082b060102010101000500")
+    return _pcap_header() + _packet(eth_ip_udp(CLIENT, SERVER, 42001, 161, snmp), 1_700_000_600.0)
+
+
 #: Fixtures built from bytes, no external process.
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
     "dns_tunnel.pcap": fixture_dns_tunnel,
     "sip_rtp.pcap": fixture_sip_rtp,
     "syn_scan.pcap": fixture_syn_scan,
+    "snmp_creds.pcap": fixture_snmp_creds,
 }
 
 #: Fixtures captured from a real OpenSSL handshake. Cipher strings are passed to

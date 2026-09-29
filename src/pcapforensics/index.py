@@ -885,7 +885,10 @@ class IndexBuilder:
             if not protocols:
                 continue
             protocol = next(iter(protocols))
-            detail = " | ".join(f"{k}={v}" for k, v in protocols.items())
+            detail = " | ".join(
+                f"{k}=<redacted {len(v)} chars>" if k in REDACTED_SERVICE_FIELDS else f"{k}={v}"
+                for k, v in protocols.items()
+            )
             flow = index.flows.get(key)
             app = flow.app_proto if flow else protocol
             hit = ServiceHit(
@@ -928,6 +931,11 @@ class IndexBuilder:
             findings_by_detector=dict(sorted(det.items())),
             app_protocols=dict(apps.most_common()),
         )
+
+
+#: Service-detail fields that carry credentials in cleartext and must never
+#: reach a report verbatim. Values are replaced with a length-only placeholder.
+REDACTED_SERVICE_FIELDS: frozenset[str] = frozenset({"snmp.community", "redis.command", "mysql.query"})
 
 
 def redact_auth(value: str) -> str:
