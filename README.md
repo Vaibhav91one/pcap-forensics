@@ -171,9 +171,9 @@ graph TB
 | Id | Module | Owns |
 |---|---|---|
 | `d1.tls_cipher` | `detectors/tls_cipher.py` | negotiated version, chosen suite, offered-but-unused weak suites, forward secrecy, certificate expiry/key/signature/self-signed, alerts, truncated handshakes, JA3 fleet clustering |
-| `d2.transport_exposure` | `detectors/transport_exposure.py` | HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/Redis/MySQL/TFTP, leaked credentials, services on odd ports, unanswered-SYN scan shapes, beaconing shape |
+| `d2.transport_exposure` | `detectors/transport_exposure.py` | HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
 | `d3.sip_rtp` | `detectors/sip_rtp.py` | SIP call graph, cleartext REGISTER/INVITE with auth headers, SDP offered without `a=crypto` (no SRTP possible), RTP media in the clear, media volume anomalies |
-| `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers, QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key negotiation |
+| `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers (IPv4 and IPv6), QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key offers, Terrapin exposure (CVE-2023-48795) |
 
 Add one without touching any registry: `pcapforensics/registry.py` discovers every non-underscore
 module in the package.
@@ -341,7 +341,7 @@ Three layers, and the third is the one that matters:
 | File | What it protects |
 |---|---|
 | `tests/test_cipher_registry.py` | all 424 registry entries agree with tshark; tier and forward-secrecy expectations for hand-picked suites; unknown ids fail loudly |
-| `tests/test_tshark_layer.py` | every field and protocol the project needs exists; TLS/DTLS pass field sets stay in sync; cache behaviour; self-healing paths |
+| `tests/test_tshark_layer.py` | every field and protocol the project needs exists (including every service field the index reads); TLS/DTLS pass field sets stay in sync; cache behaviour; self-healing paths |
 | `tests/test_detectors.py` | each synthetic fixture produces exactly the codes it is meant to produce, with frame-numbered evidence, and secrets never leak |
 | `tests/test_corpus.py` | **real captures**: assertions written against `tshark -V` output for the same file, e.g. that `tls12-aes128ccm.pcap` negotiates TLS 1.2 with `0xC0A4` and must *not* be reported as negotiated TLS 1.0 |
 
@@ -386,6 +386,10 @@ Stated plainly, because a triage tool that hides its limits is worse than useles
   odd port is reported as such instead of being silently trusted.
 * **Capture point matters.** This tool sees the traffic it is given. It cannot know what the
   capture point did not record.
+* **Telnet logins are not detected yet.** A Telnet session is reported as cleartext, but typed
+  usernames and passwords need keystroke-stream reassembly (issue #37).
+* **Redis is classified by port only.** tshark has no RESP dissector, so Redis commands are not
+  parsed and cannot be checked for secrets.
 * **JA3 clustering is v1.** It groups by fingerprint, not by a maintained JA3 database.
 
 ---
