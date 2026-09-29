@@ -673,7 +673,7 @@ class IndexBuilder:
                 exch.status = status
             auth = first(row, "http.authorization")
             if auth:
-                scheme = auth.split(None, 1)[0] if " " in auth else auth
+                scheme = auth.split(None, 1)[0] if " " in auth else "unknown"
                 exch.auth_present = True
                 exch.auth_scheme = scheme
                 exch.auth_value_preview = redact_auth(auth)
@@ -957,7 +957,7 @@ REDACTED_SERVICE_FIELDS: frozenset[str] = frozenset({"snmp.community", "redis.co
 def redact_auth(value: str) -> str:
     """Keep the scheme, hide the credential. Never log secrets verbatim."""
     if " " not in value:
-        return value[:12] + "***"
+        return f"<redacted {len(value)} chars>"
     scheme, rest = value.split(None, 1)
     if scheme.lower() == "basic":
         return f"{scheme} <redacted {len(rest)} chars>"

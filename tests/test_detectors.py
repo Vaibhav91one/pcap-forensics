@@ -126,6 +126,16 @@ def test_service_credentials_are_redacted(analyze_capture) -> None:
     assert "redacted" in joined, "the redaction notice is missing"
 
 
+def test_scheme_less_authorization_never_reaches_a_report(analyze_capture) -> None:
+    """A bare token has no scheme to keep; nothing of it may survive, in any case (issue #15)."""
+    result = analyze_capture(fixture("http_bare_token.pcap"))
+    assert "HTTP_CLEARTEXT_AUTH" in codes(result)
+    joined = "".join(path.read_text() for path in result.artifacts).lower()
+    assert "9f8e7d6c5b4a" not in joined, "part of the bare token leaked into a report"
+    assert "pf-tok" not in joined, "the token prefix leaked into a report"
+    assert "redacted" in joined, "the redaction notice is missing"
+
+
 def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> None:
     """The resolver is the side on port 53/853, not the one that sorts last; internal and multicast never count (issue #6)."""
     result = analyze_capture(fixture("dns_external.pcap"))
