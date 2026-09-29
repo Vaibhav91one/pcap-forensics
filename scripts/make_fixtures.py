@@ -432,6 +432,49 @@ def fixture_dns_external() -> bytes:
     return _pcap_header() + b"".join(_packet(p, 1_700_000_700.0 + i * 0.01) for i, p in enumerate(packets))
 
 
+def ssh_kexinit(kex: str, hostkey: str, cipher: str, mac: str) -> bytes:
+    """One SSH binary packet carrying SSH_MSG_KEXINIT (RFC 4253 section 7.1), no encryption yet."""
+
+    def name_list(value: str) -> bytes:
+        return struct.pack("!I", len(value)) + value.encode()
+
+    payload = (
+        b"\x14" + bytes(range(16))
+        + name_list(kex) + name_list(hostkey)
+        + name_list(cipher) + name_list(cipher)
+        + name_list(mac) + name_list(mac)
+        + name_list("none") + name_list("none")
+        + name_list("") + name_list("")
+        + b"\x00" + struct.pack("!I", 0)
+    )
+    padding = 8 - (len(payload) + 5) % 8
+    padding += 8 if padding < 4 else 0
+    return struct.pack("!IB", len(payload) + padding + 1, padding) + payload + b"\x00" * padding
+
+
+def fixture_ssh_weak() -> bytes:
+    """Two SSH handshakes: one offering only legacy algorithms, one offering only modern ones."""
+    sessions = [
+        (43100, "diffie-hellman-group1-sha1", "ssh-dss", "aes128-cbc,chacha20-poly1305@openssh.com", "hmac-md5"),
+        (43200, "curve25519-sha256", "ssh-ed25519", "chacha20-poly1305@openssh.com,aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com"),
+    ]
+    packets = []
+    for sport, kex, hostkey, cipher, mac in sessions:
+        kexinit = ssh_kexinit(kex, hostkey, cipher, mac)
+        packets += [
+            eth_ip_tcp(CLIENT, SERVER, sport, 22, 1, 0, 0x02, b""),
+            eth_ip_tcp(SERVER, CLIENT, 22, sport, 1, 2, 0x12, b""),
+            eth_ip_tcp(CLIENT, SERVER, sport, 22, 2, 2, 0x10, b""),
+            eth_ip_tcp(CLIENT, SERVER, sport, 22, 2, 2, 0x18, b"SSH-2.0-OpenSSH_7.4\r\n"),
+            eth_ip_tcp(SERVER, CLIENT, 22, sport, 2, 23, 0x18, b"SSH-2.0-OpenSSH_7.4\r\n"),
+            eth_ip_tcp(CLIENT, SERVER, sport, 22, 23, 23, 0x18, kexinit),
+            eth_ip_tcp(SERVER, CLIENT, 22, sport, 23, 23 + len(kexinit), 0x18, kexinit),
+        ]
+    return _pcap_header() + b"".join(
+        _packet(p, 1_700_000_800.0 + i * 0.01) for i, p in enumerate(packets)
+    )
+
+
 #: Fixtures built from bytes, no external process.
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
@@ -440,6 +483,7 @@ STATIC_FIXTURES = {
     "syn_scan.pcap": fixture_syn_scan,
     "snmp_creds.pcap": fixture_snmp_creds,
     "dns_external.pcap": fixture_dns_external,
+    "ssh_weak.pcap": fixture_ssh_weak,
 }
 
 #: Fixtures captured from a real OpenSSL handshake. Cipher strings are passed to
