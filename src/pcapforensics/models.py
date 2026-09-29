@@ -7,12 +7,13 @@ added by the core owner only (see AGENTS.md -> "Schema freeze").
 from __future__ import annotations
 
 import hashlib
+import math
 from enum import StrEnum
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.1.0"
+SCHEMA_VERSION = "1.2.0"
 TOOL_VERSION = "0.1.0"
 
 Severity = Literal["critical", "high", "medium", "low", "info"]
@@ -76,6 +77,10 @@ class Flow(BaseModel):
     bytes_a_to_b: int = 0
     first_seen: float = 0.0
     first_frame: int = 0
+    burst_count: int = 0
+    last_burst_start: float = 0.0
+    burst_gap_mean: float = 0.0
+    burst_gap_m2: float = 0.0
     last_seen: float = 0.0
     duration: float = 0.0
     stream_index: int | None = None
@@ -98,6 +103,14 @@ class Flow(BaseModel):
         if self.duration < 3600:
             return f"{self.duration / 60:.1f}m"
         return f"{self.duration / 3600:.1f}h"
+
+    @property
+    def burst_gap_cv(self) -> float | None:
+        """Coefficient of variation of the gaps between bursts; None until there are two gaps."""
+        gaps = self.burst_count - 1
+        if gaps < 2 or self.burst_gap_mean <= 0:
+            return None
+        return math.sqrt(self.burst_gap_m2 / (gaps - 1)) / self.burst_gap_mean
 
     def endpoint_pairs(self) -> list[tuple[str, int, str, int, int, int]]:
         """Return (src, sport, dst, dport, bytes, packets) for both directions."""

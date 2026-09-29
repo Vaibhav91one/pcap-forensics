@@ -152,6 +152,10 @@ WELL_KNOWN_PORTS: dict[int, str] = {
     11211: "memcached",
 }
 
+#: A packet arrives more than this many seconds after the previous packet of the
+#: same flow, it starts a new burst (issue #10).
+BURST_GAP_S = 1.0
+
 GREASE_VALUES: frozenset[int] = frozenset(
     value for value in range(0x10000) if (value & 0x0F0F) == 0x0A0A and (value >> 8) & 0xFF == (value & 0xFF)
 )
@@ -389,6 +393,15 @@ class IndexBuilder:
                 index._flow_by_pair[(eb, ppb)] = key
             flow.packets += 1
             flow.bytes += length
+            if flow.packets == 1:
+                flow.burst_count, flow.last_burst_start = 1, ts
+            elif ts - flow.last_seen > BURST_GAP_S:
+                gap = ts - flow.last_burst_start
+                flow.burst_count += 1
+                flow.last_burst_start = ts
+                delta = gap - flow.burst_gap_mean
+                flow.burst_gap_mean += delta / (flow.burst_count - 1)
+                flow.burst_gap_m2 += delta * (gap - flow.burst_gap_mean)
             flow.last_seen = max(flow.last_seen, ts)
             flow.first_seen = min(flow.first_seen, ts) if flow.first_seen else ts
             if app not in {"tcp", "udp", "ethernet", "unknown"}:
