@@ -8,6 +8,7 @@ detection always does.
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -292,3 +293,19 @@ def test_every_finding_cites_a_real_frame(analyze_capture, pcap) -> None:
         assert finding.evidence, f"{finding.code} has no evidence"
         for item in finding.evidence:
             assert item.frame > 0, f"{finding.code} cites frame {item.frame}"
+
+
+REFERENCE_FORMAT = re.compile(r"^(RFC \d+|CWE-\d+|CVE-\d{4}-\d{4,}|NIST SP .+|OWASP .+|JA3|docs/[\w./-]+\.md)$")
+
+
+@pytest.mark.parametrize(
+    "pcap",
+    sorted(FIXTURES.glob("*.pcap")) + sorted(CAPTURES.glob("*.pcap")) + sorted(CAPTURES.glob("*.pcapng")),
+    ids=lambda p: p.name,
+)
+def test_every_reference_is_well_formed(analyze_capture, pcap) -> None:
+    """A reference must be something a reader can look up (issue #3)."""
+    result = analyze_capture(pcap)
+    for finding in result.report.findings:
+        for ref in finding.references:
+            assert REFERENCE_FORMAT.match(ref), f"{finding.code} cites {ref!r}"

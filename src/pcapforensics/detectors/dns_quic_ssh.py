@@ -164,7 +164,7 @@ class DnsQuicSshDetector(Detector):
                         ev(q.frame, "dns.qry.name", f"{q.qtype} {q.name}") for q in (long_queries or txt)[:5]
                     ],
                     remediation="Inspect the queried names against an allowlist; block direct outbound DNS.",
-                    references=["RFC 8484", "CWE- exfil"],
+                    references=["RFC 8484", "CWE-514"],
                     tags=["dns", "exfiltration", "heuristic"],
                 )
             )
@@ -211,7 +211,7 @@ class DnsQuicSshDetector(Detector):
                     subjects=[host],
                     evidence=[ev(first, "ipv6.dst" if ip.version == 6 else "ip.dst", host)],
                     remediation="Force DNS through the internal resolver; block outbound port 53/853 at the perimeter.",
-                    references=[],
+                    references=["RFC 9076"],
                     tags=["dns", "policy"],
                 )
             )
@@ -287,7 +287,7 @@ class DnsQuicSshDetector(Detector):
                         subjects=subjects,
                         evidence=[ev(session.frame, f"ssh.{kind}_algorithms", ", ".join(hits))],
                         remediation="Restrict Match/HostKeyAlgorithms in sshd_config and client config to modern algorithms.",
-                        references=["PROTOCOL", "CVE-2023-48795"],
+                        references=["RFC 9142", "CVE-2023-48795"],
                         tags=["ssh", "crypto"],
                     )
                 )

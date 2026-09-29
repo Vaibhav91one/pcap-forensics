@@ -115,7 +115,7 @@ class SipRtpDetector(Detector):
                     ]
                     + [ev(auth[0].frame, "sip.authentication_scheme", auth[0].auth_scheme) for _ in auth[:1]],
                     remediation="Move to SIP over TLS (port 5061) or at minimum use TLS for the signalling leg.",
-                    references=["RFC 3261", "RFC 7115", "CWE-319"],
+                    references=["RFC 3261", "RFC 5630", "CWE-319"],
                     tags=["sip", "cleartext"],
                 )
             )

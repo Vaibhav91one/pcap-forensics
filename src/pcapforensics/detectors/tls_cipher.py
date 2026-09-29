@@ -116,7 +116,7 @@ class TlsCipherDetector(Detector):
                         ),
                     ],
                     remediation="Raise the minimum to TLS 1.2 and prefer TLS 1.3; disable SSLv3/TLS1.0/1.1.",
-                    references=["RFC 8999", "RFC 8996", CIPHER_POLICY_DOC],
+                    references=["RFC 8996", "RFC 9325", CIPHER_POLICY_DOC],
                     tags=["tls", "version"],
                 )
             )
@@ -141,7 +141,7 @@ class TlsCipherDetector(Detector):
                     subjects=subjects,
                     evidence=[ev(self._client_hello_frame(session), "tls.record.version", version)],
                     remediation="No action unless the legacy version appears on post-handshake records.",
-                    references=["RFC 8999"],
+                    references=["RFC 8446"],
                     tags=["tls", "version", "legacy"],
                 )
             )
@@ -384,7 +384,7 @@ class TlsCipherDetector(Detector):
                         subjects=subjects,
                         evidence=[ev(cert.frame, "x509af.algorithmId", cert.signature_algorithm_oid)],
                         remediation="Reissue with SHA-256 or stronger signatures.",
-                        references=["RFC 6194", "RFC 8957"],
+                        references=["RFC 6194", "RFC 9155"],
                         tags=["tls", "certificate"],
                     )
                 )
