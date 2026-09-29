@@ -1,5 +1,5 @@
 [project]
-name = "pcap-forensics"
+name = "pcap-doctor"
 version = "0.1.0"
 description = "Offline pcap/pcapng triage: flows, negotiated crypto, weak-cipher and plaintext-exposure detection, Markdown+JSON reports."
 readme = "README.md"
@@ -21,6 +21,7 @@ dev = [
 ]
 
 [project.scripts]
+pcap-doctor = "pcapforensics.cli:app"
 pf = "pcapforensics.cli:app"
 
 [build-system]
