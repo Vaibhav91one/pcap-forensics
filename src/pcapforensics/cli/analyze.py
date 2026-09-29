@@ -8,6 +8,7 @@ from pathlib import Path
 import typer
 
 from ..baseline import load_baseline, new_since, version_drift
+from ..config import load as load_config
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
@@ -43,10 +44,14 @@ def analyze_cmd(
         None, "--baseline", exists=True, dir_okay=False, help="earlier report.json or envelope: report only new findings"
     ),
     sarif_out: Path = typer.Option(None, "--sarif", help="also write the shown findings as SARIF 2.1.0 to this file"),
+    config_path: Path = typer.Option(
+        None, "--config", exists=True, dir_okay=False, help="config file (default: ./pcap-doctor.toml or [tool.pcap-doctor] in ./pyproject.toml)"
+    ),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
+        config = load_config(config_path)
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
@@ -63,6 +68,7 @@ def analyze_cmd(
             min_severity=min_severity,
             categories=tuple(category or ()),
             use_cache=not no_cache,
+            config=config,
         )
     except TsharkMissingError as exc:
         console.print(f"[red]{exc}[/red]")
