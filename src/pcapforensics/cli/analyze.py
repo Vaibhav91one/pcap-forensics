@@ -30,9 +30,10 @@ def analyze_cmd(
         None, "--min-severity", help="drop findings below this severity (critical|high|medium|low|info)"
     ),
     fail_on: str = typer.Option(
-        "none",
+        None,
         "--fail-on",
-        help="exit non-zero when a finding at or above this severity exists (none|critical|high|medium|low|info)",
+        help="exit non-zero when a finding at or above this severity exists (none|critical|high|medium|low|info;"
+        " default: the config's, else none)",
     ),
     no_cache: bool = typer.Option(False, "--no-cache", help="ignore the tshark pass cache"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="suppress the console summary"),
@@ -47,14 +48,18 @@ def analyze_cmd(
     config_path: Path = typer.Option(
         None, "--config", exists=True, dir_okay=False, help="config file (default: ./pcap-doctor.toml or [tool.pcap-doctor] in ./pyproject.toml)"
     ),
+    profile: str = typer.Option(None, "--profile", help="start from a preset (ota); config and flags override it"),
 ) -> None:
     """Analyze a capture and write the four report artifacts."""
     try:
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
-        config = load_config(config_path)
+        config = load_config(config_path, profile=profile)
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
+    # Flags win over the config, which wins over its profile.
+    category = category or list(config.categories)
+    fail_on = fail_on or config.fail_on or "none"
     try:
         baseline = load_baseline(baseline_path) if baseline_path is not None else None
     except (OSError, ValueError) as exc:

@@ -7,7 +7,11 @@
     code = "TLS_CIPHER_WEAK"                 # code / subject / flow_key: fnmatch patterns, all must match
     subject = "10.0.0.20*"
     reason = "legacy appliance, replacement tracked in OPS-12"
+    profile = "ota"                          # start from a preset (see PROFILES); keys above override it
+    categories = ["Crypto", "DNS"]           # same meaning as --category
+    fail_on = "high"                         # same meaning as --fail-on
 
+Command-line flags win over the config, and the config wins over its profile.
 Every suppression is written to the report notes, so nothing disappears silently.
 """
 
@@ -20,11 +24,17 @@ from pathlib import Path
 from typing import Any
 
 from .models import SEVERITY_ORDER, Finding
-from .policy import PolicyError
-from .rules import RULES
+from .policy import SEVERITIES, PolicyError
+from .rules import CATEGORIES, RULES
 
 CONFIG_NAME = "pcap-doctor.toml"
-_KEYS = ("disable", "severity", "allow")
+_KEYS = ("profile", "categories", "fail_on", "disable", "severity", "allow")
+
+#: Presets are config fragments. "ota": firmware/OTA-update traffic, where what matters is whether the image and
+#: its credentials travel protected and are resolved safely; VoIP and network-shape findings are noise there.
+PROFILES: dict[str, dict[str, Any]] = {
+    "ota": {"categories": ["Crypto", "Credentials", "Cleartext", "DNS"], "fail_on": "high"},
+}
 _ALLOW_MATCH = ("code", "subject", "flow_key")
 
 
@@ -50,6 +60,9 @@ class Allow:
 @dataclass(frozen=True)
 class Config:
     source: str | None = None
+    profile: str | None = None
+    categories: tuple[str, ...] = ()
+    fail_on: str | None = None
     disable: frozenset[str] = frozenset()
     severity: dict[str, str] = field(default_factory=dict)
     allow: tuple[Allow, ...] = ()
@@ -61,11 +74,28 @@ def _codes(where: str, codes: list[Any]) -> None:
         raise ConfigError(f"{where}: unknown code(s) {', '.join(unknown)}; see `pcap-doctor rules list`")
 
 
-def parse(data: dict[str, Any], source: str) -> Config:
-    """Validate a `[tool.pcap-doctor]`-shaped table; raise ConfigError naming the bad key or value."""
+def parse(data: dict[str, Any], source: str, profile: str | None = None) -> Config:
+    """Validate a `[tool.pcap-doctor]`-shaped table; raise ConfigError naming the bad key or value.
+
+    `profile` (from `--profile`) replaces the table's own `profile` key; the preset fills keys the table leaves out.
+    """
     unknown = sorted(set(data) - set(_KEYS))
     if unknown:
         raise ConfigError(f"{source}: unknown key(s) {', '.join(unknown)}; valid: {', '.join(_KEYS)}")
+    name = profile or data.get("profile")
+    if name is not None:
+        if name not in PROFILES:
+            raise ConfigError(f"{'--profile' if profile else source}: unknown profile {name}; valid: {', '.join(PROFILES)}")
+        data = {**PROFILES[name], **data}
+    categories = data.get("categories", [])
+    if not isinstance(categories, list):
+        raise ConfigError(f"{source}: categories must be a list")
+    bad_categories = [str(c) for c in categories if c not in CATEGORIES]
+    if bad_categories:
+        raise ConfigError(f"{source}: unknown categories {', '.join(bad_categories)}; valid: {', '.join(CATEGORIES)}")
+    fail_on = data.get("fail_on")
+    if fail_on is not None and fail_on not in ("none", *SEVERITIES):
+        raise ConfigError(f"{source}: fail_on {fail_on} invalid; valid: none, {', '.join(SEVERITIES)}")
     disable = data.get("disable", [])
     if not isinstance(disable, list):
         raise ConfigError(f"{source}: disable must be a list of codes")
@@ -90,10 +120,18 @@ def parse(data: dict[str, Any], source: str) -> Config:
         if not any(k in entry for k in _ALLOW_MATCH):
             raise ConfigError(f"{where}: needs at least one of {', '.join(_ALLOW_MATCH)}")
         allow.append(Allow(**{k: str(v) for k, v in entry.items()}))
-    return Config(source=source, disable=frozenset(disable), severity=dict(severity), allow=tuple(allow))
+    return Config(
+        source=source,
+        profile=name,
+        categories=tuple(categories),
+        fail_on=fail_on,
+        disable=frozenset(disable),
+        severity=dict(severity),
+        allow=tuple(allow),
+    )
 
 
-def load(path: Path | None = None, cwd: Path | None = None) -> Config:
+def load(path: Path | None = None, cwd: Path | None = None, profile: str | None = None) -> Config:
     """Explicit `path`, else `pcap-doctor.toml`, else `[tool.pcap-doctor]` in pyproject.toml, in `cwd`."""
     if path is None:
         here = cwd or Path.cwd()
@@ -101,12 +139,12 @@ def load(path: Path | None = None, cwd: Path | None = None) -> Config:
             if candidate.is_file():
                 table = _read(candidate)
                 if table is not None:
-                    return parse(table, str(candidate))
-        return Config()
+                    return parse(table, str(candidate), profile)
+        return parse({}, f"profile {profile}", profile) if profile else Config()
     table = _read(path)
     if table is None:
         raise ConfigError(f"{path}: no [tool.pcap-doctor] table")
-    return parse(table, str(path))
+    return parse(table, str(path), profile)
 
 
 def _read(path: Path) -> dict[str, Any] | None:
