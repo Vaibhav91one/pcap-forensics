@@ -143,6 +143,26 @@ def test_syn_scan_shape(analyze_capture) -> None:
     assert result.report.stats.flows == 39
 
 
+def test_chacha20_is_not_a_weak_ssh_cipher() -> None:
+    """ChaCha20-Poly1305 is a modern AEAD; only the CBC/RC4-era ciphers are weak (issue #2)."""
+    from pcapforensics.detectors.dns_quic_ssh import WEAK_SSH_CIPHERS, DnsQuicSshDetector
+    from pcapforensics.index import CaptureIndex
+    from pcapforensics.models import CaptureInfo, Flow, SshSession, endpoints_of, flow_key
+
+    assert "chacha20-poly1305@openssh.com" not in WEAK_SSH_CIPHERS
+    info = CaptureInfo(
+        path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
+        packets=2, bytes=0, first_seen=0.0, last_seen=0.0, duration=0.0,
+    )
+    index = CaptureIndex(info)
+    key = flow_key("tcp", "10.0.0.10", 51000, "10.0.0.20", 22)
+    _proto, a, port_a, b, port_b = endpoints_of(key)
+    index.flows[key] = Flow(key=key, proto="tcp", endpoint_a=a, port_a=port_a, endpoint_b=b, port_b=port_b, app_proto="ssh", first_frame=1)
+    index.ssh.append(SshSession(key=key, frame=4, ciphers=["chacha20-poly1305@openssh.com", "aes128-cbc"]))
+    (finding,) = [f for f in DnsQuicSshDetector().detect(index) if f.code == "SSH_WEAK_CIPHER"]
+    assert finding.evidence[0].value == "aes128-cbc"
+
+
 # ---------------------------------------------------------------- D3: voice
 def test_sip_rtp_fixture(analyze_capture) -> None:
     result = analyze_capture(fixture("sip_rtp.pcap"))

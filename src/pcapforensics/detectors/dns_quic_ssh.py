@@ -42,7 +42,6 @@ WEAK_SSH_CIPHERS = {
     "arcfour128",
     "blowfish-cbc",
     "cast128-cbc",
-    "chacha20-poly1305@openssh.com",
 }
 WEAK_SSH_MACS = {
     "hmac-md5",
@@ -262,7 +261,7 @@ class DnsQuicSshDetector(Detector):
             subjects = [flow.endpoint_a, flow.endpoint_b]
             checks: list[tuple[str, list[str], set[str], str]] = [
                 ("kex", session.kex_algorithms, WEAK_SSH_KEX, "key exchange"),
-                ("cipher", session.ciphers, WEAK_SSH_CIPHERS - {"chacha20-poly1305@openssh.com"}, "cipher"),
+                ("cipher", session.ciphers, WEAK_SSH_CIPHERS, "cipher"),
                 ("mac", session.macs, WEAK_SSH_MACS, "MAC"),
                 ("hostkey", session.host_key_algorithms, WEAK_SSH_HOSTKEYS, "host key"),
             ]
