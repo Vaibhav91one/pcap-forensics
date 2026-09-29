@@ -307,7 +307,7 @@ class TransportExposureDetector(Detector):
                     scope=f"{key}|beacon",
                     flow_key=key,
                     subjects=[flow.endpoint_a, flow.endpoint_b],
-                    evidence=[ev(flow.stream_index or 0, "frame.time_epoch", f"{rate:.3f} pkt/s")],
+                    evidence=[ev(flow.first_frame, "frame.time_epoch", f"{rate:.3f} pkt/s")],
                     remediation="Correlate the interval with known job schedules; if unexplained, isolate the host.",
                     references=[],
                     tags=["network", "beaconing"],
