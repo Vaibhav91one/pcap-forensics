@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from conftest import codes, fixture, load_json, requires_tshark
+from conftest import CAPTURES, FIXTURES, codes, fixture, load_json, requires_tshark
 
 pytestmark = requires_tshark
 
@@ -269,3 +269,17 @@ def test_empty_capture_does_not_crash(analyze_capture, tmp_path: Path) -> None:
     assert result.report.stats.packets == 0
     assert result.report.findings == []
     assert (result.outdir / "report.json").exists()
+
+
+@pytest.mark.parametrize(
+    "pcap",
+    sorted(FIXTURES.glob("*.pcap")) + sorted(CAPTURES.glob("*.pcap")) + sorted(CAPTURES.glob("*.pcapng")),
+    ids=lambda p: p.name,
+)
+def test_every_finding_cites_a_real_frame(analyze_capture, pcap) -> None:
+    """Evidence must point at a frame a reader can open in Wireshark (issue #4)."""
+    result = analyze_capture(pcap)
+    for finding in result.report.findings:
+        assert finding.evidence, f"{finding.code} has no evidence"
+        for item in finding.evidence:
+            assert item.frame > 0, f"{finding.code} cites frame {item.frame}"

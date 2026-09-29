@@ -43,7 +43,7 @@ class TemplateDetector(Detector):
                     scope=flow.key,
                     flow_key=flow.key,
                     subjects=[flow.endpoint_a, flow.endpoint_b],
-                    evidence=[ev(flow.stream_index or 0, "frame.protocols", flow.app_proto)],
+                    evidence=[ev(flow.first_frame, "frame.protocols", flow.app_proto)],
                     remediation="Delete this detector once you understand the pattern.",
                     references=["AGENTS.md"],
                     tags=["template"],
