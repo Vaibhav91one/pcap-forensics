@@ -135,6 +135,16 @@ def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> Non
     assert found[("2606:4700:4700::1111",)].evidence[0].frame == 7
 
 
+def test_ssh_weak_algorithms_are_flagged_only_on_the_legacy_session(analyze_capture) -> None:
+    """Legacy KEXINIT raises all four SSH_WEAK_* codes; a modern one raises none (issue #8)."""
+    result = analyze_capture(fixture("ssh_weak.pcap"))
+    ssh = [f for f in result.report.findings if f.code.startswith("SSH_WEAK_")]
+    legacy = {f.code: f for f in ssh if f.flow_key and ":43100<->" in f.flow_key}
+    assert set(legacy) == {"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}
+    assert legacy["SSH_WEAK_CIPHER"].evidence[0].value == "aes128-cbc"
+    assert not [f for f in ssh if f.flow_key and ":43200<->" in f.flow_key], "modern SSH session flagged"
+
+
 def test_syn_scan_shape(analyze_capture) -> None:
     result = analyze_capture(fixture("syn_scan.pcap"))
     assert "SYN_SCAN_SHAPE" in codes(result)
