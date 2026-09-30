@@ -38,9 +38,12 @@ def test_npm_launcher_version_matches_the_python_package() -> None:
     assert package["bin"] == {"pcap-doctor": "bin/pcap-doctor.js"}
 
 
-def test_npm_publishes_after_pypi_with_provenance() -> None:
+def test_npm_publishes_after_pypi_with_trusted_publishing() -> None:
     text = RELEASE.read_text()
     npm_job = text.split("\n  npm:\n", 1)[1]
     assert "needs: pypi" in npm_job
-    assert "npm publish --provenance --access public" in npm_job
+    assert "id-token: write" in npm_job and "npm install -g npm@latest" in npm_job
+    assert "npm publish --access public" in npm_job
+    assert "NPM_TOKEN" not in text and "NODE_AUTH_TOKEN" not in text  # no npm token exists (#93)
+    assert "E404" in npm_job and "already on npm" in npm_job  # first publish is manual; reruns are safe
     assert "npm/package.json" in text.split("\n  pypi:\n", 1)[0]
