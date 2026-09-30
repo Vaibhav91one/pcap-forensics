@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-09-30
+
+White-box firmware testing: decrypt a capture with key material you supply, inventory the keys an
+image ships, and flag a server key that ships in the firmware. Plus cross-platform CI.
+
 ### Added
 
 - **Decrypt your own capture with key material you supply** (authorized white-box testing). `analyze` gains
