@@ -6,18 +6,6 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
-### Added
-
-- `HTTP_CLEARTEXT`: plain HTTP is reported per flow, high when a request path looks like a firmware or
-  package download (so `--profile ota` fails it) and medium otherwise; query strings are never written
-  to a report (#91). A new fixture, `http_cleartext.pcap`, covers it.
-
-### Changed
-
-- The npm launcher is published with npm trusted publishing (OIDC) instead of an `NPM_TOKEN` secret;
-  the release job skips with a notice when the package is not on npm yet (its first publish is
-  manual) or the version is already published (#93).
-
 ## [0.2.0] — 2026-09-30
 
 **pcap-forensics is now pcap-doctor**: one command gives a health score, findings grouped by category,
@@ -27,8 +15,8 @@ explanations, a CI gate on new findings, and a handoff to AI coding agents. `pf`
 ### Added — pcap-doctor
 
 - Distribution and command `pcap-doctor`, `--version`; `npx pcap-doctor` launcher (runs the same
-  version through `uvx` or `pipx`); PyPI release by trusted publishing and npm with provenance
-  (#46, #50, #51).
+  version through `uvx` or `pipx`); PyPI and npm releases by trusted publishing,
+  with no stored token (#46, #50, #51, #93).
 - The CLI is a package of self-registering command modules (#45).
 - A rule catalog with eight categories, `rules list` / `rules explain`, and a doc per finding code
   (#47, #49, #61).
@@ -46,6 +34,15 @@ explanations, a CI gate on new findings, and a handoff to AI coding agents. `pf`
 - `ci install` and a composite GitHub Action that compares each capture with its base-branch copy,
   comments once on the PR and uploads SARIF (#63).
 - `watch -i IFACE`: ring-buffer live capture that prints each finding the first time it appears (#64).
+- `HTTP_CLEARTEXT`: plain HTTP is reported per flow, high when a request path looks like a firmware or
+  package download (so `--profile ota` fails it) and medium otherwise; query strings are never written
+  to a report (#91). A new fixture, `http_cleartext.pcap`, covers it.
+
+### Changed — pcap-doctor
+
+- The npm launcher is published with npm trusted publishing (OIDC) instead of an `NPM_TOKEN` secret;
+  the release job skips with a notice when the package is not on npm yet (its first publish is
+  manual) or the version is already published (#93).
 
 ### Fixed — pcap-doctor
 
