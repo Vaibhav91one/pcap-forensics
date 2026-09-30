@@ -11,6 +11,7 @@ from . import policy
 from .config import Config
 from .config import apply as apply_config
 from .index import CaptureIndex, IndexBuilder
+from .keymaterial import KeyMaterial
 from .models import SEVERITY_ORDER, ArtifactRef, Finding, Report
 from .registry import enabled_detectors
 from .render import markdown
@@ -44,6 +45,7 @@ def analyze(
     use_cache: bool = True,
     config: Config | None = None,
     progress: Callable[[str], None] | None = None,
+    keys: KeyMaterial | None = None,
 ) -> RunResult:
     policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
@@ -51,7 +53,8 @@ def analyze(
     outdir.mkdir(parents=True, exist_ok=True)
 
     runner = TsharkRunner(pcap, use_cache=use_cache)
-    builder = IndexBuilder(runner)
+    decrypt_args = tuple(keys.tshark_args()) if keys is not None and not keys.is_empty() else ()
+    builder = IndexBuilder(runner, decrypt_args=decrypt_args)
     if progress:
         progress("Reading the capture with tshark")
     index = builder.build()

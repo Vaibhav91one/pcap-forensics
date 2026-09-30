@@ -1,0 +1,4 @@
+rsa_kx.pcap / rsa_kx.key are Wireshark's public "rsasnakeoil2" sample (a throwaway Snake Oil test key,
+not a secret): a static-RSA (TLS_RSA_WITH_AES_256_CBC_SHA) HTTPS session that decrypts to plain HTTP with
+rsa_kx.key. Used to prove firmware-key-assisted decryption (issue #115). Source:
+https://gitlab.com/wireshark/wireshark/-/tree/master/test  (captures/rsasnakeoil2.pcap, keys/rsasnakeoil2.key)
