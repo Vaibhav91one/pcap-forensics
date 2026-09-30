@@ -264,8 +264,10 @@ all recorded past traffic on this session.
 
 ## Configuration
 
-pcap-doctor reads `pcap-doctor.toml` in the current directory, else the `[tool.pcap-doctor]` table
-of `pyproject.toml`; `--config FILE` points at another file. Every key is optional.
+pcap-doctor uses the nearest `pcap-doctor.toml`, or `[tool.pcap-doctor]` table in `pyproject.toml`,
+searching from the current directory up to the repository root, so it also applies when you run it from
+a subfolder. `--config FILE` points at another file, and the report notes say which file was used.
+Every key is optional.
 
 | Key | Meaning |
 |---|---|

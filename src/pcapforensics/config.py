@@ -1,4 +1,6 @@
-"""Project config: ``pcap-doctor.toml`` or ``[tool.pcap-doctor]`` in ``pyproject.toml`` (issue #57).
+"""Project config: ``pcap-doctor.toml`` or ``[tool.pcap-doctor]`` in ``pyproject.toml`` (issues #57, #106).
+
+The nearest one wins, searching from the current directory up to the repository root.
 
     disable = ["DNS_CLEARTEXT"]              # codes never reported
     [severity]
@@ -132,19 +134,31 @@ def parse(data: dict[str, Any], source: str, profile: str | None = None) -> Conf
 
 
 def load(path: Path | None = None, cwd: Path | None = None, profile: str | None = None) -> Config:
-    """Explicit `path`, else `pcap-doctor.toml`, else `[tool.pcap-doctor]` in pyproject.toml, in `cwd`."""
+    """Explicit `path`, else the nearest config found walking up from `cwd` (see `discover`)."""
     if path is None:
-        here = cwd or Path.cwd()
-        for candidate in (here / CONFIG_NAME, here / "pyproject.toml"):
-            if candidate.is_file():
-                table = _read(candidate)
-                if table is not None:
-                    return parse(table, str(candidate), profile)
+        found = discover(cwd or Path.cwd())
+        if found is not None:
+            return parse(found[1], str(found[0]), profile)
         return parse({}, f"profile {profile}", profile) if profile else Config()
     table = _read(path)
     if table is None:
         raise ConfigError(f"{path}: no [tool.pcap-doctor] table")
     return parse(table, str(path), profile)
+
+
+def discover(start: Path) -> tuple[Path, dict[str, Any]] | None:
+    """The nearest config walking up from `start`, like git and ruff: at each level `pcap-doctor.toml` wins over
+    `[tool.pcap-doctor]` in pyproject.toml, and a pyproject.toml without that table does not stop the search.
+    The search ends at the repository root (the directory holding .git), so nothing outside the project is used."""
+    for directory in (start, *start.parents):
+        for candidate in (directory / CONFIG_NAME, directory / "pyproject.toml"):
+            if candidate.is_file():
+                table = _read(candidate)
+                if table is not None:
+                    return candidate, table
+        if (directory / ".git").exists():
+            return None
+    return None
 
 
 def _read(path: Path) -> dict[str, Any] | None:
