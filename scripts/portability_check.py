@@ -3,7 +3,9 @@
 
 1. The installed ``pcap-doctor`` runs, ``pcap-doctor doctor`` passes, and every fixture yields exactly the
    finding codes in tests/fixtures/expected_codes.json: the same findings on every OS.
-2. A real clipboard round trip through ``pcapforensics.clipboard.copy``, read back with the OS's own tool.
+2. Every command a person runs works on this OS with its output piped, as in CI or ``> file``: no traceback,
+   no encoding crash (Windows consoles and pipes are not UTF-8 by default).
+3. A real clipboard round trip through ``pcapforensics.clipboard.copy``, read back with the OS's own tool.
 
 Usage: python scripts/portability_check.py [--no-clipboard]
 """
@@ -52,6 +54,36 @@ def check_findings() -> list[str]:
     return problems
 
 
+def check_commands() -> list[str]:
+    """Human-readable output, piped. Exit 0/1 are both fine (1 = the gate); 2 or a traceback is a failure."""
+    problems: list[str] = []
+    fixture = str(FIXTURES / "weak_tls.pcap")
+    with tempfile.TemporaryDirectory() as tmp:
+        report = Path(tmp) / "r"
+        runs = [
+            ("analyze", fixture, "-o", str(report), "--fail-on", "high"),
+            ("analyze", fixture, "-o", str(report), "--verbose", "--sarif", str(Path(tmp) / "s" / "x.sarif")),
+            ("why", "4", "--report", str(report / "report.json")),
+            ("why", "d1.tls_cipher.TLS_CIPHER_WEAK", "--report", str(report / "report.json")),
+            ("rules", "list"),
+            ("rules", "explain", "TLS_CIPHER_WEAK"),
+            ("flows", fixture),
+            ("ciphers", fixture),
+            ("detectors",),
+            ("suites",),
+            ("install", "--dir", str(Path(tmp) / "repo")),
+            ("ci", "install", "--dir", str(Path(tmp) / "repo")),
+        ]
+        for args in runs:
+            run = pcap_doctor(*args)
+            broken = "Traceback" in run.stderr or "UnicodeEncodeError" in run.stderr + run.stdout
+            ok = run.returncode in (0, 1, 2 if args[0] == "why" and args[1] == "4" else 0) and not broken
+            print(f"  {'ok' if ok else 'FAIL':8} pcap-doctor {' '.join(args[:2])} (exit {run.returncode})")
+            if not ok:
+                problems.append(f"pcap-doctor {' '.join(args)}: exit {run.returncode}: {(run.stderr or run.stdout)[-600:]}")
+    return problems
+
+
 def check_clipboard() -> list[str]:
     from pcapforensics.clipboard import OSC52, copy
 
@@ -66,11 +98,13 @@ def check_clipboard() -> list[str]:
         read = ["xclip", "-selection", "clipboard", "-o"]
     back = subprocess.run(read, capture_output=True, text=True, encoding="utf-8", check=False).stdout.rstrip("\r\n")
     print(f"  clipboard via {how}: {'ok' if back == TEXT else 'MISMATCH'}")
-    return [] if back == TEXT else [f"clipboard via {how}: read back {back!r}"]
+    return [] if back == TEXT else [f"clipboard via {how}: read back {ascii(back)}, expected {ascii(TEXT)}"]
 
 
 def main() -> int:
+    sys.stdout.reconfigure(errors="backslashreplace")  # type: ignore[union-attr]  # this script's own prints
     problems = check_findings()
+    problems += check_commands()
     if "--no-clipboard" not in sys.argv:
         problems += check_clipboard()
     for problem in problems:
