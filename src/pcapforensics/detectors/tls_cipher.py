@@ -207,7 +207,7 @@ class TlsCipherDetector(Detector):
                         ),
                     ],
                     remediation=_REMEDIATION.get(suite.deprecation, "Remove this suite from the server cipher list."),
-                    references=["RFC 8996", "RFC 7457", CIPHER_POLICY_DOC],
+                    references=["RFC 8996", "RFC 7457", "RFC 9325", CIPHER_POLICY_DOC],
                     tags=["tls", "cipher", suite.deprecation],
                 )
             ]

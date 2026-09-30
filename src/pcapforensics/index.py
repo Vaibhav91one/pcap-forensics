@@ -306,8 +306,9 @@ class CaptureIndex:
 class IndexBuilder:
     """Turns raw tshark rows into a :class:`CaptureIndex`."""
 
-    def __init__(self, runner: TsharkRunner) -> None:
+    def __init__(self, runner: TsharkRunner, decrypt_args: tuple[str, ...] = ()) -> None:
         self.runner = runner
+        self.decrypt_args = decrypt_args
         self.index: CaptureIndex | None = None
         self._cert_cache: dict[tuple[str, ...], list[CertFacts]] = {}
         self._sdp_media_ports: list[int] = []
@@ -335,7 +336,7 @@ class IndexBuilder:
 
         self._build_flows(index, runner.run("base"))
         self._build_tls(index, runner.run("tls"), runner.run("dtls"))
-        self._build_http(index, runner.run("http"))
+        self._build_http(index, runner.run("http", self.decrypt_args))
         self._build_dns(index, runner.run("dns"))
         self._build_sip(index, runner.run("sip"))
         # SIP runs first so SDP can hand us the media ports for decode-as.
@@ -345,6 +346,13 @@ class IndexBuilder:
         self._build_services(index, runner.run("services"))
         self._build_telnet(index, runner.run("telnet"))
 
+        if self.decrypt_args:
+            tls_keys = {s.key for s in index.tls.values()}
+            decrypted = {e.key for e in index.http if e.key in tls_keys}
+            index.add_note(
+                f"[decrypt] read inner traffic from {len(decrypted)} of {len(index.tls)} TLS session(s) "
+                "with the supplied key material"
+            )
         index.dropped_fields = list(runner.dropped_fields)
         index.pass_stats = {k: dict(v) for k, v in runner.stats.items()}
         if index.dropped_fields:
