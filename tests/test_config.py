@@ -106,3 +106,35 @@ def test_disabled_code_is_gone_from_the_report_and_noted(cli_runner, tmp_path, c
     report = json.loads((tmp_path / "r" / "report.json").read_text())
     assert "TLS_CIPHER_WEAK" not in {f["code"] for f in report["findings"]}
     assert f"[config] disabled 1 finding(s) in {cfg}: TLS_CIPHER_WEAK x1" in report["notes"]
+
+
+def test_config_is_found_from_a_subfolder_up_to_the_repo_root(tmp_path) -> None:
+    """Running from repo/captures/lab must not silently ignore repo/pcap-doctor.toml (#106)."""
+    outside = tmp_path
+    repo = tmp_path / "repo"
+    deep = repo / "captures" / "lab"
+    deep.mkdir(parents=True)
+    (repo / ".git").mkdir()
+    (outside / "pcap-doctor.toml").write_text('disable = ["SYN_SCAN_SHAPE"]\n')  # above the repo: never used
+    assert load(cwd=deep) == Config()
+    (repo / "pcap-doctor.toml").write_text('disable = ["DNS_CLEARTEXT"]\n')
+    found = load(cwd=deep)
+    assert found.disable == {"DNS_CLEARTEXT"} and found.source == str(repo / "pcap-doctor.toml")
+    (repo / "captures" / "pyproject.toml").write_text('[project]\nname = "x"\n')  # no table: keep looking
+    assert load(cwd=deep).disable == {"DNS_CLEARTEXT"}
+    (repo / "captures" / "pcap-doctor.toml").write_text('disable = ["TLS_CIPHER_WEAK"]\n')  # nearer wins
+    assert load(cwd=deep).disable == {"TLS_CIPHER_WEAK"}
+
+
+def test_cli_uses_the_repo_config_from_a_subfolder(cli_runner, tmp_path, monkeypatch) -> None:
+    def boom(*_a, **_k):
+        raise AssertionError("analyze must not run")
+
+    repo = tmp_path / "repo"
+    (repo / "captures").mkdir(parents=True)
+    (repo / ".git").mkdir()
+    (repo / "pcap-doctor.toml").write_text('disable = ["NOPE"]\n')  # invalid: proves the file was read
+    monkeypatch.chdir(repo / "captures")
+    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap")])
+    assert result.exit_code == 2 and "NOPE" in result.output
