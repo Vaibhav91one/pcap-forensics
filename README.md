@@ -625,8 +625,8 @@ pcap-doctor --version
 | `2` | bad input or environment: an unknown option value, config key or code, an unreadable baseline, tshark missing, or `watch` could not capture |
 
 `--fail-on {none,critical,high,medium,low,info}` defaults to the config's `fail_on`, else `none`:
-report, do not fail. The tshark pass cache lives in `PCAP_FORENSICS_CACHE` (default
-`~/.cache/pcap-forensics`) and is keyed by capture SHA-256, tshark version and pass arguments, so
+report, do not fail. The tshark pass cache lives in `PCAP_DOCTOR_CACHE` (default `~/.cache/pcap-doctor`;
+the older `PCAP_FORENSICS_CACHE` still works) and is keyed by capture SHA-256, tshark version and pass arguments, so
 editing a detector never re-runs tshark.
 
 ---

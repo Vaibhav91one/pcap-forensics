@@ -444,8 +444,9 @@ def file_sha256(path: Path, chunk: int = 1 << 20) -> str:
 
 
 def cache_dir() -> Path:
-    env = os.environ.get("PCAP_FORENSICS_CACHE")
-    base = Path(env) if env else Path.home() / ".cache" / "pcap-forensics"
+    """PCAP_DOCTOR_CACHE, else the older PCAP_FORENSICS_CACHE (still honoured), else ~/.cache/pcap-doctor."""
+    env = os.environ.get("PCAP_DOCTOR_CACHE") or os.environ.get("PCAP_FORENSICS_CACHE")
+    base = Path(env) if env else Path.home() / ".cache" / "pcap-doctor"
     base.mkdir(parents=True, exist_ok=True)
     return base
 
