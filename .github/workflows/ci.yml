@@ -42,6 +42,8 @@ jobs:
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xclip xsel xvfb
           PCAP_DOCTOR_REQUIRE_X11=1 xvfb-run -a .venv/bin/python -m pytest -q -o addopts="" tests/test_clipboard.py -k x11
+      - name: Same findings as macOS and Windows, and a clipboard round trip (#108)
+        run: PATH="$PWD/.venv/bin:$PATH" xvfb-run -a .venv/bin/python scripts/portability_check.py
       - name: Reports render end to end
         run: |
           for cap in captures/*.pcap captures/*.pcapng; do
@@ -63,3 +65,32 @@ jobs:
       - name: Launcher tests
         working-directory: npm
         run: npm test
+
+  portability:
+    # pcap-doctor on macOS and Windows: tshark from the OS package manager, the same findings as Linux on
+    # every fixture, a real clipboard round trip, and (macOS) the whole test suite (#108).
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install tshark (macOS)
+        if: runner.os == 'macOS'
+        run: brew install wireshark
+      - name: Install tshark (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install wireshark -y --no-progress
+          "C:\Program Files\Wireshark" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+      - name: Install pcap-doctor
+        run: python -m pip install -e ".[dev]"
+      - name: Same findings as Linux, and a real clipboard round trip
+        run: python scripts/portability_check.py
+      - name: Full test suite (macOS)
+        if: runner.os == 'macOS'
+        run: python -m pytest -q

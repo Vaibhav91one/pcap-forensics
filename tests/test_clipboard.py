@@ -27,7 +27,7 @@ def test_tool_order_follows_the_session() -> None:
     assert names(commands({"WAYLAND_DISPLAY": "wayland-0", "DISPLAY": ":0"}, ALL, "linux"))[:3] == ["wl-copy", "xclip", "xsel"]
     assert commands({"DISPLAY": ":0"}, ALL, "linux")[0] == ["/usr/bin/xclip", "-selection", "clipboard"]
     # Ubuntu over SSH or headless: no display, so no X11/Wayland tool is even tried
-    assert names(commands({}, ALL, "linux")) == ["clip.exe", "clip", "termux-clipboard-set"]
+    assert names(commands({}, ALL, "linux")) == ["powershell.exe", "powershell", "clip.exe", "clip", "termux-clipboard-set"]
     assert commands({"DISPLAY": ":0"}, NONE, "linux") == []  # nothing installed
 
 
@@ -54,6 +54,14 @@ def test_osc52_bytes_plain_and_inside_tmux() -> None:
     assert osc52("héllo 🔐", {}) == f"\x1b]52;c;{payload}\x07".encode()
     wrapped = osc52("héllo 🔐", {"TMUX": "/tmp/tmux-501/default,1,0"})
     assert wrapped.startswith(b"\x1bPtmux;\x1b\x1b]52;c;") and wrapped.endswith(b"\x07\x1b\\")
+
+
+def test_windows_prefers_powershell_and_drops_duplicate_paths() -> None:
+    """clip.exe keeps the byte-order mark in the clipboard (seen on a real Windows runner): PowerShell goes first."""
+    same = lambda name: "C:/Windows/System32/WindowsPowerShell/v1.0/powershell.exe" if name.startswith("powershell") else None  # noqa: E731
+    cmds = commands({}, same, "win32")
+    assert len(cmds) == 1 and cmds[0][-1].endswith("Set-Clipboard -Value ([Console]::In.ReadToEnd())")
+    assert encode_for(cmds[0], "é") == "é".encode()  # UTF-8 on stdin, no byte-order mark
 
 
 def test_windows_clip_gets_utf16_with_a_bom() -> None:

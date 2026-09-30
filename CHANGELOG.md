@@ -6,7 +6,23 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- CI proves pcap-doctor on **Linux, macOS and Windows**:
+  - tshark from each OS's package manager;
+  - the same finding codes on every fixture (`tests/fixtures/expected_codes.json`);
+  - every command run with piped output;
+  - a real clipboard round trip;
+  - the full test suite on macOS (#108).
+- The npm package has a README, and the PyPI page links the repository, issues and changelog. README
+  images and links are absolute, so they work on PyPI and npm (#105).
+
 ### Fixed
+
+- Copy on Windows goes through PowerShell's `Set-Clipboard`. `clip.exe` put an invisible byte-order
+  mark (U+FEFF) at the start of the copied text; a real Windows runner caught it (#108).
+- `pcap-doctor.toml` or `[tool.pcap-doctor]` is found from subfolders, up to the repository root. Before,
+  a run from `captures/` silently ignored the repository's config (#106).
 
 - The interactive text screens scroll. Show findings report, Show fix prompt, the workflow and the
   launch preview used to show only their first lines and looked stuck. Keys: ↑/↓, PgUp/PgDn, Space,

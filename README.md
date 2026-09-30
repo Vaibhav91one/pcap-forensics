@@ -368,8 +368,8 @@ Everything else keeps its exact output.
   **s** saves it. Review's **enter** copies the same report for the selected finding.
 
 **Copying works on any machine.** pcap-doctor uses the clipboard tool that fits the session
-(`pbcopy` on macOS, `wl-copy` under Wayland, `xclip` or `xsel` under X11, `clip.exe` on Windows and
-WSL, `termux-clipboard-set` on Android) and says "copied" only when that tool succeeded. Otherwise
+(`pbcopy` on macOS, `wl-copy` under Wayland, `xclip` or `xsel` under X11, PowerShell's `Set-Clipboard`
+on Windows and WSL with `clip.exe` as a fallback, `termux-clipboard-set` on Android) and says "copied" only when that tool succeeded. Otherwise
 (a stock Ubuntu without `wl-clipboard`/`xclip`, SSH, a headless server) it sends the text with
 **OSC 52**, the terminal's own clipboard, which most modern terminals honour even over SSH, **and** saves
 it next to the report (`findings-report.md`, `fix-prompt.md`), so you always get it.
