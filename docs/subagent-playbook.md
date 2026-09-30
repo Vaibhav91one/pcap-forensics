@@ -72,7 +72,7 @@ Rules that make this safe:
 
 * **Same base commit.** Fan out from the freeze commit, not from `main` HEAD, or agents will
   disagree about which schema they were written against.
-* **No shared cache directory by accident.** Point each agent at its own `PCAP_FORENSICS_CACHE` if
+* **No shared cache directory by accident.** Point each agent at its own `PCAP_DOCTOR_CACHE` if
   they run concurrently on one machine; the cache is content-addressed but concurrent writes are
   not worth reasoning about.
 * **One PR per issue.** If an agent produces two PRs, it did two issues.

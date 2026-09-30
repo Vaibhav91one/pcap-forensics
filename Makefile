@@ -63,4 +63,4 @@ clean: ## Remove caches and reports
 
 distclean: clean ## Also remove the virtualenv and the tshark pass cache
 	rm -rf .venv
-	rm -rf $${PCAP_FORENSICS_CACHE:-$$HOME/.cache/pcap-forensics}
+	rm -rf $${PCAP_DOCTOR_CACHE:-$${PCAP_FORENSICS_CACHE:-$$HOME/.cache/pcap-doctor}}
