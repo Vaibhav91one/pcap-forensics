@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+from pathlib import Path
 
 import pytest
 from rich.console import Console
@@ -52,19 +53,26 @@ REPORT = _report(
 )
 
 
-def _browser(report: Report = REPORT, *, agents=(CLAUDE, CODEX), copy_ok: bool = True, safe: bool = False):
+def _browser(report: Report = REPORT, *, agents=(CLAUDE, CODEX), how: str = "xclip", safe: bool = False):
     copied: list[str] = []
     wrote: list[bool] = []
 
-    def copy(text: str) -> bool:
+    def copy(text: str) -> str:
         copied.append(text)
-        return copy_ok
+        return how
 
     def write() -> str:
         wrote.append(True)
         return "✓ Wrote the workflow"
 
-    return Browser(report, agents=list(agents), copy=copy, write_workflow=write, safe=safe), copied, wrote
+    def save(name: str, text: str) -> Path:
+        saved[name] = text
+        return Path("/r") / name
+
+    saved: dict[str, str] = {}
+    browser = Browser(report, agents=list(agents), copy=copy, write_workflow=write, save=save, safe=safe)
+    browser.saved = saved  # type: ignore[attr-defined]
+    return browser, copied, wrote
 
 
 def _text(browser: Browser) -> str:
@@ -111,16 +119,26 @@ def test_review_groups_by_category_and_tracks_unread() -> None:
     assert "finding 1/3" in _text(browser)
 
 
-def test_enter_in_review_copies_ticket_ready_details() -> None:
+def test_enter_in_review_copies_the_finding_as_a_report() -> None:
     browser, copied, _ = _browser()
     _press(browser, ENTER, ENTER)
-    (details,) = copied
-    assert details.startswith("[HIGH] TLS_CIPHER_WEAK:")
-    assert "Evidence: frame 4 tls.handshake.ciphersuite" in details and "Finding id: d1.tls_cipher.TLS_CIPHER_WEAK." in details
-    assert "✓ Copied finding details" in _text(browser)
-    browser, _, _ = _browser(copy_ok=False)
+    (report,) = copied
+    assert "## 1. [HIGH] TLS_CIPHER_WEAK:" in report and "|---|" not in report  # one finding: no summary table
+    assert "  - frame 4: `tls.handshake.ciphersuite`" in report and "**Finding id:** `d1.tls_cipher.TLS_CIPHER_WEAK." in report
+    assert "✓ Copied the findings report (xclip)" in _text(browser)
+    assert browser.saved == {}  # a confirmed copy writes no file
+
+
+def test_copy_falls_back_to_the_terminal_and_a_file() -> None:
+    browser, _, _ = _browser(how="OSC 52")
     _press(browser, ENTER, ENTER)
-    assert "No clipboard tool" in _text(browser)
+    assert "Sent the findings report to your terminal's clipboard (OSC 52)" in _text(browser)
+    assert "findings-report.md" in browser.saved
+    browser, _, _ = _browser(how="")
+    _press(browser, ENTER, ENTER)
+    text = _text(browser)
+    assert "No clipboard here: saved the findings report to /r/findings-report.md" in text
+    assert "install wl-clipboard or xclip" in text
 
 
 def test_hand_off_one_finding_shows_the_prompt_then_launches() -> None:
@@ -146,15 +164,22 @@ def test_safe_mode_launches_without_bypass_and_hides_the_warning() -> None:
     assert "all 3 finding(s) listed" not in result.argv[1] and "3 finding(s), 3 listed" in result.argv[1]
 
 
-def test_hand_off_without_agents_offers_copy_and_show() -> None:
+def test_hand_off_offers_the_findings_report_and_the_fix_prompt() -> None:
     browser, copied, _ = _browser(agents=())
     _press(browser, DOWN, DOWN, ENTER)
     text = _text(browser)
-    assert "No agent found on PATH" in text and "❯ Copy prompt" in text
-    _press(browser, ENTER)
-    assert FENCE_LABEL in copied[0]
-    _press(browser, DOWN, ENTER)
-    assert "Preview" in _text(browser)
+    assert "No agent found on PATH" in text
+    assert [k for k, _ in browser.choices()] == ["copyreport", "showreport", "copy", "show"]
+    _press(browser, ENTER)  # Copy findings report: every finding, with the summary table
+    assert copied[0].startswith("# Security findings: x.pcap") and "| 3 | Medium | DNS_CLEARTEXT" in copied[0]
+    _press(browser, DOWN, ENTER)  # Show findings report
+    text = _text(browser)
+    assert "Findings report" in text and "# Security findings: x.pcap" in text
+    assert text.rstrip().endswith("c copy · s save · esc back · q quit")
+    _press(browser, "s")
+    assert "✓ Saved the findings report to /r/findings-report.md" in _text(browser)
+    _press(browser, ESC, DOWN, ENTER)  # Copy fix prompt
+    assert FENCE_LABEL in copied[-1]
 
 
 def test_github_actions_asks_then_writes_and_returns_home() -> None:
@@ -187,7 +212,7 @@ def test_no_findings_offers_only_github_actions() -> None:
 def test_browse_loop_launches_after_leaving_the_screen() -> None:
     console = Console(record=True, width=120, force_terminal=False)
     launched: list[list[str]] = []
-    browse(console, REPORT, safe=False, agents=[CLAUDE], copy=lambda t: True,
+    browse(console, REPORT, safe=False, agents=[CLAUDE], copy=lambda t: "xclip",
            run=lambda argv: launched.append(argv) or 0, keys=[DOWN, DOWN, ENTER, ENTER, ENTER], live=False)
     assert launched and launched[0][0] == "claude"
     assert "$ claude --dangerously-skip-permissions <prompt>" in console.export_text()

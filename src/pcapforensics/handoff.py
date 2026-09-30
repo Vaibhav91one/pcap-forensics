@@ -17,6 +17,8 @@ from typing import NamedTuple
 from rich.console import Console
 from rich.markup import escape
 
+from .clipboard import OSC52
+from .clipboard import copy as copy_text
 from .models import SEVERITY_ORDER, Finding, Report
 from .prompts import build_prompt
 
@@ -37,9 +39,6 @@ AGENTS: tuple[Agent, ...] = (
 #: Set inside a coding agent's own shell: Claude Code sets CLAUDECODE, Codex sets CODEX_THREAD_ID (and
 #: CODEX_SANDBOX when sandboxed), Cursor's agent sets CURSOR_SANDBOX. PCAP_DOCTOR_AGENT=1 is the manual switch.
 AGENT_ENV = ("CLAUDECODE", "CODEX_THREAD_ID", "CODEX_SANDBOX", "CURSOR_SANDBOX", "PCAP_DOCTOR_AGENT")
-
-#: First clipboard command found on PATH wins.
-CLIPBOARDS: tuple[tuple[str, ...], ...] = (("pbcopy",), ("wl-copy",), ("xclip", "-selection", "clipboard"), ("clip",))
 
 MENU_SIZE = 9
 
@@ -64,10 +63,6 @@ def detect_agents(which: Which = shutil.which) -> list[Agent]:
 
 def launch_argv(agent: Agent, prompt: str, *, safe: bool) -> list[str]:
     return [agent.binary, *(() if safe else agent.bypass), prompt]
-
-
-def clipboard_argv(which: Which = shutil.which) -> list[str] | None:
-    return next((list(cmd) for cmd in CLIPBOARDS if which(cmd[0])), None)
 
 
 def _ranked(report: Report) -> list[Finding]:
@@ -95,10 +90,6 @@ def _subprocess_run(argv: list[str]) -> int:
     return subprocess.run(argv, check=False).returncode
 
 
-def _copy(argv: list[str], text: str) -> bool:
-    return subprocess.run(argv, input=text, text=True, check=False).returncode == 0
-
-
 def menu(
     console: Console,
     report: Report,
@@ -107,7 +98,7 @@ def menu(
     ask: Ask = _prompt_ask,
     run: Run = _subprocess_run,
     which: Which = shutil.which,
-    copy: Callable[[list[str], str], bool] = _copy,
+    copy: Callable[[str], str] = copy_text,
 ) -> None:
     """Pick a finding, preview its prompt, then launch an agent, copy or print it."""
     findings = _ranked(report)
@@ -124,10 +115,8 @@ def menu(
     console.print(escape(prompt), highlight=False)
     console.rule()
     agents = detect_agents(which)
-    clip = clipboard_argv(which)
     actions = {str(i): a.name for i, a in enumerate(agents, 1)}
-    if clip:
-        actions["c"] = "copy to clipboard"
+    actions["c"] = "copy to clipboard"
     actions["p"] = "print only"
     for key, label in actions.items():
         launch = key.isdigit()
@@ -138,8 +127,14 @@ def menu(
         argv = launch_argv(agents[int(action) - 1], prompt, safe=safe)
         console.print(f"[dim]$ {escape(' '.join(argv[:-1]))} <prompt>[/dim]")
         run(argv)
-    elif action == "c" and clip:
-        console.print("copied" if copy(clip, prompt) else "[red]clipboard command failed; prompt shown above[/red]")
+    elif action == "c":
+        how = copy(prompt)
+        if how and how != OSC52:
+            console.print(f"copied ({how})")
+        elif how == OSC52:
+            console.print("sent to your terminal's clipboard (OSC 52); the prompt is also shown above")
+        else:
+            console.print("[yellow]no clipboard here (install wl-clipboard or xclip); the prompt is shown above[/yellow]")
 
 
 def offer(

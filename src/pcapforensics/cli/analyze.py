@@ -13,8 +13,9 @@ import typer
 from rich.markup import escape
 
 from ..baseline import load_baseline, new_since, version_drift
+from ..clipboard import copy as copy_text
 from ..config import load as load_config
-from ..handoff import _copy, _subprocess_run, clipboard_argv, detect_agents, in_agent, offer, safe_mode
+from ..handoff import _subprocess_run, detect_agents, in_agent, offer, safe_mode
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
@@ -128,11 +129,6 @@ def analyze_cmd(
             console.print(f"  [{style}]{icon}[/{style}] {finding.code}  {escape(finding.title)}", highlight=False)
         if len(ranked) > 20:
             console.print(f"  [dim]… {len(ranked) - 20} more in Review[/dim]")
-        clip = clipboard_argv()
-
-        def copy_text(text: str) -> bool:
-            return clip is not None and _copy(clip, text)
-
         browse(
             console,
             shown,
