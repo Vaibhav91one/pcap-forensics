@@ -38,6 +38,10 @@ jobs:
         run: .venv/bin/mypy
       - name: Tests
         run: .venv/bin/python -m pytest -q
+      - name: Clipboard really copies on Ubuntu (xclip and xsel under Xvfb)
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xclip xsel xvfb
+          PCAP_DOCTOR_REQUIRE_X11=1 xvfb-run -a .venv/bin/python -m pytest -q -o addopts="" tests/test_clipboard.py -k x11
       - name: Reports render end to end
         run: |
           for cap in captures/*.pcap captures/*.pcapng; do

@@ -1,12 +1,13 @@
-"""Machine-readable output built around the report: the JSON envelope and SARIF 2.1.0."""
+"""Output built around the report: the JSON envelope, SARIF 2.1.0 and a Markdown findings report."""
 
 from __future__ import annotations
 
 from collections import Counter
 from typing import Any
 
-from .models import SEVERITY_ORDER, Report
-from .rules import CATEGORIES, RULES, category_of
+from .models import SEVERITY_ORDER, Finding, Report
+from .prompts import clean
+from .rules import CATEGORIES, CATEGORY_IMPACT, RULES, category_of
 from .scoring import score
 
 
@@ -94,3 +95,61 @@ def sarif(report: Report, artifact_uri: str | None = None) -> dict[str, Any]:
             }
         ],
     }
+
+
+REPORT_VALUE_LIMIT = 1000  # longer than the prompt's cap: a report keeps the whole description
+
+
+def _cell(value: str) -> str:
+    """Capture text inside a Markdown table cell: sanitised, and no pipe can split the cell."""
+    return clean(value, limit=REPORT_VALUE_LIMIT).replace("|", "\\|")
+
+
+def findings_report(report: Report, findings: list[Finding] | None = None) -> str:
+    """A security-weakness report in Markdown for a ticket or a pentest write-up (#101).
+
+    `findings` defaults to every finding; worst first. Capture strings are sanitised like the fix prompt:
+    no control characters, no backticks, capped length.
+    """
+    chosen = sorted(findings if findings is not None else report.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9))
+    cap = report.capture
+    value, label = score(report.findings)
+    counts: Counter[str] = Counter(f.severity for f in chosen)
+    by_severity = ", ".join(f"{counts[s]} {s}" for s in SEVERITY_ORDER if counts[s]) or "none"
+    lines = [
+        f"# Security findings: {_cell(cap.name)}",
+        "",
+        f"- **Capture:** `{_cell(cap.name)}` (sha256 `{cap.sha256[:16]}`), {cap.packets:,} packets",
+        f"- **Tool:** pcap-doctor {report.tool_version}, report generated {report.generated_at}",
+        f"- **Score:** {value}/100 ({label}) · **Findings in this report:** {len(chosen)} ({by_severity})",
+        "",
+    ]
+    if len(chosen) > 1:
+        lines += ["| # | Severity | Finding | Affected |", "|---|---|---|---|"]
+        for i, f in enumerate(chosen, 1):
+            lines.append(f"| {i} | {f.severity.title()} | {f.code}: {_cell(f.title)} | {_cell(f.flow_key or ', '.join(f.subjects) or '-')} |")
+        lines.append("")
+    for i, f in enumerate(chosen, 1):
+        category = category_of(f.code)
+        lines += [
+            f"## {i}. [{f.severity.upper()}] {f.code}: {_cell(f.title)}",
+            "",
+            f"- **Category:** {category} · **Severity:** {f.severity} · **Confidence:** {f.confidence}",
+        ]
+        if f.flow_key or f.subjects:
+            affected = f"`{_cell(f.flow_key)}`" if f.flow_key else ""
+            hosts = ", ".join(_cell(s) for s in f.subjects)
+            lines.append(f"- **Affected:** {affected}{' · hosts: ' + hosts if hosts else ''}")
+        lines.append(f"- **Impact:** {CATEGORY_IMPACT[category]}")
+        if f.summary:
+            lines.append(f"- **Description:** {_cell(f.summary)}")
+        if f.evidence:
+            lines.append("- **Evidence:**")
+            lines += [f"  - frame {e.frame}: `{_cell(e.field)}` = `{_cell(e.value)}`" for e in f.evidence]
+        if f.remediation:
+            lines.append(f"- **Remediation:** {_cell(f.remediation)}")
+        if f.references:
+            lines.append(f"- **References:** {', '.join(_cell(r) for r in f.references)}")
+        lines += [f"- **Finding id:** `{f.id}`", ""]
+    lines.append("_A capture without a finding is not proof of safety: pcap-doctor only sees the traffic in this capture._")
+    return "\n".join(lines) + "\n"
