@@ -46,6 +46,7 @@ def analyze(
     config: Config | None = None,
     progress: Callable[[str], None] | None = None,
     keys: KeyMaterial | None = None,
+    firmware_keys: dict[str, str] | None = None,
 ) -> RunResult:
     policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
@@ -58,6 +59,8 @@ def analyze(
     if progress:
         progress("Reading the capture with tshark")
     index = builder.build()
+    if firmware_keys:
+        index.firmware_keys = firmware_keys
 
     detectors = enabled_detectors(include=only)
     findings: list[Finding] = []

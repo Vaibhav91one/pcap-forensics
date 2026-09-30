@@ -243,6 +243,7 @@ class CaptureIndex:
         self.services: list[ServiceHit] = []
         self.telnet_logins: list[TelnetLogin] = []
         self.notes: list[str] = []
+        self.firmware_keys: dict[str, str] = {}  # {cert SPKI fingerprint: firmware path} supplied via --firmware
         self.dropped_fields: list[str] = []
         self.pass_stats: dict[str, dict[str, int | float | str]] = {}
         self._flow_by_pair: dict[tuple[str, int], str] = {}

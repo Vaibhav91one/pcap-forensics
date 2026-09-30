@@ -33,6 +33,7 @@ RULES: dict[str, Rule] = {
         Rule("TLS_CIPHER_WEAK", _TLS, "Crypto", "Weak or prohibited cipher suite negotiated"),
         Rule("TLS_OFFERS_WEAK_CIPHERS", _TLS, "Crypto", "Client offers weak cipher suites"),
         Rule("TLS_NO_FORWARD_SECRECY", _TLS, "Crypto", "No forward secrecy"),
+        Rule("TLS_KEY_IN_FIRMWARE", _TLS, "Crypto", "Server private key ships in the firmware"),
         Rule("TLS_CERT_EXPIRED", _TLS, "Crypto", "Certificate already expired during the capture"),
         Rule("TLS_CERT_EXPIRED_NOW", _TLS, "Crypto", "Certificate has expired since the capture"),
         Rule("TLS_CERT_EXPIRING", _TLS, "Crypto", "Certificate close to expiry"),
