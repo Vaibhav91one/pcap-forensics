@@ -98,7 +98,7 @@ def check_clipboard() -> list[str]:
         read = ["xclip", "-selection", "clipboard", "-o"]
     back = subprocess.run(read, capture_output=True, text=True, encoding="utf-8", check=False).stdout.rstrip("\r\n")
     print(f"  clipboard via {how}: {'ok' if back == TEXT else 'MISMATCH'}")
-    return [] if back == TEXT else [f"clipboard via {how}: read back {ascii(back)}, expected {ascii(TEXT)}"]
+    return [] if back == TEXT else [f"clipboard via {how}: read back {back!a}, expected {TEXT!a}"]
 
 
 def main() -> int:
