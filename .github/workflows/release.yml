@@ -1,7 +1,7 @@
 name: release
 
 # Publishes to PyPI when a version tag is pushed (issue #50), then the npm launcher (issue #51).
-# PyPI uses trusted publishing; npm uses the NPM_TOKEN secret with provenance.
+# Both use trusted publishing (OIDC): no token or secret exists for either registry (#93).
 on:
   push:
     tags: ["v*"]
@@ -53,18 +53,32 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
+      id-token: write # npm trusted publishing: GitHub proves the workflow's identity; provenance is automatic
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           registry-url: https://registry.npmjs.org
+      - name: npm with trusted publishing (needs 11.5.1+)
+        run: npm install -g npm@latest
       - name: Launcher tests
         working-directory: npm
         run: npm test
-      - name: Publish
+      - name: Publish unless the package is new or this version is already on npm
         working-directory: npm
-        run: npm publish --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if ! versions=$(npm view pcap-doctor versions --json 2>&1); then
+            if grep -q E404 <<< "$versions"; then
+              echo "::notice::pcap-doctor is not on npm yet. A trusted publisher can only be added to an existing package: publish it once by hand (cd npm && npm login && npm publish --access public), then add this workflow as its trusted publisher."
+              exit 0
+            fi
+            echo "$versions"
+            exit 1
+          fi
+          if node -e 'process.exit([].concat(JSON.parse(process.argv[1])).includes(process.argv[2]) ? 0 : 1)' "$versions" "$version"; then
+            echo "::notice::pcap-doctor@$version is already on npm; nothing to publish."
+            exit 0
+          fi
+          npm publish --access public

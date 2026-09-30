@@ -12,6 +12,12 @@ All notable changes to this project are documented here. The format follows
   package download (so `--profile ota` fails it) and medium otherwise; query strings are never written
   to a report (#91). A new fixture, `http_cleartext.pcap`, covers it.
 
+### Changed
+
+- The npm launcher is published with npm trusted publishing (OIDC) instead of an `NPM_TOKEN` secret;
+  the release job skips with a notice when the package is not on npm yet (its first publish is
+  manual) or the version is already published (#93).
+
 ## [0.2.0] — 2026-09-30
 
 **pcap-forensics is now pcap-doctor**: one command gives a health score, findings grouped by category,
