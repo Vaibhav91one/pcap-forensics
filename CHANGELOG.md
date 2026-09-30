@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `HTTP_CLEARTEXT`: plain HTTP is reported per flow, high when a request path looks like a firmware or
+  package download (so `--profile ota` fails it) and medium otherwise; query strings are never written
+  to a report (#91). A new fixture, `http_cleartext.pcap`, covers it.
+
 ## [0.2.0] — 2026-09-30
 
 **pcap-forensics is now pcap-doctor**: one command gives a health score, findings grouped by category,

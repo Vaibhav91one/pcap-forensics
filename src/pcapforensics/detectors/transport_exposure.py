@@ -10,7 +10,7 @@ from collections import Counter
 from typing import ClassVar
 
 from ..index import WELL_KNOWN_PORTS, CaptureIndex
-from ..models import Finding, ServiceHit
+from ..models import Finding, HttpExchange, ServiceHit
 from .base import Detector, ev
 
 #: Request methods that normally carry state worth protecting.
@@ -22,6 +22,14 @@ ODD_PORT_SKIP = {80, 443, 8080, 8443, 5060, 5061, 5353, 853, 784, 8853}
 
 #: A beacon is a scheduled callback: require enough burst gaps to measure a rate
 #: distribution, and require that distribution to be tight (issue #10).
+#: A request path that looks like a firmware/package download makes plain HTTP high severity. The HTTP
+#: model has no content type (core schema is frozen), so the path is the signal.
+FIRMWARE_EXTENSIONS = (
+    ".bin", ".img", ".fw", ".hex", ".uf2", ".elf", ".zip", ".tar", ".gz", ".tgz",
+    ".ipk", ".deb", ".rpm", ".apk", ".swu", ".ota", ".pkg", ".upd",
+)
+FIRMWARE_SEGMENTS = ("firmware", "fw", "ota", "update", "updates")
+
 BEACON_MIN_GAPS = 5
 BEACON_MAX_CV = 0.1
 
@@ -32,13 +40,14 @@ class TransportExposureDetector(Detector):
     version: ClassVar[str] = "1"
     category: ClassVar[str] = "cleartext"
     description: ClassVar[str] = (
-        "Finds credentials and sensitive state sent without TLS: HTTP Basic/Digest auth, "
+        "Finds credentials and sensitive state sent without TLS: plain HTTP, HTTP Basic/Digest auth, "
         "insecure cookies, FTP/Telnet/SNMP/LDAP/Redis/MySQL, scan-shaped TCP patterns."
     )
 
     def detect(self, index: CaptureIndex) -> list[Finding]:
         findings: list[Finding] = []
         findings += self._http_auth(index)
+        findings += self._http_cleartext(index)
         findings += self._http_cookies(index)
         findings += self._cleartext_services(index)
         findings += self._service_credentials(index)
@@ -103,6 +112,59 @@ class TransportExposureDetector(Detector):
                     remediation="Terminate TLS, or move to a token scheme; never send Basic over cleartext.",
                     references=["RFC 7617", "CWE-319"],
                     tags=["http", "auth", "cleartext"],
+                )
+            )
+        return out
+
+    def _http_cleartext(self, index: CaptureIndex) -> list[Finding]:
+        """Any HTTP flow without TLS: one finding per flow, high when it carries a firmware-like download."""
+        by_flow: dict[str, list[HttpExchange]] = {}
+        for exch in index.http:
+            flow = index.flows.get(exch.key)
+            if exch.is_encrypted or (flow is not None and flow.encrypted):
+                continue
+            by_flow.setdefault(exch.key, []).append(exch)
+        out: list[Finding] = []
+        for key, exchanges in by_flow.items():
+            requests = [e for e in exchanges if e.method] or exchanges
+            firmware = [e for e in requests if _looks_like_firmware(e.uri)]
+            first = (firmware or requests)[0]
+            what = f"{first.method or 'HTTP'} {first.host or ''}{_path_only(first.uri)}".strip()
+            if firmware:
+                summary = (
+                    f"{what} downloaded what looks like a firmware or package image over plain HTTP "
+                    "(judged from the request path). Anyone on-path can read it or replace it; unless the "
+                    "device verifies a signature on the image, a replaced image is installed."
+                )
+                remediation = (
+                    "Serve updates over HTTPS (TLS 1.2+) with certificate validation, and verify a signature "
+                    "on every image before installing it: transport security alone does not authenticate it."
+                )
+                references = ["CWE-319", "CWE-494"]
+            else:
+                summary = (
+                    f"{len(requests)} HTTP request(s) without TLS, first {what}. Request and response bodies, "
+                    "headers and URLs are readable and modifiable on-path."
+                )
+                remediation = "Serve it over HTTPS (TLS 1.2+) and redirect or refuse plain HTTP."
+                references = ["CWE-319"]
+            out.append(
+                self.finding(
+                    code="HTTP_CLEARTEXT",
+                    title=f"{'Firmware download' if firmware else 'HTTP'} in cleartext on {key}",
+                    severity="high" if firmware else "medium",
+                    confidence="high",
+                    summary=summary,
+                    scope=f"{key}|http",
+                    flow_key=key,
+                    subjects=self._subjects(index, key),
+                    evidence=[
+                        ev(e.frame, "http.request.uri", f"{e.method or '?'} {e.host or ''}{_path_only(e.uri)}")
+                        for e in (firmware + [r for r in requests if r not in firmware])[:5]
+                    ],
+                    remediation=remediation,
+                    references=references,
+                    tags=["http", "cleartext", *(["firmware"] if firmware else [])],
                 )
             )
         return out
@@ -350,3 +412,17 @@ class TransportExposureDetector(Detector):
     def _subjects(index: CaptureIndex, key: str) -> list[str]:
         flow = index.flows.get(key)
         return [flow.endpoint_a, flow.endpoint_b] if flow else []
+
+
+def _path_only(uri: str | None) -> str:
+    """The request path without its query string, which can carry tokens that must never reach a report."""
+    if not uri:
+        return ""
+    path, sep, _ = uri.partition("?")
+    return path + ("?<query removed>" if sep else "")
+
+
+def _looks_like_firmware(uri: str | None) -> bool:
+    path = (uri or "").partition("?")[0].lower()
+    segments = [s for s in path.split("/") if s]
+    return path.endswith(FIRMWARE_EXTENSIONS) or any(s in FIRMWARE_SEGMENTS for s in segments[:-1])
