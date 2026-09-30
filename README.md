@@ -85,12 +85,29 @@ On every pull request that touches a capture, the workflow compares each capture
 the base branch, comments one summary on the PR, uploads SARIF to code scanning, and fails only when
 a **new** finding reaches `--fail-on` (default `high`). See [CI](#ci).
 
-### 5. Fix it with an AI agent
+### 5. Review it, or fix it with an AI agent
 
-After an interactive run, pcap-doctor offers a menu: pick a finding, read the generated fix prompt,
-then launch Claude Code, Codex or Cursor with it, copy it, or print it. Read the
+In a terminal, a scan ends on an interactive screen, for security testers and developers alike:
+
+```text
+  ┌─────┐  68 / 100 Needs work  ·  device-boot.pcap
+  │ o o │  ██████████████████████████████████░░░░░░░░░░░░░░░░
+  │  ▭  │  pcap-doctor 0.2.0 · 1,204 packets, 18 flows, 6 hosts
+  └─────┘
+  Potential score 95 after priority fixes +27
+
+❯ Review 7 finding(s)
+› Add to GitHub Actions (Recommended)
+› Hand off to an agent
+
+↑/↓ move · enter select · q quit
+```
+
+**Review** lists the findings by category and shows the selected one's impact, evidence frames, fix,
+references and rule guide; **enter** copies it as ticket-ready text, **h** hands it to an agent.
+**Hand off** launches Claude Code, Codex or Cursor with a fix prompt, or copies or shows it. Read the
 [AI mode warning](#ai-mode) first: launched agents skip their approval prompts unless you pass
-`--safe`.
+`--safe`. Piped output, files, CI, `--json`, `-q` and `--score` never show these screens.
 
 ```bash
 pcap-doctor install         # teach Claude Code, Cursor and Codex how to use pcap-doctor in this repo
@@ -329,15 +346,20 @@ pcap-doctor analyze head.pcap -o head --baseline base/report.json --sarif head.s
 > and it always shows you the prompt before anything is launched. A fence reduces the risk; it
 > does not remove it. Use `--safe` for captures you did not make yourself.
 
-**The handoff menu.** It appears only after an interactive `analyze`: a terminal on both ends, not
-in CI, and not with `--json`, `-q`, `--score` or `--no-handoff`.
+**The interactive screens.** They appear only after an interactive `analyze`: a terminal on both
+ends, not in CI, not inside an agent, and not with `--json`, `-q`, `--score` or `--no-handoff`.
+Everything else keeps its exact output.
 
-1. Pick one of the worst nine findings.
-2. Read the prompt: tool and capture identity, the rule text, the fenced evidence, and the task (find
-   the configuration or code that produces this traffic, fix it at the source, verify with
-   `--baseline`).
-3. Launch an agent found on `PATH`, copy the prompt (`pbcopy`, `wl-copy`, `xclip` or `clip`), or
-   just print it.
+- **Review** (↑/↓, enter, h, esc, q): findings grouped by category with `×N` per code and unread
+  markers; the selected finding's impact, why, evidence frames, fix, references and rule guide.
+  **Enter** copies it as ticket-ready text (`pbcopy`, `wl-copy`, `xclip` or `clip`).
+- **Hand off to an agent**, for the whole report or, from Review, one finding: pick an agent found on
+  `PATH`, or copy or show the prompt. The prompt carries tool and capture identity, the rule text, the
+  fenced evidence and the task (find the configuration or code that produces this traffic, fix it at
+  the source, verify with `--baseline`). **It is always shown before a launch**, with the
+  skip-approvals warning.
+- **Add to GitHub Actions** writes the same workflow as `pcap-doctor ci install`, at the repository
+  root, after asking.
 
 **Inside an agent.** When pcap-doctor runs inside Claude Code (`CLAUDECODE`), Codex
 (`CODEX_THREAD_ID`, `CODEX_SANDBOX`), Cursor's agent (`CURSOR_SANDBOX`), or with
