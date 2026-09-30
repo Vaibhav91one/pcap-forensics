@@ -22,6 +22,12 @@ All notable changes to this project are documented here. The format follows
 - Each certificate now carries a public-key fingerprint `spki_sha256` (the non-secret
   `sha256(DER public key)[:16]`), so a key seen on the wire can be matched against a private
   key found in firmware. Report schema bumped to **1.5.0** (#119).
+- `analyze --firmware DIR` (repeatable) correlates the capture against an extracted-firmware tree:
+  when a session's server certificate has the same public key as a private key in the image,
+  pcap-doctor reports **`TLS_KEY_IN_FIRMWARE`** (critical) — the key that protects this channel
+  ships in every device, so anyone with the image can passively decrypt and tamper with it. Keys
+  supplied via `--tls-key`/`--keys-from` are correlated too. Only the non-secret SPKI fingerprint
+  and the firmware path appear in the report (#121).
 
 - CI proves pcap-doctor on **Linux, macOS and Windows**:
   - tshark from each OS's package manager;

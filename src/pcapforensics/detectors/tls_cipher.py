@@ -61,6 +61,7 @@ class TlsCipherDetector(Detector):
             findings += self._chosen_cipher(session, subjects)
             findings += self._offered_ciphers(session, subjects)
             findings += self._forward_secrecy(session, subjects)
+            findings += self._key_in_firmware(index, session, subjects)
             findings += self._certificates(session, subjects, index.capture.last_seen)
             findings += self._alerts(session, subjects)
             if session.truncated and flow is not None:
@@ -290,6 +291,51 @@ class TlsCipherDetector(Detector):
                 tags=["tls", "pfs"],
             )
         ]
+
+    def _key_in_firmware(
+        self, index: CaptureIndex, session: TlsSession, subjects: list[str]
+    ) -> list[Finding]:
+        """A session cert whose public key matches a private key found in the supplied firmware.
+
+        Whoever has the image has the key, so they can passively decrypt (and, as a MITM, tamper
+        with) this channel on every device that ships it — forward secrecy or not.
+        """
+        if not index.firmware_keys:
+            return []
+        out: list[Finding] = []
+        for cert in session.certs:
+            fp = cert.spki_sha256
+            if not fp or fp not in index.firmware_keys:
+                continue
+            path = index.firmware_keys[fp]
+            out.append(
+                self.finding(
+                    code="TLS_KEY_IN_FIRMWARE",
+                    title=f"Server key for {session.server} ships in the firmware",
+                    severity="critical",
+                    confidence="high",
+                    summary=(
+                        f"The certificate on {session.key} has public-key fingerprint {fp}, which matches a "
+                        f"private key extracted from the supplied firmware ({path}). Anyone with the firmware "
+                        "image holds this private key and can passively decrypt, and actively tamper with, this "
+                        "channel on every device that ships it — no forward secrecy can help."
+                    ),
+                    scope=f"{session.key}|firmware-key",
+                    flow_key=session.key,
+                    subjects=subjects,
+                    evidence=[
+                        ev(self._server_hello_frame(session), "x509af.subjectPublicKey[spki_sha256]", fp),
+                        ev(self._server_hello_frame(session), "firmware.private_key", path),
+                    ],
+                    remediation=(
+                        "Provision a unique key pair per device (or per fleet) instead of shipping one private "
+                        "key in the image; rotate the exposed key and revoke its certificate."
+                    ),
+                    references=["RFC 8446", CIPHER_POLICY_DOC],
+                    tags=["tls", "firmware", "key-exposure"],
+                )
+            )
+        return out
 
     def _certificates(self, session: TlsSession, subjects: list[str], capture_end: float) -> list[Finding]:
         out: list[Finding] = []
