@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- The interactive text screens scroll. Show findings report, Show fix prompt, the workflow and the
+  launch preview used to show only their first lines and looked stuck. Keys: ↑/↓, PgUp/PgDn, Space,
+  g/Home and G/End. Lines wrap to the terminal, so the key footer always stays visible (#104).
+
 ## [0.4.0] — 2026-09-30
 
 Findings reports for security testers, and copying that works on every machine.

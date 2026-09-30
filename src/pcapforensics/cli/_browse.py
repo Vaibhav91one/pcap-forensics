@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 import sys
+import textwrap
 from collections import Counter
 from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass, field
@@ -32,9 +33,9 @@ from ..scoring import score
 from .ci import WORKFLOW, workflow
 
 UP, DOWN, ENTER, ESC, LEFT, RIGHT = "up", "down", "enter", "esc", "left", "right"
+PGUP, PGDN, HOME, END = "pgup", "pgdn", "home", "end"
 LIST_ROWS = 12
 EVIDENCE_ROWS = 5
-PROMPT_ROWS = 22
 ICON = {"critical": ("✖", "bold red"), "high": ("✖", "red"), "medium": ("⚠", "yellow"), "low": ("•", "cyan"), "info": ("ℹ", "dim")}
 FACE = {"Great": "^ ^", "Good": "• •", "Needs work": "o o", "Critical": "x x"}
 BAR_STYLE = {"Great": "green", "Good": "green", "Needs work": "yellow", "Critical": "red"}
@@ -54,6 +55,7 @@ class Screen:
     finding: Finding | None = None  # hand off / prompt for one finding (None = the whole report)
     agent: Agent | None = None
     text: str = ""  # prompt, findings report or workflow shown on a text screen
+    offset: int = 0  # first visible row of that text (it scrolls, #104)
     what: str = ""  # what that text is, for messages and the saved file's name
 
 
@@ -69,6 +71,8 @@ class Browser:
     stack: list[Screen] = field(default_factory=list)
     read: set[str] = field(default_factory=set)
     flash: str = ""
+    _page: int = 1  # rows of text visible on the last draw (page size for scrolling)
+    _max_offset: int = 0
 
     def __post_init__(self) -> None:
         by_category: dict[str, list[Finding]] = {}
@@ -116,6 +120,8 @@ class Browser:
             return None
         if self.screen.name == "review":
             return self._review_key(key)
+        if self.screen.name in ("text", "confirm") and self._scroll(key):
+            return None
         if self.screen.name == "text":
             if key == "c":
                 self._copy(self.screen.text, self.screen.what)
@@ -130,6 +136,23 @@ class Browser:
         elif key in (ENTER, RIGHT):
             return self._select(items[self.screen.cursor][0])
         return None
+
+    def _scroll(self, key: str) -> bool:
+        """Scroll a text screen; on the confirm screen ↑/↓ stay for the choices. True when the key scrolled."""
+        page = max(1, self._page)
+        text_only = self.screen.name == "text"
+        step = {PGDN: page, " ": page, PGUP: -page, "b": -page}
+        if text_only:
+            step |= {DOWN: 1, "j": 1, UP: -1, "k": -1}
+        if key in (HOME, "g"):
+            self.screen.offset = 0
+        elif key == END:
+            self.screen.offset = self._max_offset
+        elif key in step:
+            self.screen.offset = max(0, min(self._max_offset, self.screen.offset + step[key]))
+        else:
+            return False
+        return True
 
     def _review_key(self, key: str) -> Launch | str | None:
         if key in (UP, "k"):
@@ -203,13 +226,13 @@ class Browser:
         return build_prompt(finding, self.report) if finding else build_report_prompt(self.report)
 
     # -- drawing ------------------------------------------------------------------------------------------
-    def render(self, height: int = 45) -> RenderableType:
+    def render(self, height: int = 45, width: int = 100) -> RenderableType:
         parts: list[RenderableType] = [self.header(compact=self.screen.name != "home")]
         name = self.screen.name
         if name == "review":
             parts += self._review(height)
         elif name in ("text", "confirm"):
-            parts += self._text(height)
+            parts += self._text(height, width)
         else:
             parts += self._menu()
         if self.flash:
@@ -285,16 +308,25 @@ class Browser:
         out.append(Text(f"{unread} unread", style="dim"))
         return out
 
-    def _text(self, height: int) -> list[RenderableType]:
+    def _text(self, height: int, width: int) -> list[RenderableType]:
         s = self.screen
         title = f"Prompt for {s.agent.name}" if s.name == "confirm" and s.agent else s.what.capitalize() or "Preview"
-        lines = s.text.splitlines()
-        rows = max(8, min(PROMPT_ROWS, height - 16))
+        # Wrap to the terminal first so every display row is one screen line: the footer can never be pushed off.
+        wrap = max(20, width - 1)
+        lines = [part for line in s.text.splitlines() for part in (textwrap.wrap(line, wrap, replace_whitespace=False,
+                 drop_whitespace=False, subsequent_indent="  ") or [""])]
+        fixed = 12 + (7 if s.name == "confirm" else 0)  # header, title, rules, position, flash, keys (+ choices)
+        rows = max(5, height - fixed)
+        self._page = rows
+        self._max_offset = max(0, len(lines) - rows)
+        s.offset = min(s.offset, self._max_offset)
         out: list[RenderableType] = [Text(title, style="bold"), Rule(style="dim")]
-        out += [Text(line, style="") for line in lines[:rows]]
-        if len(lines) > rows:
-            out.append(Text(f"… +{len(lines) - rows} lines (c copies, s saves the whole text)", style="dim"))
+        out += [Text(line, style="") for line in lines[s.offset : s.offset + rows]]
         out.append(Rule(style="dim"))
+        if len(lines) > rows:
+            last = min(len(lines), s.offset + rows)
+            where = "top" if s.offset == 0 else "end" if last == len(lines) else f"{round(100 * last / len(lines))}%"
+            out.append(Text(f"lines {s.offset + 1}–{last} of {len(lines)} · {where}", style="dim"))
         if s.name == "confirm":
             if not self.safe:
                 out.append(Text("It will run without asking before commands (--safe keeps approvals).", style="red"))
@@ -305,7 +337,9 @@ class Browser:
         if self.screen.name == "review":
             return "↑/↓ move · enter copy finding · h hand off · esc back · q quit"
         if self.screen.name == "text":
-            return "c copy · s save · esc back · q quit"
+            return "↑/↓ PgUp/PgDn g/End scroll · c copy · s save · esc back · q quit"
+        if self.screen.name == "confirm":
+            return "↑/↓ move · enter select · PgUp/PgDn scroll · esc back · q quit"
         return "↑/↓ move · enter select · esc back · q quit" if self.stack else "↑/↓ move · enter select · q quit"
 
 
@@ -352,8 +386,9 @@ def supported() -> bool:
 
 
 _SEQUENCES = {"\x1b[A": UP, "\x1b[B": DOWN, "\x1b[C": RIGHT, "\x1b[D": LEFT, "\x1bOA": UP, "\x1bOB": DOWN,
-              "\x1bOC": RIGHT, "\x1bOD": LEFT}
-_SINGLE = {"\r": ENTER, "\n": ENTER, "\x1b": ESC, "\x03": "q"}
+              "\x1bOC": RIGHT, "\x1bOD": LEFT, "\x1b[H": HOME, "\x1b[F": END, "\x1bOH": HOME, "\x1bOF": END,
+              "\x1b[5~": PGUP, "\x1b[6~": PGDN, "\x1b[1~": HOME, "\x1b[4~": END, "\x1b[7~": HOME, "\x1b[8~": END}
+_SINGLE = {"\r": ENTER, "\n": ENTER, "\x1b": ESC, "\x03": "q", "G": END}  # G before lower-casing, as in less
 
 
 def split_keys(chunk: str) -> list[str]:
@@ -361,10 +396,11 @@ def split_keys(chunk: str) -> list[str]:
     keys: list[str] = []
     i = 0
     while i < len(chunk):
-        seq = chunk[i : i + 3]
-        if seq in _SEQUENCES:
-            keys.append(_SEQUENCES[seq])
-            i += 3
+        for size in (4, 3):
+            if chunk[i : i + size] in _SEQUENCES:
+                keys.append(_SEQUENCES[chunk[i : i + size]])
+                i += size
+                break
         else:
             keys.append(_SINGLE.get(chunk[i], chunk[i].lower()))
             i += 1
@@ -377,7 +413,7 @@ def read_keys() -> Iterator[str]:
     if sys.platform == "win32":  # pragma: no cover - exercised on Windows only
         import msvcrt
 
-        arrows = {"H": UP, "P": DOWN, "K": LEFT, "M": RIGHT}
+        arrows = {"H": UP, "P": DOWN, "K": LEFT, "M": RIGHT, "I": PGUP, "Q": PGDN, "G": HOME, "O": END}
         while True:
             ch = msvcrt.getwch()
             if ch in ("\x00", "\xe0"):
@@ -445,19 +481,19 @@ def browse(
     result: Launch | str | None = None
     try:
         if live:
-            with Live(browser.render(console.height), console=console, screen=True, auto_refresh=False) as screen:
+            with Live(browser.render(console.height, console.width), console=console, screen=True, auto_refresh=False) as screen:
                 for key in source:
                     result = browser.handle(key)
                     if result is not None:
                         break
-                    screen.update(browser.render(console.height), refresh=True)
+                    screen.update(browser.render(console.height, console.width), refresh=True)
         else:
-            console.print(browser.render(console.height))
+            console.print(browser.render(console.height, console.width))
             for key in source:
                 result = browser.handle(key)
                 if result is not None:
                     break
-                console.print(browser.render(console.height))
+                console.print(browser.render(console.height, console.width))
     except KeyboardInterrupt:
         result = "quit"
     finally:
