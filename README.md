@@ -141,6 +141,7 @@ See [Configuration](#configuration).
 - [Configuration](#configuration)
 - [CI](#ci)
 - [AI mode](#ai-mode)
+- [White-box firmware testing](#white-box-firmware-testing)
 - [Live capture](#live-capture)
 - [Detectors](#detectors)
 - [Architecture](#architecture)
@@ -383,6 +384,44 @@ commands instead of a menu, and never launches anything.
 `.cursor/rules/pcap-doctor.mdc` and a managed block in `AGENTS.md` (Codex), so agents in your repo
 know how to run pcap-doctor and read its output safely. Re-running it is idempotent; `--agent`
 picks one, `--force` overwrites a file you edited.
+
+---
+
+## White-box firmware testing
+
+When you have a device's **firmware** and a capture of its own OTA / management traffic — your own
+devices, or an authorized engagement — pcap-doctor can tie the two together: find the key material
+the image ships, decrypt the channel it protects, and report the consequence.
+
+```bash
+# 1. Inventory the key material an attacker holding the image would have.
+pcap-doctor keys scan ./firmware/extracted/fs
+#    flags weak keys (<=1024-bit RSA), self-signed and expired certs, and — the dangerous one —
+#    a private key whose public half matches a certificate shipped in the same tree.
+
+# 2. Decrypt your own capture with a key you supply (RSA key exchange, no forward secrecy).
+pcap-doctor analyze ota.pcap --tls-key ./firmware/extracted/fs/etc/server.key
+#    or load every PEM private key under a tree:
+pcap-doctor analyze ota.pcap --keys-from ./firmware/extracted/fs
+#    decrypted inner HTTP then flows through every detector, so cleartext creds inside the
+#    management channel surface with the usual redaction. Forward-secret sessions need a key log:
+pcap-doctor analyze ota.pcap --keylog sslkeys.log
+
+# 3. Correlate the capture against the image and report the finding.
+pcap-doctor analyze ota.pcap --firmware ./firmware/extracted/fs
+```
+
+Step 3 fingerprints every private key in the tree and matches it against each session's server
+certificate (by SPKI, `sha256(DER public key)[:16]` — the same fingerprint `keys scan` uses). On a
+match it reports **`TLS_KEY_IN_FIRMWARE`** (critical): the private key that authenticates and
+protects this session ships in the image, so anyone with the firmware can passively decrypt — and,
+as a man-in-the-middle, tamper with — the channel on **every** device that ships it. Forward secrecy
+does not help; the match is on the server's identity key, independent of cipher.
+
+pcap-doctor consumes an **already-extracted** filesystem tree (like `binwalk`'s output); it never
+unpacks an image or runs a device binary. Key material goes straight to tshark and is **never**
+written to any report — only the non-secret SPKI fingerprint and the firmware-relative path appear
+as evidence.
 
 ---
 
