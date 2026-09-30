@@ -1,7 +1,8 @@
 """Copy text to the clipboard on any machine, and never claim a copy that did not happen (issue #101).
 
 Order: a clipboard tool that fits the session (pbcopy on macOS, wl-copy under Wayland, xclip/xsel under X11,
-clip.exe on Windows and WSL, termux-clipboard-set on Android), confirmed by its exit code; otherwise OSC 52,
+PowerShell's Set-Clipboard on Windows and WSL (clip.exe as a fallback), termux-clipboard-set
+on Android), confirmed by its exit code; otherwise OSC 52,
 the terminal's own clipboard escape, which most modern terminals honour even over SSH but which cannot be
 confirmed. Callers save the text to a file whenever no tool confirmed the copy.
 """
@@ -23,6 +24,11 @@ OSC52 = "OSC 52"
 TIMEOUT_SECONDS = 5
 
 
+#: Windows and WSL: PowerShell's Set-Clipboard reads UTF-8 from stdin and stores the text exactly. clip.exe is
+#: only a fallback: it needs UTF-16 with a byte-order mark and then keeps that mark (U+FEFF) in the clipboard.
+POWERSHELL_SET = "[Console]::InputEncoding=[Text.Encoding]::UTF8; Set-Clipboard -Value ([Console]::In.ReadToEnd())"
+
+
 def commands(env: Mapping[str, str], which: Which, platform: str) -> list[list[str]]:
     """Clipboard commands worth trying in this session, best first: installed ones only, run by their resolved path."""
     candidates: list[list[str]] = []
@@ -32,19 +38,21 @@ def commands(env: Mapping[str, str], which: Which, platform: str) -> list[list[s
         candidates.append(["wl-copy"])
     if env.get("DISPLAY"):
         candidates += [["xclip", "-selection", "clipboard"], ["xsel", "--clipboard", "--input"]]
-    candidates += [["clip.exe"], ["clip"], ["termux-clipboard-set"]]  # Windows, WSL, Android
+    powershell = ["-NoProfile", "-NonInteractive", "-Command", POWERSHELL_SET]
+    candidates += [["powershell.exe", *powershell], ["powershell", *powershell]]  # Windows, WSL
+    candidates += [["clip.exe"], ["clip"], ["termux-clipboard-set"]]  # fallbacks; Android
     found: list[list[str]] = []
     for name, *args in candidates:
         path = which(name)
-        if path:
+        if path and path not in (cmd[0] for cmd in found):
             found.append([path, *args])
     return found
 
 
 def encode_for(cmd: list[str], text: str) -> bytes:
-    # clip.exe reads UTF-16LE when the data starts with a byte-order mark; anything else takes UTF-8.
+    # clip.exe reads UTF-16LE when the data starts with a byte-order mark; everything else takes UTF-8.
     if Path(cmd[0]).name.lower() in ("clip", "clip.exe"):
-        return "﻿".encode("utf-16-le") + text.encode("utf-16-le")
+        return "\ufeff".encode("utf-16-le") + text.encode("utf-16-le")
     return text.encode("utf-8")
 
 
