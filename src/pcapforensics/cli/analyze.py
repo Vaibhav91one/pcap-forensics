@@ -16,7 +16,7 @@ from ..baseline import load_baseline, new_since, version_drift
 from ..clipboard import copy as copy_text
 from ..config import load as load_config
 from ..handoff import _subprocess_run, detect_agents, in_agent, offer, safe_mode
-from ..keymaterial import collect
+from ..keymaterial import collect, firmware_key_spkis
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
@@ -66,6 +66,11 @@ def analyze_cmd(
         None, "--keys-from", exists=True, file_okay=False,
         help="load every PEM private key under this extracted-firmware tree",
     ),
+    firmware: list[Path] = typer.Option(
+        None, "--firmware", exists=True, file_okay=False,
+        help="extracted-firmware tree to correlate against: a session whose server key ships here is flagged "
+        "TLS_KEY_IN_FIRMWARE (repeatable)",
+    ),
     keylog: Path = typer.Option(
         None, "--keylog", exists=True, dir_okay=False, envvar="PCAP_DOCTOR_KEYLOG",
         help="TLS key-log file (SSLKEYLOGFILE format) to decrypt forward-secret sessions",
@@ -81,6 +86,11 @@ def analyze_cmd(
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
         config = load_config(config_path, profile=profile)
         keys = collect(tls_key, tls_key_password=tls_key_password, keys_from=keys_from, keylog=keylog, psk=psk)
+        firmware_keys = (
+            firmware_key_spkis(firmware or [], extra_keys=keys.tls_keys)
+            if (firmware or keys.tls_keys)
+            else {}
+        )
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
@@ -113,6 +123,7 @@ def analyze_cmd(
             use_cache=not no_cache,
             config=config,
             keys=keys,
+            firmware_keys=firmware_keys,
             progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
         )
 

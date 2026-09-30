@@ -76,3 +76,28 @@ def private_keys_under(root: Path) -> list[Path]:
         except OSError:
             continue
     return found
+
+
+def firmware_key_spkis(
+    firmware_dirs: Iterable[Path], extra_keys: Iterable[Path] = ()
+) -> dict[str, str]:
+    """Map every firmware private key to its public SPKI fingerprint: ``{spki: display_path}``.
+
+    The fingerprint is the same one a certificate carries, so a match means the private key that
+    protects a session on the wire ships in the firmware. Paths are relative to their tree (or a
+    bare name for an explicit key); the private bytes never leave openssl.
+    """
+    from .certificates import spki_of_private_key
+
+    out: dict[str, str] = {}
+    for root in firmware_dirs:
+        root = Path(root)
+        for key in private_keys_under(root):
+            fp = spki_of_private_key(str(key))
+            if fp:
+                out.setdefault(fp, str(key.relative_to(root)))
+    for key in extra_keys:
+        fp = spki_of_private_key(str(key))
+        if fp:
+            out.setdefault(fp, Path(key).name)
+    return out

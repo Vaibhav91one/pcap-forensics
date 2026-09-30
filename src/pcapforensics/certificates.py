@@ -59,6 +59,31 @@ def spki_sha256(pubkey_der: bytes) -> str:
     return hashlib.sha256(pubkey_der).hexdigest()[:16]
 
 
+def spki_of_private_key(path: str) -> str | None:
+    """Fingerprint the public half of a PEM/DER private key: ``sha256(DER public key)[:16]``.
+
+    The same value `keys scan` and a certificate's :func:`spki_sha256` produce, so a firmware
+    private key can be matched to a certificate seen on the wire. Never reads the private bits
+    into Python; openssl derives the public key and only the public DER is hashed.
+    """
+    ossl = openssl_path()
+    if ossl is None:
+        return None
+    for args in (
+        ["pkey", "-in", path, "-pubout", "-outform", "DER"],
+        ["rsa", "-in", path, "-pubout", "-outform", "DER", "-passin", "pass:"],
+    ):
+        try:
+            proc = subprocess.run(
+                [ossl, *args], capture_output=True, timeout=OPENSSL_TIMEOUT, check=False
+            )
+        except subprocess.SubprocessError:
+            continue
+        if proc.returncode == 0 and proc.stdout:
+            return spki_sha256(proc.stdout)
+    return None
+
+
 def _spki_from_cert_pem(pem: str) -> str | None:
     """PEM certificate -> its public-key SPKI fingerprint, via openssl."""
     path = openssl_path()
