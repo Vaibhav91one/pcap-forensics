@@ -75,3 +75,27 @@ def test_versions_agree() -> None:
     assert pyproject == npm == version("pcap-doctor") == TOOL_VERSION
     assert f"Vaibhav91one/pcap-forensics@v{pyproject}" in (ROOT / "README.md").read_text()
     assert f"## [{pyproject}]" in (ROOT / "CHANGELOG.md").read_text()
+
+
+REPO_LINK = re.compile(
+    r"https://(?:github\.com/Vaibhav91one/pcap-forensics/(?:blob|tree)/main|"
+    r"raw\.githubusercontent\.com/Vaibhav91one/pcap-forensics/main)/([^)\"#\s>]+)"
+)
+
+
+@pytest.mark.parametrize("doc", [ROOT / "README.md", ROOT / "npm" / "README.md"], ids=lambda p: str(p.relative_to(ROOT)))
+def test_readmes_shown_on_pypi_and_npm_use_absolute_links_that_exist(doc: Path) -> None:
+    """PyPI and npm show these files away from the repo: a relative link or image breaks there (#105)."""
+    text = re.sub(r"```.*?```", "", doc.read_text(encoding="utf-8"), flags=re.S)
+    relative = [t for t in LINK.findall(text) + re.findall(r'(?:src|srcset)="([^"]+)"', text)
+                if not re.match(r"[a-z]+:|#", t)]
+    assert relative == []
+    missing = [path for path in REPO_LINK.findall(text) if not (ROOT / path).exists()]
+    assert missing == []
+
+
+def test_package_metadata_links_the_project() -> None:
+    urls = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["urls"]
+    assert {"Homepage", "Repository", "Issues", "Changelog"} <= set(urls)
+    package = json.loads((ROOT / "npm" / "package.json").read_text())
+    assert package["repository"]["url"].endswith("Vaibhav91one/pcap-forensics.git")

@@ -1,13 +1,13 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./docs/assets/logo-light.svg">
-  <img alt="pcap-doctor" src="./docs/assets/logo-light.svg" width="360" height="56">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-light.svg">
+  <img alt="pcap-doctor" src="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-light.svg" width="360" height="56">
 </picture>
 
 [![CI](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml/badge.svg)](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-000000?style=flat&logo=python&logoColor=white)](pyproject.toml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-000000?style=flat&logo=python&logoColor=white)](https://github.com/Vaibhav91one/pcap-forensics/blob/main/pyproject.toml)
 [![tshark](https://img.shields.io/badge/tshark-4.2%20%E2%80%93%204.6-000000?style=flat&logo=wireshark&logoColor=white)](https://www.wireshark.org/docs/man-pages/tshark.html)
-[![License: MIT](https://img.shields.io/badge/license-MIT-000000?style=flat)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-000000?style=flat)](https://github.com/Vaibhav91one/pcap-forensics/blob/main/LICENSE)
 [![Telemetry: none](https://img.shields.io/badge/telemetry-none-000000?style=flat)](#privacy-and-telemetry)
 
 **Hand it a capture. It scores it, tells you who talked to whom, what crypto they negotiated, what is weak or leaking, and how to fix it.**
@@ -570,7 +570,7 @@ entries.
 | `recommended` | TLS 1.3 suites | info |
 | `signalling` | SCSV and other non-cipher values | never reported |
 
-The reasoning lives in [`docs/cipher-policy.md`](docs/cipher-policy.md). Regenerate with
+The reasoning lives in [`docs/cipher-policy.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/cipher-policy.md). Regenerate with
 `make regenerate` (add `--refresh` to re-extract the name table from tshark).
 
 ---
@@ -678,11 +678,11 @@ own GitHub Action against the fixtures whenever the action or the package change
 Issues and pull requests are welcome. Work is organised as **one issue, one branch, one pull
 request**, and every change ships with a fixture and a test that fails without it.
 
-- [`CONTRIBUTING.md`](CONTRIBUTING.md): setup, ground rules and how to submit a pull request
-- [`AGENTS.md`](AGENTS.md): the contract for automated agents working in isolation
-- [`docs/detector-authoring.md`](docs/detector-authoring.md): writing a detector
-- [`docs/subagent-playbook.md`](docs/subagent-playbook.md): running a fleet of agents safely
-- [`CHANGELOG.md`](CHANGELOG.md): what changed and when
+- [`CONTRIBUTING.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/CONTRIBUTING.md): setup, ground rules and how to submit a pull request
+- [`AGENTS.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/AGENTS.md): the contract for automated agents working in isolation
+- [`docs/detector-authoring.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/detector-authoring.md): writing a detector
+- [`docs/subagent-playbook.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/subagent-playbook.md): running a fleet of agents safely
+- [`CHANGELOG.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/CHANGELOG.md): what changed and when
 
 From a clone: `make setup` (uv venv and an editable install with dev extras), then `make verify`.
 The core (`models.py`, `index.py`, `data_ciphers.py`, `tshark.py`) is frozen: a detector that needs
@@ -720,5 +720,5 @@ Stated plainly, because a triage tool that hides its limits is worse than useles
 
 ## License
 
-[MIT](LICENSE). The captures under `captures/` belong to the Wireshark project (BSD-2-Clause) and
+[MIT](https://github.com/Vaibhav91one/pcap-forensics/blob/main/LICENSE). The captures under `captures/` belong to the Wireshark project (BSD-2-Clause) and
 are fetched, not authored.

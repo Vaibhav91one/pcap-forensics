@@ -20,6 +20,13 @@ dev = [
     "scapy>=2.5",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Vaibhav91one/pcap-forensics"
+Repository = "https://github.com/Vaibhav91one/pcap-forensics"
+Issues = "https://github.com/Vaibhav91one/pcap-forensics/issues"
+Changelog = "https://github.com/Vaibhav91one/pcap-forensics/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/Vaibhav91one/pcap-forensics#readme"
+
 [project.scripts]
 pcap-doctor = "pcapforensics.cli:app"
 pf = "pcapforensics.cli:app"
