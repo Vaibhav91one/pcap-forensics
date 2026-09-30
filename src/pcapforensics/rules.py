@@ -69,6 +69,19 @@ RULES: dict[str, Rule] = {
 }
 
 
+#: One line per category: what is at stake, for someone reading a finding (the interactive review, #98).
+CATEGORY_IMPACT: dict[str, str] = {
+    "Crypto": "Anyone who records this traffic can decrypt or alter it, now or later.",
+    "Credentials": "Anyone on the network path can capture these credentials and reuse them.",
+    "Cleartext": "Data, commands and downloads are readable and modifiable on the network path.",
+    "DNS": "Lookups reveal what devices talk to, or DNS is being used to move data covertly.",
+    "SSH & QUIC": "Remote access or transport security can be downgraded or attacked.",
+    "Voice": "Calls and call signalling can be listened to or hijacked.",
+    "Network": "The traffic shape suggests scanning, beaconing, or services exposed where they should not be.",
+    "Other": "A finding the rule catalog does not classify yet.",
+}
+
+
 def category_of(code: str) -> str:
     """User-facing category of a finding code; "Other" for a code missing from the catalog."""
     rule = RULES.get(code)
