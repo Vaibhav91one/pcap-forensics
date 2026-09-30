@@ -99,3 +99,10 @@ def test_package_metadata_links_the_project() -> None:
     assert {"Homepage", "Repository", "Issues", "Changelog"} <= set(urls)
     package = json.loads((ROOT / "npm" / "package.json").read_text())
     assert package["repository"]["url"].endswith("Vaibhav91one/pcap-forensics.git")
+
+
+def test_every_fixture_has_expected_codes_for_the_portability_check() -> None:
+    """scripts/portability_check.py compares every OS against this file; a new fixture must be added to it (#108)."""
+    expected = json.loads((ROOT / "tests" / "fixtures" / "expected_codes.json").read_text())
+    assert sorted(expected) == sorted(p.name for p in (ROOT / "tests" / "fixtures").glob("*.pcap"))
+    assert all(codes == sorted(set(codes)) for codes in expected.values())
