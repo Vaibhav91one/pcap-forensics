@@ -612,6 +612,7 @@ pcap-doctor rules explain CODE
 pcap-doctor install [--agent claude|cursor|codex]... [--force] [--dir DIR]
 pcap-doctor ci install [--captures GLOBS] [--fail-on LEVEL] [--ref REF] [--force] [--dir DIR]
 pcap-doctor watch -i IFACE [--seconds N] [--files K] [--dir DIR]
+pcap-doctor keys scan DIR [--json] [--out KEYS_DIR]   # inventory key material in an extracted firmware tree
 pcap-doctor flows CAPTURE [--top N]
 pcap-doctor ciphers CAPTURE
 pcap-doctor detectors | suites | doctor | schema
