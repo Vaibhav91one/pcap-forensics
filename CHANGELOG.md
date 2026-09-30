@@ -17,6 +17,11 @@ All notable changes to this project are documented here. The format follows
 - The npm package has a README, and the PyPI page links the repository, issues and changelog. README
   images and links are absolute, so they work on PyPI and npm (#105).
 
+### Changed
+
+- The tshark cache is set with `PCAP_DOCTOR_CACHE` and defaults to `~/.cache/pcap-doctor`; the older
+  `PCAP_FORENSICS_CACHE` is still honoured (#112).
+
 ### Fixed
 
 - Copy on Windows goes through PowerShell's `Set-Clipboard`. `clip.exe` put an invisible byte-order
