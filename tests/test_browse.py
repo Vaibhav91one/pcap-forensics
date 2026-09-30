@@ -149,7 +149,8 @@ def test_hand_off_one_finding_shows_the_prompt_then_launches() -> None:
     assert "Launches with its approval prompts skipped" in text
     assert _press(browser, ENTER) is None  # Claude Code: first the preview
     text = _text(browser)
-    assert "Prompt for Claude Code" in text and FENCE_LABEL in text and "It will run without asking" in text
+    assert "Prompt for Claude Code" in text and "It will run without asking" in text
+    assert FENCE_LABEL in browser.screen.text  # the whole prompt is previewed (scrollable, #104)
     result = _press(browser, ENTER)
     assert isinstance(result, Launch)
     assert result.argv[:2] == ["claude", "--dangerously-skip-permissions"] and "TLS_CIPHER_WEAK" in result.argv[2]
