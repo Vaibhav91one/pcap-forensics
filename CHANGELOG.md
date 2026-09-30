@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-09-30
+
+Findings reports for security testers, and copying that works on every machine.
+
 ### Added
 
 - *Choose how to continue* copies or shows a **findings report**: a security-weakness report in
