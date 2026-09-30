@@ -28,7 +28,7 @@ def cache_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
     path = tmp_path_factory.mktemp("pf-cache")
     import os
 
-    os.environ["PCAP_FORENSICS_CACHE"] = str(path)
+    os.environ["PCAP_DOCTOR_CACHE"] = str(path)  # the new name wins over PCAP_FORENSICS_CACHE
     return path
 
 
