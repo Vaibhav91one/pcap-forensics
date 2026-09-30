@@ -13,6 +13,9 @@ caller keeps the tshark-derived values and records a note -- never a guess.
 
 from __future__ import annotations
 
+import base64
+import binascii
+import hashlib
 import re
 import shutil
 import ssl
@@ -47,6 +50,42 @@ def openssl_path() -> str | None:
     return shutil.which("openssl")
 
 
+def spki_sha256(pubkey_der: bytes) -> str:
+    """Fingerprint a DER SubjectPublicKeyInfo: sha256(DER)[:16].
+
+    Non-secret and identical whether the public key comes from a capture's
+    certificate or a private key found in firmware, so the two can be matched.
+    """
+    return hashlib.sha256(pubkey_der).hexdigest()[:16]
+
+
+def _spki_from_cert_pem(pem: str) -> str | None:
+    """PEM certificate -> its public-key SPKI fingerprint, via openssl."""
+    path = openssl_path()
+    if path is None:
+        return None
+    try:
+        proc = subprocess.run(
+            [path, "x509", "-pubkey", "-noout"],
+            input=pem,
+            capture_output=True,
+            text=True,
+            timeout=OPENSSL_TIMEOUT,
+            check=False,
+        )
+    except subprocess.SubprocessError:
+        return None
+    if proc.returncode != 0:
+        return None
+    body = "".join(
+        line for line in proc.stdout.splitlines() if line and not line.startswith("-----")
+    )
+    try:
+        return spki_sha256(base64.b64decode(body))
+    except (ValueError, binascii.Error):
+        return None
+
+
 @dataclass
 class CertFacts:
     subject: str | None = None
@@ -56,6 +95,7 @@ class CertFacts:
     public_key_bits: int | None = None
     key_algorithm: str | None = None
     key_curve: str | None = None
+    spki_sha256: str | None = None
     signature_algorithm: str | None = None
     san_dns: list[str] = field(default_factory=list)
     is_ca: bool | None = None
@@ -118,7 +158,9 @@ def inspect_der(der: bytes) -> CertFacts:
         return CertFacts(error=f"openssl failed: {exc}")
     if proc.returncode != 0:
         return CertFacts(error=f"openssl exit {proc.returncode}: {proc.stderr.strip()[:120]}")
-    return parse_openssl_text(proc.stdout)
+    facts = parse_openssl_text(proc.stdout)
+    facts.spki_sha256 = _spki_from_cert_pem(pem)
+    return facts
 
 
 def split_certificate_occurrences(values: list[str]) -> list[bytes]:
@@ -175,6 +217,8 @@ def apply_openssl_facts(certs: list[Cert], facts: list[CertFacts]) -> None:
             cert.key_algorithm = fact.key_algorithm
         if fact.key_curve:
             cert.key_curve = fact.key_curve
+        if fact.spki_sha256:
+            cert.spki_sha256 = fact.spki_sha256
         if fact.signature_algorithm:
             cert.signature_algorithm_oid = fact.signature_algorithm
         if fact.san_dns:

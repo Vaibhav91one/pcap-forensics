@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.4.0"
+SCHEMA_VERSION = "1.5.0"
 try:  # one source of truth: the installed distribution (pyproject.toml)
     TOOL_VERSION = version("pcap-doctor")
 except PackageNotFoundError:  # running from a source tree that was never installed
@@ -145,6 +145,7 @@ class Cert(BaseModel):
     public_key_bits: int | None = None
     key_algorithm: str | None = None
     key_curve: str | None = None
+    spki_sha256: str | None = None  # sha256(DER public key)[:16] — non-secret; matches a firmware key's SPKI
     signature_algorithm_oid: str | None = None
     san_dns: list[str] = Field(default_factory=list)
     subject: str | None = None

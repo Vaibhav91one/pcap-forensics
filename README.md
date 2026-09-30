@@ -472,7 +472,7 @@ flowchart TD
 
 Score, categories, the JSON envelope, SARIF and baselines are all computed *around* the report
 from `Finding.code` and the stable `Finding.id`, so `report.json` keeps its own schema
-(`schema_version` 1.4.0). The CLI is a package of self-registering command modules
+(`schema_version` 1.5.0). The CLI is a package of self-registering command modules
 (`cli/<command>.py` with a `register(app)`), so a new command is a new file.
 
 <details>
