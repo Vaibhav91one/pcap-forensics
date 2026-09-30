@@ -1,0 +1,72 @@
+{
+  "beaconing.pcap": [
+    "BEACONING_SHAPE"
+  ],
+  "dns_external.pcap": [
+    "DNS_CLEARTEXT",
+    "DNS_EXTERNAL_RESOLVER"
+  ],
+  "dns_tunnel.pcap": [
+    "DNS_CLEARTEXT",
+    "DNS_TUNNEL_SHAPE"
+  ],
+  "ftp_ldap_creds.pcap": [
+    "CLEARTEXT_CREDENTIAL",
+    "CLEARTEXT_SERVICE"
+  ],
+  "http_bare_token.pcap": [
+    "HTTP_CLEARTEXT",
+    "HTTP_CLEARTEXT_AUTH"
+  ],
+  "http_basic.pcap": [
+    "HTTP_CLEARTEXT",
+    "HTTP_CLEARTEXT_AUTH",
+    "HTTP_COOKIE_NO_SECURE"
+  ],
+  "http_cleartext.pcap": [
+    "HTTP_CLEARTEXT"
+  ],
+  "mixed_ciphers.pcap": [
+    "TLS_LEGACY_RECORD_VERSION",
+    "TLS_OFFERS_WEAK_CIPHERS",
+    "TLS_SELF_SIGNED_CHAIN"
+  ],
+  "no_pfs_tls12.pcap": [
+    "TLS_CIPHER_WEAK",
+    "TLS_LEGACY_RECORD_VERSION",
+    "TLS_NO_FORWARD_SECRECY",
+    "TLS_SELF_SIGNED_CHAIN"
+  ],
+  "sip_rtp.pcap": [
+    "RTP_MEDIA_UNPROTECTED",
+    "SDP_NO_CRYPTO_ATTR",
+    "SIP_CLEARTEXT_SIGNALLING"
+  ],
+  "snmp_creds.pcap": [
+    "CLEARTEXT_CREDENTIAL",
+    "CLEARTEXT_SERVICE"
+  ],
+  "ssh_weak.pcap": [
+    "SSH_TERRAPIN_EXPOSED",
+    "SSH_WEAK_CIPHER",
+    "SSH_WEAK_HOSTKEY",
+    "SSH_WEAK_KEX",
+    "SSH_WEAK_MAC"
+  ],
+  "strong_tls13.pcap": [
+    "TLS_LEGACY_RECORD_VERSION"
+  ],
+  "syn_scan.pcap": [
+    "SYN_SCAN_SHAPE"
+  ],
+  "telnet_login.pcap": [
+    "CLEARTEXT_CREDENTIAL",
+    "CLEARTEXT_SERVICE"
+  ],
+  "weak_tls.pcap": [
+    "TLS_CIPHER_WEAK",
+    "TLS_NO_FORWARD_SECRECY",
+    "TLS_SELF_SIGNED_CHAIN",
+    "TLS_VERSION_DEPRECATED"
+  ]
+}
