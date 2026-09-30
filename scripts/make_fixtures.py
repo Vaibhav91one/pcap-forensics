@@ -282,6 +282,27 @@ def fixture_http_basic() -> bytes:
     )
 
 
+def fixture_http_cleartext() -> bytes:
+    """Plain HTTP without credentials: a firmware download, and an ordinary page whose query holds a token (#91)."""
+    body = b"\x7fELF" + b"\x00" * 60
+    fw_req = b"GET /firmware/v2.1.bin HTTP/1.1\r\nHost: updates.example\r\nUser-Agent: device/1.0\r\n\r\n"
+    fw_resp = (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n"
+        b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+    )
+    page_req = b"GET /status.html?token=pf-q-4a7b1c9d HTTP/1.1\r\nHost: portal.example\r\n\r\n"
+    page_resp = b"HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 2\r\n\r\nok"
+    packets = []
+    for sport, req, resp in ((43000, fw_req, fw_resp), (43001, page_req, page_resp)):
+        packets += [
+            eth_ip_tcp(CLIENT, SERVER, sport, 80, 1, 0, 0x02, b""),
+            eth_ip_tcp(SERVER, CLIENT, 80, sport, 1, 2, 0x12, b""),
+            eth_ip_tcp(CLIENT, SERVER, sport, 80, 2, 2, 0x18, req),
+            eth_ip_tcp(SERVER, CLIENT, 80, sport, 2, 2 + len(req), 0x18, resp),
+        ]
+    return _pcap_header() + b"".join(_packet(p, 1_700_000_300.0 + i * 0.02) for i, p in enumerate(packets))
+
+
 def fixture_http_bare_token() -> bytes:
     """A scheme-less Authorization header (a bare API token) in cleartext HTTP (issue #15)."""
     request = (
@@ -580,6 +601,7 @@ def fixture_beaconing() -> bytes:
 STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
     "http_bare_token.pcap": fixture_http_bare_token,
+    "http_cleartext.pcap": fixture_http_cleartext,
     "ftp_ldap_creds.pcap": fixture_ftp_ldap_creds,
     "telnet_login.pcap": fixture_telnet_login,
     "dns_tunnel.pcap": fixture_dns_tunnel,

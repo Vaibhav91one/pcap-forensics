@@ -46,6 +46,7 @@ RULES: dict[str, Rule] = {
         Rule("CLEARTEXT_CREDENTIAL", _TRANSPORT, "Credentials", "Credential sent in cleartext"),
         Rule("HTTP_BASIC_AUTH", _TRANSPORT, "Credentials", "HTTP Basic authentication"),
         Rule("HTTP_CLEARTEXT_AUTH", _TRANSPORT, "Credentials", "HTTP authentication over cleartext"),
+        Rule("HTTP_CLEARTEXT", _TRANSPORT, "Cleartext", "HTTP (or a firmware download) without TLS"),
         Rule("HTTP_COOKIE_NO_SECURE", _TRANSPORT, "Credentials", "Cookie without the Secure flag"),
         Rule("CLEARTEXT_SERVICE", _TRANSPORT, "Cleartext", "Cleartext service"),
         Rule("SERVICE_ON_ODD_PORT", _TRANSPORT, "Network", "Service on a non-standard port"),

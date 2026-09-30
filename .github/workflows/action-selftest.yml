@@ -23,6 +23,8 @@ jobs:
         uses: ./
         with:
           captures: "tests/fixtures/*.pcap"
-          fail-on: high
+          # This job proves the action runs end to end (install, analysis, comment, SARIF). The gate itself is
+          # tested in tests/test_ci_install.py; gating here would fail every PR that adds a fixture.
+          fail-on: none
       - name: The summary lists every fixture
         run: test "$(grep -c '^| `tests/fixtures/' "${{ steps.doctor.outputs.summary }}")" -eq "$(ls tests/fixtures/*.pcap | wc -l)"
