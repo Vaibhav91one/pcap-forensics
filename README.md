@@ -92,7 +92,7 @@ In a terminal, a scan ends on an interactive screen, for security testers and de
 ```text
   ┌─────┐  68 / 100 Needs work  ·  device-boot.pcap
   │ o o │  ██████████████████████████████████░░░░░░░░░░░░░░░░
-  │  ▭  │  pcap-doctor 0.2.0 · 1,204 packets, 18 flows, 6 hosts
+  │  ▭  │  pcap-doctor 0.3.0 · 1,204 packets, 18 flows, 6 hosts
   └─────┘
   Potential score 95 after priority fixes +27
 
@@ -302,7 +302,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Vaibhav91one/pcap-forensics@v0.2.0
+      - uses: Vaibhav91one/pcap-forensics@v0.3.0
         with:
           captures: "**/*.pcap **/*.pcapng"
           fail-on: high
