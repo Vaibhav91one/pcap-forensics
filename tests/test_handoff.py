@@ -9,7 +9,6 @@ from pcapforensics.cli import app
 from pcapforensics.handoff import (
     AGENT_ENV,
     AGENTS,
-    clipboard_argv,
     detect_agents,
     in_agent,
     launch_argv,
@@ -68,8 +67,6 @@ def test_launch_argv_per_agent_and_safe_mode() -> None:
 
 def test_detection_of_agents_clipboard_and_agent_shells() -> None:
     assert detect_agents(lambda b: b if b in ("codex", "cursor-agent") else None) == [CODEX, CURSOR]
-    assert clipboard_argv(lambda b: b if b in ("xclip", "clip") else None) == ["xclip", "-selection", "clipboard"]
-    assert clipboard_argv(lambda b: None) is None
     assert not in_agent({})
     assert all(in_agent({name: "1"}) for name in AGENT_ENV)
 
@@ -99,7 +96,7 @@ def test_menu_previews_the_prompt_then_launches_the_chosen_agent() -> None:
     (argv,) = launched
     assert argv[:2] == ["codex", "--dangerously-bypass-approvals-and-sandbox"]
     assert "TLS_CIPHER_WEAK" in argv[2] and FENCE_LABEL in argv[2]  # finding 1 is the worst one
-    assert asked[1][1] == ["1", "2", "p"]
+    assert asked[1][1] == ["1", "2", "c", "p"]  # copy always has a fallback (#101)
     text = console.export_text()
     assert "  1. high     TLS_CIPHER_WEAK  TLS_CIPHER_WEAK title" in text
     assert text.index("prompt preview") < text.index("launch Codex")
@@ -110,11 +107,11 @@ def test_menu_skip_copy_and_safe_launch() -> None:
     ask, _ = _asker("q")
     menu(_console(), _report(), safe=False, ask=ask, run=_no_menu, which=lambda b: b)
 
-    copied: list[tuple[list[str], str]] = []
+    copied: list[str] = []
     ask, _ = _asker("2", "c")
     menu(_console(), _report(), safe=False, ask=ask, run=_no_menu,
-         which=lambda b: b if b == "pbcopy" else None, copy=lambda argv, text: copied.append((argv, text)) or True)
-    assert copied[0][0] == ["pbcopy"] and "TLS_CERT_EXPIRING" in copied[0][1]
+         which=lambda b: None, copy=lambda text: copied.append(text) or "pbcopy")
+    assert "TLS_CERT_EXPIRING" in copied[0]
 
     launched: list[list[str]] = []
     ask, _ = _asker("1", "1")

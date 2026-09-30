@@ -22,9 +22,9 @@ def rule_text(code: str) -> str:
     return doc.read_text(encoding="utf-8").strip() if doc.is_file() else f"No rule text for {code}."
 
 
-def clean(value: str) -> str:
+def clean(value: str, limit: int = MAX_VALUE) -> str:
     """Capture text is attacker-controlled: no control or invisible/bidi characters, no backticks, capped length."""
-    return _CONTROL.sub(" ", value).replace("`", "'")[:MAX_VALUE]
+    return _CONTROL.sub(" ", value).replace("`", "'")[:limit]
 
 
 def build_prompt(finding: Finding, report: Report) -> str:

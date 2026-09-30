@@ -2,8 +2,8 @@
 
 Home: score header, then Review findings · Add to GitHub Actions · Hand off to an agent (arrow keys).
 Review: findings grouped by category with the selected one's impact, evidence, fix and rule guide below;
-enter copies its details for a ticket, h hands it to an agent. Hand off: an installed agent, or copy/show the
-prompt; a launch always shows the prompt first. Only in a real terminal: pipes, files, CI, --json, -q and
+enter copies it as a findings report, h hands it to an agent. Hand off: an installed agent, or copy/show the
+findings report or the fix prompt; a launch always shows the prompt first. Only in a real terminal: pipes, files, CI, --json, -q and
 --score keep their exact output. The browser is a pure state machine (``handle(key)``/``render()``) so it is
 tested without a terminal; ``browse()`` adds the key reader and the live display.
 """
@@ -22,8 +22,10 @@ from rich.markup import escape
 from rich.rule import Rule
 from rich.text import Text
 
+from ..clipboard import OSC52
 from ..handoff import Agent, launch_argv
 from ..models import SEVERITY_ORDER, Finding, Report
+from ..output import findings_report
 from ..prompts import build_prompt, build_report_prompt
 from ..rules import CATEGORIES, CATEGORY_IMPACT, category_of
 from ..scoring import score
@@ -51,15 +53,17 @@ class Screen:
     cursor: int = 0
     finding: Finding | None = None  # hand off / prompt for one finding (None = the whole report)
     agent: Agent | None = None
-    text: str = ""  # prompt or workflow shown on a text screen
+    text: str = ""  # prompt, findings report or workflow shown on a text screen
+    what: str = ""  # what that text is, for messages and the saved file's name
 
 
 @dataclass
 class Browser:
     report: Report
     agents: list[Agent]
-    copy: Callable[[str], bool]
+    copy: Callable[[str], str]  # returns how it was copied: a tool name, OSC52 or "" (see clipboard.copy)
     write_workflow: Callable[[], str]
+    save: Callable[[str, str], Path]  # (file name, text) -> where it was saved
     safe: bool = False
     screen: Screen = field(default_factory=lambda: Screen("home"))
     stack: list[Screen] = field(default_factory=list)
@@ -86,11 +90,17 @@ class Browser:
                 items.append(("handoff", "Hand off to an agent"))
             return items
         if name == "handoff":
-            return [*((f"agent:{i}", a.name) for i, a in enumerate(self.agents)), ("copy", "Copy prompt"), ("show", "Show prompt")]
+            return [
+                *((f"agent:{i}", a.name) for i, a in enumerate(self.agents)),
+                ("copyreport", "Copy findings report"),
+                ("showreport", "Show findings report"),
+                ("copy", "Copy fix prompt"),
+                ("show", "Show fix prompt"),
+            ]
         if name == "ci":
             return [("write", f"Yes, write {WORKFLOW.as_posix()}"), ("show", "Show the workflow")]
         if name == "confirm":
-            return [("launch", f"Launch {self.screen.agent.name if self.screen.agent else ''}"), ("copy", "Copy prompt instead")]
+            return [("launch", f"Launch {self.screen.agent.name if self.screen.agent else ''}"), ("copy", "Copy fix prompt instead")]
         return []
 
     # -- keys ---------------------------------------------------------------------------------------------
@@ -108,7 +118,9 @@ class Browser:
             return self._review_key(key)
         if self.screen.name == "text":
             if key == "c":
-                self._copy(self.screen.text, "prompt")
+                self._copy(self.screen.text, self.screen.what)
+            elif key == "s":
+                self._save(self.screen.text, self.screen.what)
             return None
         items = self.choices()
         if key in (UP, "k"):
@@ -125,7 +137,7 @@ class Browser:
         elif key in (DOWN, "j"):
             self.screen.cursor = (self.screen.cursor + 1) % len(self.ordered)
         elif key == ENTER:
-            self._copy(finding_details(self.current(), self.report), "finding details")
+            self._copy(findings_report(self.report, [self.current()]), "findings report")
         elif key == "h":
             self._push(Screen("handoff", finding=self.current()))
         self.read.add(self.current().id)
@@ -144,11 +156,15 @@ class Browser:
             self.flash = self.write_workflow()
             self.screen = self.stack.pop()
         elif choice == "show" and self.screen.name == "ci":
-            self._push(Screen("text", text=workflow("**/*.pcap **/*.pcapng", "high", "v<version>")))
+            self._push(Screen("text", text=workflow("**/*.pcap **/*.pcapng", "high", "v<version>"), what="workflow"))
         elif choice == "show":
-            self._push(Screen("text", finding=target, text=self.prompt_for(target)))
+            self._push(Screen("text", finding=target, text=self.prompt_for(target), what="fix prompt"))
         elif choice == "copy":
-            self._copy(self.prompt_for(target), "prompt")
+            self._copy(self.prompt_for(target), "fix prompt")
+        elif choice == "showreport":
+            self._push(Screen("text", finding=target, text=self.report_for(target), what="findings report"))
+        elif choice == "copyreport":
+            self._copy(self.report_for(target), "findings report")
         elif choice.startswith("agent:"):
             agent = self.agents[int(choice.split(":")[1])]
             self._push(Screen("confirm", finding=target, agent=agent, text=self.prompt_for(target)))
@@ -161,8 +177,24 @@ class Browser:
         self.screen = screen
 
     def _copy(self, text: str, what: str) -> None:
-        ok = self.copy(text)
-        self.flash = f"[green]✓ Copied {what}[/green]" if ok else "[red]✗ No clipboard tool (pbcopy, wl-copy, xclip or clip)[/red]"
+        how = self.copy(text)
+        if how and how != OSC52:
+            self.flash = f"[green]✓ Copied the {what} ({how})[/green]"
+            return
+        path = self.save(_file_name(what), text)
+        if how == OSC52:
+            self.flash = f"[green]✓ Sent the {what} to your terminal's clipboard (OSC 52)[/green] · also saved to {escape(str(path))}"
+        else:
+            self.flash = (
+                f"[yellow]No clipboard here: saved the {what} to {escape(str(path))}[/yellow] "
+                "[dim](install wl-clipboard or xclip to copy directly)[/dim]"
+            )
+
+    def _save(self, text: str, what: str) -> None:
+        self.flash = f"[green]✓ Saved the {what} to {escape(str(self.save(_file_name(what), text)))}[/green]"
+
+    def report_for(self, finding: Finding | None) -> str:
+        return findings_report(self.report, [finding] if finding else None)
 
     def current(self) -> Finding:
         return self.ordered[self.screen.cursor]
@@ -209,7 +241,7 @@ class Browser:
             what = f"finding {self.screen.finding.code}" if self.screen.finding else f"all {len(self.ordered)} finding(s)"
             out.append(Text.from_markup(f"  [bold]Choose how to continue[/bold] · {escape(what)}"))
             if not self.agents:
-                out.append(Text("  No agent found on PATH (claude, codex, cursor-agent): copy or show the prompt.", style="dim"))
+                out.append(Text("  No agent found on PATH (claude, codex, cursor-agent): copy or show the report or prompt.", style="dim"))
             out.append(Text(""))
         if name == "ci":
             out.append(Text.from_markup("[bold]? Add pcap-doctor to GitHub Actions?[/bold]"))
@@ -255,13 +287,13 @@ class Browser:
 
     def _text(self, height: int) -> list[RenderableType]:
         s = self.screen
-        title = f"Prompt for {s.agent.name}" if s.name == "confirm" and s.agent else "Preview"
+        title = f"Prompt for {s.agent.name}" if s.name == "confirm" and s.agent else s.what.capitalize() or "Preview"
         lines = s.text.splitlines()
         rows = max(8, min(PROMPT_ROWS, height - 16))
         out: list[RenderableType] = [Text(title, style="bold"), Rule(style="dim")]
         out += [Text(line, style="") for line in lines[:rows]]
         if len(lines) > rows:
-            out.append(Text(f"… +{len(lines) - rows} lines (c copies the whole text)", style="dim"))
+            out.append(Text(f"… +{len(lines) - rows} lines (c copies, s saves the whole text)", style="dim"))
         out.append(Rule(style="dim"))
         if s.name == "confirm":
             if not self.safe:
@@ -271,9 +303,9 @@ class Browser:
 
     def _keys(self) -> str:
         if self.screen.name == "review":
-            return "↑/↓ move · enter copy details · h hand off · esc back · q quit"
+            return "↑/↓ move · enter copy finding · h hand off · esc back · q quit"
         if self.screen.name == "text":
-            return "c copy · esc back · q quit"
+            return "c copy · s save · esc back · q quit"
         return "↑/↓ move · enter select · esc back · q quit" if self.stack else "↑/↓ move · enter select · q quit"
 
 
@@ -302,23 +334,8 @@ def finding_view(f: Finding) -> list[RenderableType]:
     return out
 
 
-def finding_details(f: Finding, report: Report) -> str:
-    """Plain text for a ticket or a pentest report (what enter copies in Review)."""
-    lines = [
-        f"[{f.severity.upper()}] {f.code}: {f.title}",
-        f"Capture: {report.capture.name} (sha256 {report.capture.sha256[:16]}) · pcap-doctor {report.tool_version}",
-        f"Category: {category_of(f.code)} · confidence {f.confidence}" + (f" · flow {f.flow_key}" if f.flow_key else ""),
-        f"Impact: {CATEGORY_IMPACT[category_of(f.code)]}",
-    ]
-    if f.summary:
-        lines.append(f"Details: {f.summary}")
-    lines += [f"Evidence: frame {e.frame} {e.field} = {e.value}" for e in f.evidence]
-    if f.remediation:
-        lines.append(f"Fix: {f.remediation}")
-    if f.references:
-        lines.append(f"References: {', '.join(f.references)}")
-    lines.append(f"Finding id: {f.id}")
-    return "\n".join(lines)
+def _file_name(what: str) -> str:
+    return {"findings report": "findings-report.md", "fix prompt": "fix-prompt.md"}.get(what, "pcap-doctor.txt")
 
 
 # -- terminal plumbing --------------------------------------------------------------------------------------
@@ -406,7 +423,7 @@ def browse(
     *,
     safe: bool,
     agents: list[Agent],
-    copy: Callable[[str], bool],
+    copy: Callable[[str], str],
     run: Callable[[list[str]], int],
     keys: Iterable[str] | None = None,
     live: bool = True,
@@ -414,7 +431,16 @@ def browse(
     """Run the browser until q; launch an agent after leaving the screen if one was chosen."""
     from rich.live import Live
 
-    browser = Browser(report, agents=agents, copy=copy, write_workflow=lambda: write_workflow_here(report.tool_version), safe=safe)
+    outdir = Path(next((a.path for a in report.artifacts if a.name == "report.json"), "report.json")).parent
+
+    def save(name: str, text: str) -> Path:
+        outdir.mkdir(parents=True, exist_ok=True)
+        (outdir / name).write_text(text, encoding="utf-8")
+        return outdir / name
+
+    browser = Browser(
+        report, agents=agents, copy=copy, write_workflow=lambda: write_workflow_here(report.tool_version), save=save, safe=safe
+    )
     source = iter(keys) if keys is not None else read_keys()
     result: Launch | str | None = None
     try:

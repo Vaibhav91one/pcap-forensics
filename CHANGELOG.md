@@ -6,6 +6,19 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- *Choose how to continue* copies or shows a **findings report**: a security-weakness report in
+  Markdown for one finding or all of them. Review's enter copies it for the selected finding, and
+  **s** saves it (#101).
+
+### Fixed
+
+- Copy works everywhere. It picks the clipboard tool that fits the session (`pbcopy`, `wl-copy`,
+  `xclip`, `xsel`, `clip.exe`, `termux-clipboard-set`) and says "copied" only on success. Otherwise it
+  uses OSC 52 and also saves the text next to the report. A stock Ubuntu, with no clipboard tool,
+  previously just failed (#101).
+
 ## [0.3.0] — 2026-09-30
 
 Interactive results in the terminal, for security testers and developers.
