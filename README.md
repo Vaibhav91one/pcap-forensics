@@ -148,7 +148,7 @@ config use.
 |---|---|
 | **Crypto** | weak and deprecated TLS/DTLS: prohibited and legacy suites, deprecated versions, missing forward secrecy, weak suites a client still *offers*, expired or weak certificates, self-signed chains, alerts and truncated handshakes, JA3 fleet clustering |
 | **Credentials** | HTTP Basic/Digest, SNMP communities, FTP `PASS`, LDAP simple binds, MySQL queries and Telnet logins (always redacted to `<redacted N chars>`), cookies without `Secure` |
-| **Cleartext** | cleartext FTP, Telnet, TFTP, NTP, SNMP, LDAP, SMTP, POP and MySQL |
+| **Cleartext** | plain HTTP (high when the request path looks like a firmware or package download), cleartext FTP, Telnet, TFTP, NTP, SNMP, LDAP, SMTP, POP and MySQL |
 | **DNS** | plaintext DNS leakage, external resolvers over IPv4 and IPv6, DNS tunnelling shapes |
 | **SSH & QUIC** | weak SSH key exchange, cipher, MAC and host-key offers; Terrapin exposure (CVE-2023-48795); QUIC version inventory and payload opacity |
 | **Voice** | cleartext SIP signalling, SDP offered without `a=crypto`, RTP media in the clear, media volume anomalies (the SIP call graph is drawn in `04-diagrams.md`) |
@@ -375,7 +375,7 @@ non-underscore module in `detectors/`, so adding one needs no registration.
 | Id | Module | Owns |
 |---|---|---|
 | `d1.tls_cipher` | `detectors/tls_cipher.py` | negotiated version, chosen suite, offered-but-unused weak suites, forward secrecy, certificate expiry/key/signature/self-signed, alerts, truncated handshakes, JA3 fleet clustering |
-| `d2.transport_exposure` | `detectors/transport_exposure.py` | HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries, Telnet logins; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
+| `d2.transport_exposure` | `detectors/transport_exposure.py` | plain HTTP (firmware-like downloads rated high; query strings never reported), HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries, Telnet logins; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
 | `d3.sip_rtp` | `detectors/sip_rtp.py` | SIP call graph, cleartext REGISTER/INVITE with auth headers, SDP offered without `a=crypto` (no SRTP possible), RTP media in the clear, media volume anomalies |
 | `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers (IPv4 and IPv6), QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key offers, Terrapin exposure (CVE-2023-48795) |
 
