@@ -48,11 +48,14 @@ jobs:
 
   npm-launcher:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: ["20", "22"] # 22 is what the release job uses (#96)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node }}
       - name: Launcher tests
         working-directory: npm
         run: npm test
