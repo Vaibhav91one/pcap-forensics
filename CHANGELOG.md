@@ -8,6 +8,15 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
+- **Decrypt your own capture with key material you supply** (authorized white-box testing). `analyze` gains
+  `--tls-key FILE` (repeatable), `--tls-key-password`, `--keys-from DIR` (every PEM private key under an
+  extracted-firmware tree), `--keylog FILE` and `--psk HEX`. An RSA private key decrypts RSA-key-exchange
+  sessions (no forward secrecy) that match the server certificate; decrypted inner HTTP then flows through the
+  existing detectors, and a `[decrypt] read inner traffic from N of M TLS session(s)` note is added. Key
+  material is passed straight to tshark and never written to any artifact (#115).
+
+### Added
+
 - CI proves pcap-doctor on **Linux, macOS and Windows**:
   - tshark from each OS's package manager;
   - the same finding codes on every fixture (`tests/fixtures/expected_codes.json`);

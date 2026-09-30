@@ -16,6 +16,7 @@ from ..baseline import load_baseline, new_since, version_drift
 from ..clipboard import copy as copy_text
 from ..config import load as load_config
 from ..handoff import _subprocess_run, detect_agents, in_agent, offer, safe_mode
+from ..keymaterial import collect
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
@@ -56,6 +57,20 @@ def analyze_cmd(
         None, "--config", exists=True, dir_okay=False, help="config file (default: ./pcap-doctor.toml or [tool.pcap-doctor] in ./pyproject.toml)"
     ),
     profile: str = typer.Option(None, "--profile", help="start from a preset (ota); config and flags override it"),
+    tls_key: list[Path] = typer.Option(
+        None, "--tls-key", exists=True, dir_okay=False,
+        help="TLS private key (PEM) to decrypt RSA-key-exchange sessions in your own capture (repeatable)",
+    ),
+    tls_key_password: str = typer.Option("", "--tls-key-password", help="passphrase for --tls-key, if encrypted"),
+    keys_from: Path = typer.Option(
+        None, "--keys-from", exists=True, file_okay=False,
+        help="load every PEM private key under this extracted-firmware tree",
+    ),
+    keylog: Path = typer.Option(
+        None, "--keylog", exists=True, dir_okay=False, envvar="PCAP_DOCTOR_KEYLOG",
+        help="TLS key-log file (SSLKEYLOGFILE format) to decrypt forward-secret sessions",
+    ),
+    psk: str = typer.Option("", "--psk", envvar="PCAP_DOCTOR_PSK", help="TLS/DTLS pre-shared key, hex"),
     no_handoff: bool = typer.Option(False, "--no-handoff", help="never offer to hand a finding to an AI agent"),
     safe: bool = typer.Option(
         False, "--safe", help="launch AI agents with their approval prompts (also PCAP_DOCTOR_HANDOFF_SAFE=1)"
@@ -65,6 +80,7 @@ def analyze_cmd(
     try:
         validate(only=only or (), categories=category or (), min_severity=min_severity, fail_on=fail_on)
         config = load_config(config_path, profile=profile)
+        keys = collect(tls_key, tls_key_password=tls_key_password, keys_from=keys_from, keylog=keylog, psk=psk)
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
@@ -96,6 +112,7 @@ def analyze_cmd(
             categories=tuple(category or ()),
             use_cache=not no_cache,
             config=config,
+            keys=keys,
             progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
         )
 
