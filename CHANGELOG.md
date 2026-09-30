@@ -6,6 +6,10 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-09-30
+
+Interactive results in the terminal, for security testers and developers.
+
 ### Added
 
 - Interactive results after a scan in a terminal, modelled on React Doctor. A spinner shows each stage,
@@ -16,6 +20,11 @@ All notable changes to this project are documented here. The format follows
   - **Hand off to an agent**, with the prompt always previewed.
 
   Piped output, files, CI, `--json`, `-q` and `--score` are unchanged (#98).
+
+### Fixed
+
+- The npm launcher's tests run on Node 20 and 22; `node --test test/` failed on Node 22, which the
+  release job uses (#96).
 
 ## [0.2.0] — 2026-09-30
 
