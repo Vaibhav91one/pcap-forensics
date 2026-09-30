@@ -6,6 +6,17 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Interactive results after a scan in a terminal, modelled on React Doctor. A spinner shows each stage,
+  then the score header with the potential score after priority fixes, then an arrow-key menu:
+  - **Review**: findings grouped by category, with impact, evidence, fix and rule guide; enter copies
+    ticket-ready text.
+  - **Add to GitHub Actions**.
+  - **Hand off to an agent**, with the prompt always previewed.
+
+  Piped output, files, CI, `--json`, `-q` and `--score` are unchanged (#98).
+
 ## [0.2.0] — 2026-09-30
 
 **pcap-forensics is now pcap-doctor**: one command gives a health score, findings grouped by category,

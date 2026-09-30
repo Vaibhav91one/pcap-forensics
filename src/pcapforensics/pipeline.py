@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -42,6 +43,7 @@ def analyze(
     categories: tuple[str, ...] = (),
     use_cache: bool = True,
     config: Config | None = None,
+    progress: Callable[[str], None] | None = None,
 ) -> RunResult:
     policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
@@ -50,11 +52,15 @@ def analyze(
 
     runner = TsharkRunner(pcap, use_cache=use_cache)
     builder = IndexBuilder(runner)
+    if progress:
+        progress("Reading the capture with tshark")
     index = builder.build()
 
     detectors = enabled_detectors(include=only)
     findings: list[Finding] = []
     for detector in detectors:
+        if progress:
+            progress(f"Checking {detector.title}")
         try:
             found = detector.detect(index)
         except Exception as exc:  # one bad detector must not sink the run

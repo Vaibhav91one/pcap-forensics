@@ -3,18 +3,24 @@
 from __future__ import annotations
 
 import json
+import os
+import sys
+import time
+from contextlib import nullcontext
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 
 from ..baseline import load_baseline, new_since, version_drift
 from ..config import load as load_config
-from ..handoff import offer
+from ..handoff import _copy, _subprocess_run, clipboard_argv, detect_agents, in_agent, offer, safe_mode
 from ..models import SEVERITY_ORDER
 from ..output import json_envelope, sarif
 from ..pipeline import analyze
 from ..policy import PolicyError, validate
 from ..scoring import score
+from ._browse import ICON, browse, supported
 from ._console import console, tshark_errors
 from ._summary import render
 
@@ -69,7 +75,18 @@ def analyze_cmd(
     except (OSError, ValueError) as exc:
         console.print(f"[red]--baseline {baseline_path}: not a pcap-doctor report ({type(exc).__name__})[/red]")
         raise typer.Exit(code=2) from exc
-    with tshark_errors():
+    # The interactive screens run only for a person at a terminal; pipes, files, CI, agents and the machine
+    # outputs (--json, --score, -q) keep their exact output.
+    interactive = (
+        not (quiet or show_score or as_json or no_handoff)
+        and sys.stdin.isatty()
+        and sys.stdout.isatty()
+        and not os.environ.get("CI")
+        and not in_agent()
+        and supported()
+    )
+    started = time.monotonic()
+    with tshark_errors(), (console.status("Scanning…") if interactive else nullcontext()) as status:
         result = analyze(
             pcap,
             out,
@@ -78,6 +95,7 @@ def analyze_cmd(
             categories=tuple(category or ()),
             use_cache=not no_cache,
             config=config,
+            progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
         )
 
     # The artifacts on disk stay complete; with a baseline everything shown or gated is the new findings only.
@@ -99,6 +117,31 @@ def analyze_cmd(
         typer.echo(json.dumps(envelope, indent=2))
     elif show_score:
         typer.echo(score(shown.findings)[0])
+    elif interactive:
+        seconds = time.monotonic() - started
+        console.print(f"[green]✔[/green] Scanned {result.report.stats.packets:,} packets in {seconds:.1f}s")
+        if baseline is not None:
+            console.print(f"{len(shown.findings)} new finding(s) since the baseline ({len(result.report.findings)} in total)")
+        ranked = sorted(shown.findings, key=lambda f: SEVERITY_ORDER.get(f.severity, 9))
+        for finding in ranked[:20]:
+            icon, style = ICON[finding.severity]
+            console.print(f"  [{style}]{icon}[/{style}] {finding.code}  {escape(finding.title)}", highlight=False)
+        if len(ranked) > 20:
+            console.print(f"  [dim]… {len(ranked) - 20} more in Review[/dim]")
+        clip = clipboard_argv()
+
+        def copy_text(text: str) -> bool:
+            return clip is not None and _copy(clip, text)
+
+        browse(
+            console,
+            shown,
+            safe=safe_mode(safe),
+            agents=detect_agents(),
+            copy=copy_text,
+            run=_subprocess_run,
+        )
+        console.print(f"Report: {escape(str(result.outdir))}/index.md · 03-findings.md · report.json")
     elif not quiet:
         if baseline is not None:
             console.print(f"{len(shown.findings)} new finding(s) since the baseline ({len(result.report.findings)} in total)")
@@ -114,8 +157,8 @@ def analyze_cmd(
     )
     if tripped and not (quiet or show_score or as_json):
         console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
-    if not (quiet or show_score or as_json or no_handoff):
-        offer(console, shown, safe=safe)
+    if not (interactive or quiet or show_score or as_json or no_handoff):
+        offer(console, shown, safe=safe)  # agent guidance inside an agent; the plain menu where raw keys are missing
     raise typer.Exit(code=1 if tripped else 0)
 
 
