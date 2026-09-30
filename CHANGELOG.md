@@ -19,6 +19,9 @@ All notable changes to this project are documented here. The format follows
   dangerous one — a private key whose public half matches a shipped certificate (you hold the key for that
   cert). `--json` for the machine form; `--out KEYS_DIR` normalises the private keys for
   `analyze --keys-from`. Private-key bytes are never printed (#117).
+- Each certificate now carries a public-key fingerprint `spki_sha256` (the non-secret
+  `sha256(DER public key)[:16]`), so a key seen on the wire can be matched against a private
+  key found in firmware. Report schema bumped to **1.5.0** (#119).
 
 - CI proves pcap-doctor on **Linux, macOS and Windows**:
   - tshark from each OS's package manager;
