@@ -14,8 +14,11 @@ All notable changes to this project are documented here. The format follows
   sessions (no forward secrecy) that match the server certificate; decrypted inner HTTP then flows through the
   existing detectors, and a `[decrypt] read inner traffic from N of M TLS session(s)` note is added. Key
   material is passed straight to tshark and never written to any artifact (#115).
-
-### Added
+- `pcap-doctor keys scan DIR` inventories the key material in an already-extracted firmware tree: every PEM
+  private key and certificate, flagged for weak keys (<=1024-bit RSA), self-signed, expired, and — the
+  dangerous one — a private key whose public half matches a shipped certificate (you hold the key for that
+  cert). `--json` for the machine form; `--out KEYS_DIR` normalises the private keys for
+  `analyze --keys-from`. Private-key bytes are never printed (#117).
 
 - CI proves pcap-doctor on **Linux, macOS and Windows**:
   - tshark from each OS's package manager;
