@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- Indexing runs the independent tshark passes concurrently (RTP still waits for SIP). Reports are identical;
+  on a 120 MB / 509k-packet capture `analyze` took 41 s instead of 91 s, at about +0.8 GB peak memory (#127).
+
 ## [0.5.0] — 2026-09-30
 
 White-box firmware testing: decrypt a capture with key material you supply, inventory the keys an
