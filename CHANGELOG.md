@@ -14,6 +14,11 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- `watch` prints the exact command that grants live-capture rights on this OS (macOS ChmodBPF / `access_bpf`,
+  Linux `wireshark` group or `setcap` on dumpcap, Windows Npcap) when capturing fails. CI now runs a real
+  `watch -i lo` capture on Linux and checks a finding comes out and no capture process is left. `watch` now
+  also stops cleanly on SIGTERM and when started in the background (`watch &` ignores Ctrl-C's SIGINT);
+  before, both left dumpcap running (#128).
 - Indexing runs the independent tshark passes concurrently (RTP still waits for SIP). Reports are identical;
   on a 120 MB / 509k-packet capture `analyze` took 41 s instead of 91 s, at about +0.8 GB peak memory (#127).
 

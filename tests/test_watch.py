@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from pcapforensics.cli import app
-from pcapforensics.cli.watch import Watcher, capture_argv
+from pcapforensics.cli.watch import Watcher, capture_argv, capture_rights_hint
 from pcapforensics.models import CaptureInfo, Finding, Report, Stats
 
 
@@ -65,6 +65,59 @@ def test_capture_failure_exits_2_with_the_tool_error(cli_runner, tmp_path, monke
     fake.chmod(0o755)
     monkeypatch.setattr("pcapforensics.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
     monkeypatch.setattr("pcapforensics.cli.watch.POLL_SECONDS", 0.05)
+    monkeypatch.setattr("pcapforensics.cli.watch.sys.platform", "darwin")
     result = cli_runner.invoke(app, ["watch", "-i", "en0", "--dir", str(tmp_path / "ring")])
     assert result.exit_code == 2
     assert "permission to capture" in result.output and "access_bpf" in result.output
+
+
+def test_capture_rights_hint_names_the_fix_for_each_os() -> None:
+    # #128: the exact command for this OS, not a generic "needs root"
+    assert "ChmodBPF" in capture_rights_hint("darwin")
+    assert "setcap" in capture_rights_hint("linux") and "wireshark" in capture_rights_hint("linux")
+    assert "Npcap" in capture_rights_hint("win32")
+    assert "root" in capture_rights_hint("freebsd14")
+
+
+def test_capture_failure_prints_the_linux_fix(cli_runner, tmp_path, monkeypatch) -> None:
+    fake = tmp_path / "dumpcap"
+    fake.write_text("#!/bin/sh\necho \"You don't have permission to capture on that device\" >&2\nexit 1\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr("pcapforensics.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
+    monkeypatch.setattr("pcapforensics.cli.watch.POLL_SECONDS", 0.05)
+    monkeypatch.setattr("pcapforensics.cli.watch.sys.platform", "linux")
+    result = cli_runner.invoke(app, ["watch", "-i", "eth0", "--dir", str(tmp_path / "ring")])
+    assert result.exit_code == 2
+    assert "setcap cap_net_raw" in result.output
+
+
+def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_path, monkeypatch) -> None:
+    # #128: `watch &` starts with SIGINT ignored, and service managers send SIGTERM; either must stop the capture
+    import os
+    import signal
+    import threading
+
+    pidfile = tmp_path / "dumpcap.pid"
+    fake = tmp_path / "dumpcap"
+    fake.write_text(f"#!/bin/sh\necho $$ > {pidfile}\nexec sleep 30\n")
+    fake.chmod(0o755)
+    monkeypatch.setattr("pcapforensics.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
+    monkeypatch.setattr("pcapforensics.cli.watch.POLL_SECONDS", 0.05)
+    before = signal.signal(signal.SIGINT, signal.SIG_IGN)
+    try:
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            pidfile.unlink(missing_ok=True)
+            threading.Timer(1.0, os.kill, (os.getpid(), sig)).start()
+            result = cli_runner.invoke(app, ["watch", "-i", "lo", "--dir", str(tmp_path / f"ring{sig}")])
+            assert result.exit_code == 0, result.output
+            assert "stopped:" in result.output
+            pid = int(pidfile.read_text())
+            try:
+                os.kill(pid, 0)
+                alive = True
+            except ProcessLookupError:
+                alive = False
+            assert not alive  # the capture was terminated and reaped
+        assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # watch put the old handlers back
+    finally:
+        signal.signal(signal.SIGINT, before)
