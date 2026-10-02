@@ -303,6 +303,37 @@ def fixture_http_cleartext() -> bytes:
     return _pcap_header() + b"".join(_packet(p, 1_700_000_300.0 + i * 0.02) for i, p in enumerate(packets))
 
 
+def fixture_http_firmware_headers() -> bytes:
+    """Firmware over plain HTTP that only the response headers reveal: a file name, then a firmware type (#130)."""
+    body = b"\x7fELF" + b"\x00" * 60
+    named_req = b"GET /download?id=123 HTTP/1.1\r\nHost: cdn.example\r\n\r\n"
+    named_resp = (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n"
+        b'Content-Disposition: attachment; filename="router-v2.bin"\r\n'
+        b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+    )
+    typed_req = b"GET /dl/42 HTTP/1.1\r\nHost: cdn.example\r\n\r\n"
+    typed_resp = (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/vnd.android.ota-package\r\n"
+        b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+    )
+    plain_req = b"GET /download?id=7 HTTP/1.1\r\nHost: cdn.example\r\n\r\n"
+    plain_resp = (
+        b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\n"
+        b'Content-Disposition: attachment; filename="report.pdf"\r\n'
+        b"Content-Length: " + str(len(body)).encode() + b"\r\n\r\n" + body
+    )
+    packets = []
+    for sport, req, resp in ((43100, named_req, named_resp), (43101, typed_req, typed_resp), (43102, plain_req, plain_resp)):
+        packets += [
+            eth_ip_tcp(CLIENT, SERVER, sport, 80, 1, 0, 0x02, b""),
+            eth_ip_tcp(SERVER, CLIENT, 80, sport, 1, 2, 0x12, b""),
+            eth_ip_tcp(CLIENT, SERVER, sport, 80, 2, 2, 0x18, req),
+            eth_ip_tcp(SERVER, CLIENT, 80, sport, 2, 2 + len(req), 0x18, resp),
+        ]
+    return _pcap_header() + b"".join(_packet(p, 1_700_000_400.0 + i * 0.02) for i, p in enumerate(packets))
+
+
 def fixture_http_bare_token() -> bytes:
     """A scheme-less Authorization header (a bare API token) in cleartext HTTP (issue #15)."""
     request = (
@@ -602,6 +633,7 @@ STATIC_FIXTURES = {
     "http_basic.pcap": fixture_http_basic,
     "http_bare_token.pcap": fixture_http_bare_token,
     "http_cleartext.pcap": fixture_http_cleartext,
+    "http_firmware_headers.pcap": fixture_http_firmware_headers,
     "ftp_ldap_creds.pcap": fixture_ftp_ldap_creds,
     "telnet_login.pcap": fixture_telnet_login,
     "dns_tunnel.pcap": fixture_dns_tunnel,

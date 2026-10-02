@@ -26,6 +26,9 @@
   "http_cleartext.pcap": [
     "HTTP_CLEARTEXT"
   ],
+  "http_firmware_headers.pcap": [
+    "HTTP_CLEARTEXT"
+  ],
   "mixed_ciphers.pcap": [
     "TLS_LEGACY_RECORD_VERSION",
     "TLS_OFFERS_WEAK_CIPHERS",

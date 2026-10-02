@@ -14,6 +14,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- A plain-HTTP firmware download is also recognised from the response: a `Content-Disposition` file name with a
+  firmware extension, or a firmware-only content type (`application/x-firmware`,
+  `application/vnd.android.ota-package`, `application/x-ota-package`); the evidence names the header that fired.
+  `application/octet-stream` alone is not a signal. Existing findings are unchanged (#130).
 - `watch` prints the exact command that grants live-capture rights on this OS (macOS ChmodBPF / `access_bpf`,
   Linux `wireshark` group or `setcap` on dumpcap, Windows Npcap) when capturing fails. CI now runs a real
   `watch -i lo` capture on Linux and checks a finding comes out and no capture process is left. `watch` now
