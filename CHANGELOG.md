@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- `--baseline` no longer reports every finding as new when the same device is captured again: a finding is
+  known when only its client's ephemeral port changed (detector, code, title and flow key are compared with
+  the higher port of each flow masked). Finding ids are unchanged (#126).
+
 ### Changed
 
 - Indexing runs the independent tshark passes concurrently (RTP still waits for SIP). Reports are identical;
