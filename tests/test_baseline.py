@@ -78,3 +78,43 @@ def test_removed_baseline_finding_is_exactly_the_new_one(cli_runner, tmp_path, c
     base.write_text(json.dumps(data))
     result = cli_runner.invoke(app, ["analyze", pcap, "-o", str(tmp_path / "b"), "--baseline", str(base), "--json"])
     assert json.loads(result.output)["new_findings"] == [dropped["id"]]
+
+
+def _flow_finding(key: str, code: str = "TLS_CIPHER_WEAK") -> Finding:
+    return Finding.make(
+        detector="d1.tls_cipher", code=code, title=f"TLS_RSA_WITH_AES_128_CBC_SHA negotiated on {key}",
+        severity="high", confidence="high", category="crypto", summary="", scope=key, flow_key=key,
+    )
+
+
+def test_recapture_with_new_client_ports_has_nothing_new() -> None:
+    # #126: the same device captured twice: only the client's ephemeral port differs, so every id differs
+    old = _report([])
+    old.findings[:] = [_flow_finding("tcp:10.9.0.1:38288<->10.9.0.2:443"), _flow_finding("udp:127.0.0.1:4433<->127.0.0.1:54273")]
+    now = [_flow_finding("tcp:10.9.0.1:51122<->10.9.0.2:443"), _flow_finding("udp:127.0.0.1:4433<->127.0.0.1:60001")]
+    assert [f.id for f in now] != [f.id for f in old.findings]
+    assert new_since(old, now) == []
+
+
+def test_recapture_still_reports_a_new_server_or_code() -> None:
+    old = _report([])
+    old.findings[:] = [_flow_finding("tcp:10.9.0.1:38288<->10.9.0.2:443")]
+    other_port = _flow_finding("tcp:10.9.0.1:38288<->10.9.0.2:8443")
+    other_host = _flow_finding("tcp:10.9.0.1:38288<->10.9.0.3:443")
+    other_code = _flow_finding("tcp:10.9.0.1:51122<->10.9.0.2:443", code="TLS_VERSION_DEPRECATED")
+    ipv6 = _flow_finding("tcp:2001:db8:1::1:57098<->2606:4700:10::6816:826:443")
+    assert new_since(old, [other_port, other_host, other_code, ipv6]) == [other_port, other_host, other_code, ipv6]
+
+
+def test_same_title_from_another_host_is_new() -> None:
+    # #126 review: a title that names no host must not hide the same finding on another flow
+    def offers(key: str) -> Finding:
+        return Finding.make(
+            detector="d1.tls_cipher", code="TLS_OFFERS_WEAK_CIPHERS", title="Client offers 4 prohibited/deprecated suites",
+            severity="medium", confidence="high", category="crypto", summary="", scope=key, flow_key=key,
+        )
+
+    old = _report([])
+    old.findings[:] = [offers("tcp:10.9.0.1:38288<->10.9.0.2:443")]
+    same_device, other_host = offers("tcp:10.9.0.1:51122<->10.9.0.2:443"), offers("tcp:10.9.0.7:51122<->10.9.0.2:443")
+    assert new_since(old, [same_device, other_host]) == [other_host]
