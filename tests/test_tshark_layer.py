@@ -234,3 +234,33 @@ def test_every_service_field_is_a_real_tshark_field() -> None:
     out = subprocess.run(["tshark", "-G", "fields"], capture_output=True, text=True, check=True).stdout
     known = {line.split("\t")[2] for line in out.splitlines() if line.count("\t") >= 2}
     assert [field for field in SERVICE_FIELDS if field not in known] == []
+
+
+@requires_tshark
+def test_prefetch_runs_passes_concurrently_and_run_reuses_them(monkeypatch) -> None:
+    # #127: the independent passes overlap, and `run` serves the prefetched rows (same per-call args only)
+    import threading
+    import time
+
+    runner = TsharkRunner(fixture("weak_tls.pcap"), use_cache=False)
+    active, peak, calls = [0], [0], []
+    lock = threading.Lock()
+
+    def fake_run(spec, extra_args=()):
+        with lock:
+            calls.append((spec.name, extra_args))
+            active[0] += 1
+            peak[0] = max(peak[0], active[0])
+        time.sleep(0.2)
+        with lock:
+            active[0] -= 1
+        return [{"pass": [spec.name]}]
+
+    monkeypatch.setattr(runner, "_run", fake_run)
+    runner.prefetch({"base": (), "tls": (), "http": ("-o", "x:y")})
+    assert peak[0] >= 2
+    assert runner.run("base") == [{"pass": ["base"]}]
+    assert runner.run("http", ("-o", "x:y")) == [{"pass": ["http"]}]
+    assert len(calls) == 3  # served from the prefetch, no second tshark
+    runner.run("http")  # other per-call args: a real run, never the prefetched rows
+    assert calls[-1] == ("http", ())

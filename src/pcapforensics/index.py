@@ -38,6 +38,7 @@ from .models import (
     flow_key,
 )
 from .tshark import (
+    PASSES,
     SERVICE_FIELDS,
     Row,
     TsharkRunner,
@@ -319,6 +320,11 @@ class IndexBuilder:
         pcap = runner.pcap
         if not pcap.exists():
             raise FileNotFoundError(f"capture not found: {pcap}")
+        # Every pass but RTP is independent (RTP needs the SIP pass's SDP ports), so run them concurrently (#127).
+        runner.prefetch({
+            "base": (), "tls": (), "dtls": (), "http": self.decrypt_args, "dns": (), "sip": (),
+            "ssh": (), "quic": (), "services": (), "telnet": (),
+        })
         raw_stats = runner.capture_stats()
         capture = CaptureInfo(
             path=str(pcap.resolve()),
@@ -354,8 +360,10 @@ class IndexBuilder:
                 f"[decrypt] read inner traffic from {len(decrypted)} of {len(index.tls)} TLS session(s) "
                 "with the supplied key material"
             )
-        index.dropped_fields = list(runner.dropped_fields)
-        index.pass_stats = {k: dict(v) for k, v in runner.stats.items()}
+        # Concurrent passes record in completion order: restore pass order so reports stay identical.
+        order = list(PASSES)
+        index.dropped_fields = sorted(runner.dropped_fields, key=lambda d: (order.index(d.split(":", 1)[0]), d))
+        index.pass_stats = {k: dict(runner.stats[k]) for k in order if k in runner.stats}
         if index.dropped_fields:
             index.add_note(
                 "Some tshark fields were unavailable in this build and were skipped: "

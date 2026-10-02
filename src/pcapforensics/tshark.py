@@ -19,6 +19,7 @@ import os
 import re
 import shutil
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
@@ -596,6 +597,8 @@ class TsharkRunner:
         self.dropped_fields: list[str] = []
         self._field_blacklist: set[str] = set()
         self._banned_protocols: set[str] = set()
+        # ponytail: every prefetched pass stays in memory until the build ends; pop on read if huge captures OOM.
+        self._prefetched: dict[tuple[str, tuple[str, ...]], list[Row]] = {}
 
     # -- internals ---------------------------------------------------------
     def usable_fields(self, spec: PassSpec) -> tuple[str, ...]:
@@ -769,7 +772,23 @@ class TsharkRunner:
         spec = PASSES.get(pass_name)
         if spec is None:
             raise KeyError(f"unknown pass {pass_name!r}; known: {sorted(PASSES)}")
+        if (pass_name, extra_args) in self._prefetched:
+            return self._prefetched[(pass_name, extra_args)]
         return self._run(spec, extra_args)
+
+    def prefetch(self, jobs: dict[str, tuple[str, ...]]) -> None:
+        """Run independent passes (name -> per-call extra args) concurrently; ``run`` then returns their rows.
+
+        Each pass is its own tshark process re-reading the capture, so threads are enough: they only wait.
+        """
+        for name in jobs:
+            if name not in PASSES:
+                raise KeyError(f"unknown pass {name!r}; known: {sorted(PASSES)}")
+        valid_fields(), protocol_names(), default_prefs()  # warm the `tshark -G` lookups once, not per thread
+        with ThreadPoolExecutor(max_workers=max(1, min(len(jobs), os.cpu_count() or 4))) as pool:
+            futures = {(name, args): pool.submit(self._run, PASSES[name], args) for name, args in jobs.items()}
+            for key, future in futures.items():
+                self._prefetched[key] = future.result()
 
     def all_passes(self) -> dict[str, list[Row]]:
         return {name: self._run(spec) for name, spec in PASSES.items()}
