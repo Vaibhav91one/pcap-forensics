@@ -6,6 +6,11 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-10-03
+
+Closes the caveats left after 0.5.0: re-captures match their baseline, live `watch` is proven and stops
+cleanly, firmware downloads are recognised from the response headers, and indexing is about twice as fast.
+
 ### Fixed
 
 - `watch` prints a finding once, not again for every new client connection to the same service: it dedupes
