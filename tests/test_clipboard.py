@@ -133,3 +133,20 @@ def test_findings_report_neutralises_hostile_capture_text() -> None:
     table_row = next(line for line in text.splitlines() if line.startswith("| 1 |"))
     assert table_row.count(" | ") == 3 and "\\|" in table_row  # the pipe in the title cannot split the cell
     assert "  - frame 3: `http.host` = `evil \\| cell 'code' [31m new line`" in text
+
+
+WAYLAND_REQUIRED = os.environ.get("PCAP_DOCTOR_REQUIRE_WAYLAND") == "1"  # set in CI, where wl-copy runs under headless sway
+
+
+def test_real_wayland_clipboard_round_trip() -> None:
+    # #129: the wl-copy path for real, not a fake: copy, then read it back with wl-paste
+    if not (os.environ.get("WAYLAND_DISPLAY") and shutil.which("wl-copy") and shutil.which("wl-paste")):
+        if WAYLAND_REQUIRED:
+            pytest.fail("wl-copy under a Wayland compositor is required here (PCAP_DOCTOR_REQUIRE_WAYLAND=1)")
+        pytest.skip("needs WAYLAND_DISPLAY and wl-clipboard (CI runs this under a headless sway on Ubuntu)")
+    text = "pcap-doctor wl-copy round trip ✓ ünïcode"
+    how = copy(text, env={"WAYLAND_DISPLAY": os.environ["WAYLAND_DISPLAY"]},
+               which=lambda n: shutil.which(n) if n == "wl-copy" else None, platform="linux", terminal=lambda b: False)
+    assert how == "wl-copy"
+    pasted = subprocess.run(["wl-paste", "--no-newline"], capture_output=True, timeout=5, check=True).stdout
+    assert pasted.decode("utf-8") == text
