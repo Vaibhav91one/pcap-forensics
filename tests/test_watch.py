@@ -121,3 +121,26 @@ def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_
         assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # watch put the old handlers back
     finally:
         signal.signal(signal.SIGINT, before)
+
+
+def test_a_new_client_port_does_not_print_the_same_finding_again(tmp_path) -> None:
+    # #136: every new connection to one service gets a new ephemeral port, so a new id; print it once
+    def http(key: str) -> Finding:
+        return Finding.make(detector="d2.transport_exposure", code="HTTP_CLEARTEXT", title=f"HTTP in cleartext on {key}",
+                            severity="medium", confidence="high", category="x", summary="", scope=f"{key}|http",
+                            flow_key=key)
+
+    def report(*findings: Finding) -> Report:
+        base = _report()
+        return base.model_copy(update={"findings": list(findings)})
+
+    first, again = http("tcp:127.0.0.1:8765<->127.0.0.1:45048"), http("tcp:127.0.0.1:8765<->127.0.0.1:45056")
+    other_server = http("tcp:127.0.0.1:9000<->127.0.0.1:45060")
+    results = {"ring_00001_a.pcapng": report(first), "ring_00002_b.pcapng": report(again, other_server)}
+    for name in results:
+        (tmp_path / name).write_bytes(b"")
+    emitted: list[str] = []
+    watcher = Watcher(tmp_path, lambda p: results[p.name], lambda f, p: emitted.append(f.flow_key or ""))
+    watcher.step(final=True)
+    assert first.id != again.id
+    assert emitted == [first.flow_key, other_server.flow_key]

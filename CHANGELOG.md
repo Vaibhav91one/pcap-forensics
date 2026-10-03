@@ -8,6 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- `watch` prints a finding once, not again for every new client connection to the same service: it dedupes
+  on the same port-insensitive match as `--baseline` (#136).
 - `--baseline` no longer reports every finding as new when the same device is captured again: a finding is
   known when only its client's ephemeral port changed (detector, code, title and flow key are compared with
   the higher port of each flow masked). Finding ids are unchanged (#126).
