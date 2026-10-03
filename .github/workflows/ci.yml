@@ -42,6 +42,17 @@ jobs:
         run: |
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y xclip xsel xvfb
           PCAP_DOCTOR_REQUIRE_X11=1 xvfb-run -a .venv/bin/python -m pytest -q -o addopts="" tests/test_clipboard.py -k x11
+      - name: Clipboard really copies under Wayland (wl-copy in a headless sway) (#129)
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sway wl-clipboard
+          export XDG_RUNTIME_DIR="$(mktemp -d)"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          WLR_BACKENDS=headless WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER=pixman sway -c /dev/null > sway.log 2>&1 &
+          for i in $(seq 1 50); do ls "$XDG_RUNTIME_DIR"/wayland-* > /dev/null 2>&1 && break; sleep 0.2; done
+          export WAYLAND_DISPLAY="$(basename "$(ls "$XDG_RUNTIME_DIR"/wayland-* | grep -v '\.lock$' | head -1)")"
+          echo "WAYLAND_DISPLAY=$WAYLAND_DISPLAY"; tail -5 sway.log
+          test -n "$WAYLAND_DISPLAY" || { echo "sway did not start"; cat sway.log; exit 1; }
+          PCAP_DOCTOR_REQUIRE_WAYLAND=1 .venv/bin/python -m pytest -q -o addopts="" tests/test_clipboard.py -k wayland
       - name: Same findings as macOS and Windows, and a clipboard round trip (#108)
         run: PATH="$PWD/.venv/bin:$PATH" xvfb-run -a .venv/bin/python scripts/portability_check.py
       - name: watch captures live traffic on loopback (#128)

@@ -14,6 +14,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- CI copies through `wl-copy` under a real headless Wayland compositor (sway) and reads it back with
+  `wl-paste`, so the Wayland clipboard path is proven like X11, macOS and Windows already were (#129).
 - A plain-HTTP firmware download is also recognised from the response: a `Content-Disposition` file name with a
   firmware extension, or a firmware-only content type (`application/x-firmware`,
   `application/vnd.android.ota-package`, `application/x-ota-package`); the evidence names the header that fired.
