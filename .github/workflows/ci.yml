@@ -44,6 +44,20 @@ jobs:
           PCAP_DOCTOR_REQUIRE_X11=1 xvfb-run -a .venv/bin/python -m pytest -q -o addopts="" tests/test_clipboard.py -k x11
       - name: Same findings as macOS and Windows, and a clipboard round trip (#108)
         run: PATH="$PWD/.venv/bin:$PATH" xvfb-run -a .venv/bin/python scripts/portability_check.py
+      - name: watch captures live traffic on loopback (#128)
+        run: |
+          python3 -m http.server 8765 --bind 127.0.0.1 >/dev/null 2>&1 &
+          sudo .venv/bin/pcap-doctor watch -i lo --seconds 5 --dir /tmp/pf-watch > /tmp/pf-watch.log 2>&1 &
+          watcher=$!
+          sleep 3
+          for i in $(seq 1 20); do curl -s -o /dev/null "http://127.0.0.1:8765/?n=$i" || true; sleep 0.5; done
+          sleep 8
+          sudo pkill -INT -f "[p]ython.*pcap-doctor watch"  # the watch process itself, not the sudo wrapper
+          for i in $(seq 1 60); do kill -0 "$watcher" 2>/dev/null || break; sleep 1; done
+          cat /tmp/pf-watch.log
+          grep -q "HTTP_CLEARTEXT" /tmp/pf-watch.log
+          grep -q "^stopped:" /tmp/pf-watch.log
+          ! pgrep -x dumpcap
       - name: Reports render end to end
         run: |
           for cap in captures/*.pcap captures/*.pcapng; do

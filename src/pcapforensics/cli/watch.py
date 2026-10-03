@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import shutil
+import signal
 import subprocess
+import sys
 import tempfile
 import time
 from collections.abc import Callable
@@ -28,6 +30,24 @@ def capture_argv(
     if tool is None:
         return None
     return [tool, "-i", interface, "-q", "-b", f"duration:{seconds}", "-b", f"files:{files}", "-w", str(ring / "ring.pcapng")]
+
+
+def capture_rights_hint(platform: str) -> str:
+    """How to get live-capture rights on this OS (the usual reason dumpcap exits at once, #128)."""
+    if platform == "darwin":
+        return (
+            "macOS: capturing needs read access to /dev/bpf* (the access_bpf group). Install Wireshark's ChmodBPF "
+            "(`brew install --cask wireshark-chmodbpf`, or the ChmodBPF package in Wireshark.app), "
+            "log out and in, or run watch with sudo"
+        )
+    if platform.startswith("linux"):
+        return (
+            "Linux: `sudo usermod -aG wireshark $USER` and log in again, or "
+            "`sudo setcap cap_net_raw,cap_net_admin+eip $(command -v dumpcap)`, or run watch with sudo"
+        )
+    if platform in ("win32", "cygwin"):
+        return "Windows: install Npcap (https://npcap.com), which Wireshark's installer offers, then reopen the terminal"
+    return "capturing usually needs the wireshark/access_bpf group or root"
 
 
 class Watcher:
@@ -76,6 +96,10 @@ def _emit(finding: Finding, path: Path) -> None:
     )
 
 
+def _stop(_signum: int, _frame: object) -> None:
+    raise KeyboardInterrupt
+
+
 def watch(
     interface: str = typer.Option(..., "--interface", "-i", help="capture interface (see `dumpcap -D`)"),
     seconds: int = typer.Option(60, "--seconds", min=5, help="close and analyze a ring file every N seconds"),
@@ -100,6 +124,9 @@ def watch(
     console.print(f"watching {escape(interface)}: a ring file every {seconds}s in {ring} (Ctrl-C to stop)")
     proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
     interrupted = False
+    # Ctrl-C and SIGTERM (service managers, `kill`) both stop cleanly, even when started as `watch &`, which
+    # inherits SIGINT ignored, so Python never raises KeyboardInterrupt on its own (#128).
+    previous = {sig: signal.signal(sig, _stop) for sig in (signal.SIGINT, signal.SIGTERM)}
     try:
         while proc.poll() is None:
             time.sleep(POLL_SECONDS)
@@ -110,9 +137,11 @@ def watch(
         if proc.poll() is None:
             proc.terminate()
         error = proc.communicate()[1].strip()  # reaps the process and closes its pipes
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
     if not interrupted:
         console.print(f"[red]{argv[0]} exited with {proc.returncode}: {escape(error) or 'no error text'}[/red]")
-        console.print("[red]capturing usually needs the wireshark/access_bpf group or root[/red]")
+        console.print(f"[red]{escape(capture_rights_hint(sys.platform))}[/red]", soft_wrap=True)  # one line: copyable
         raise typer.Exit(code=2) from None
     watcher.step(final=True)
     console.print(f"stopped: {len(watcher.seen)} distinct finding(s) in {len(watcher.done)} file(s); captures kept in {ring}")
