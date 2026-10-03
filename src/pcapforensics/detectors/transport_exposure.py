@@ -22,13 +22,15 @@ ODD_PORT_SKIP = {80, 443, 8080, 8443, 5060, 5061, 5353, 853, 784, 8853}
 
 #: A beacon is a scheduled callback: require enough burst gaps to measure a rate
 #: distribution, and require that distribution to be tight (issue #10).
-#: A request path that looks like a firmware/package download makes plain HTTP high severity. The HTTP
-#: model has no content type (core schema is frozen), so the path is the signal.
+#: A firmware/package download makes plain HTTP high severity. Signals: the request path, or the response's
+#: Content-Disposition file name, or a firmware-only content type (#130). application/octet-stream is not one:
+#: it is every binary download.
 FIRMWARE_EXTENSIONS = (
     ".bin", ".img", ".fw", ".hex", ".uf2", ".elf", ".zip", ".tar", ".gz", ".tgz",
     ".ipk", ".deb", ".rpm", ".apk", ".swu", ".ota", ".pkg", ".upd",
 )
 FIRMWARE_SEGMENTS = ("firmware", "fw", "ota", "update", "updates")
+FIRMWARE_CONTENT_TYPES = ("application/x-firmware", "application/vnd.android.ota-package", "application/x-ota-package")
 
 BEACON_MIN_GAPS = 5
 BEACON_MAX_CV = 0.1
@@ -128,12 +130,17 @@ class TransportExposureDetector(Detector):
         for key, exchanges in by_flow.items():
             requests = [e for e in exchanges if e.method] or exchanges
             firmware = [e for e in requests if _looks_like_firmware(e.uri)]
+            by_path = bool(firmware)
+            # same stream: the response facts sit on the request's exchange (one exchange per TCP stream)
+            served = [e for e in exchanges if _firmware_response(e) and e not in firmware]
+            firmware += [e for e in served if e in requests]
             first = (firmware or requests)[0]
             what = f"{first.method or 'HTTP'} {first.host or ''}{_path_only(first.uri)}".strip()
             if firmware:
+                judged = "the request path" if by_path else "the response headers"
                 summary = (
                     f"{what} downloaded what looks like a firmware or package image over plain HTTP "
-                    "(judged from the request path). Anyone on-path can read it or replace it; unless the "
+                    f"(judged from {judged}). Anyone on-path can read it or replace it; unless the "
                     "device verifies a signature on the image, a replaced image is installed."
                 )
                 remediation = (
@@ -161,6 +168,9 @@ class TransportExposureDetector(Detector):
                     evidence=[
                         ev(e.frame, "http.request.uri", f"{e.method or '?'} {e.host or ''}{_path_only(e.uri)}")
                         for e in (firmware + [r for r in requests if r not in firmware])[:5]
+                    ] + [
+                        ev(e.frame, "http.response", ", ".join(_firmware_signals(e)))
+                        for e in served[:5]
                     ],
                     remediation=remediation,
                     references=references,
@@ -420,6 +430,17 @@ def _path_only(uri: str | None) -> str:
         return ""
     path, sep, _ = uri.partition("?")
     return path + ("?<query removed>" if sep else "")
+
+
+def _firmware_signals(exch: HttpExchange) -> list[str]:
+    """Response headers that say a firmware image was delivered: file name and content type, no query strings."""
+    names = [f"filename={n}" for n in exch.download_names if n.lower().endswith(FIRMWARE_EXTENSIONS)]
+    types = [f"content-type={t}" for t in exch.content_types if t in FIRMWARE_CONTENT_TYPES]
+    return names + types
+
+
+def _firmware_response(exch: HttpExchange) -> bool:
+    return bool(_firmware_signals(exch))
 
 
 def _looks_like_firmware(uri: str | None) -> bool:

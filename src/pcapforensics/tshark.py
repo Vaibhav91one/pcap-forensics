@@ -165,6 +165,8 @@ HTTP_PASS = PassSpec(
         "http.authorization",
         "http.cookie",
         "http.set_cookie",
+        "http.content_type",
+        "http.response.line",
     )),
 )
 

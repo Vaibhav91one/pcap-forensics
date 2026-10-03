@@ -7,6 +7,7 @@ import pytest
 from conftest import codes, fixture, requires_tshark
 from pcapforensics.cli import app
 from pcapforensics.detectors.transport_exposure import _looks_like_firmware, _path_only
+from pcapforensics.index import download_name
 
 
 @pytest.mark.parametrize(
@@ -61,3 +62,32 @@ def test_http_with_credentials_is_also_plain_http_and_tls_stays_silent(analyze_c
 def test_ota_profile_fails_a_plain_http_firmware_download(cli_runner, tmp_path, cache_dir) -> None:
     args = ["analyze", str(fixture("http_cleartext.pcap")), "-o", str(tmp_path / "r"), "-q", "--profile", "ota"]
     assert cli_runner.invoke(app, args).exit_code == 1
+
+
+@pytest.mark.parametrize(
+    ("line", "name"),
+    [
+        ('Content-Disposition: attachment; filename="router-v2.bin"\\r\\n', "router-v2.bin"),
+        ("content-disposition: attachment; filename=fw.img", "fw.img"),
+        ("Content-Disposition: attachment; filename*=UTF-8''ota%20pkg.zip", "ota%20pkg.zip"),
+        ('Content-Disposition: attachment; filename="../../etc/fw.bin"', "fw.bin"),
+        ("Content-Disposition: inline", None),
+        ("Content-Type: application/octet-stream", None),
+    ],
+)
+def test_download_name_from_content_disposition(line: str, name: str | None) -> None:
+    assert download_name(line) == name
+
+
+@requires_tshark
+def test_firmware_named_only_by_the_response_headers_is_high(analyze_capture) -> None:
+    # #130: GET /download?id=123 serves router-v2.bin; GET /dl/42 serves an OTA package type; report.pdf stays medium
+    result = analyze_capture(fixture("http_firmware_headers.pcap"))
+    found = {f.flow_key.split(":")[2].split("<")[0]: f for f in result.report.findings if f.code == "HTTP_CLEARTEXT"}
+    assert {port: f.severity for port, f in found.items()} == {"43100": "high", "43101": "high", "43102": "medium"}
+    named, typed = found["43100"], found["43101"]
+    assert "firmware" in named.tags and "CWE-494" in named.references
+    assert "response headers" in named.summary
+    assert any(e.value == "filename=router-v2.bin" for e in named.evidence)
+    assert any(e.value == "content-type=application/vnd.android.ota-package" for e in typed.evidence)
+    assert all("id=123" not in e.value for e in named.evidence)  # query strings never reach evidence

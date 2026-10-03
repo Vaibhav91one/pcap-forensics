@@ -186,6 +186,18 @@ def first(row: Row, field: str, default: str = "") -> str:
     return values[0]
 
 
+_DISPOSITION_NAME = re.compile(r"""filename\*?=(?:[\w-]+'[\w-]*')?"?([^";\r\n\\]+)""", re.IGNORECASE)
+
+
+def download_name(header_line: str) -> str | None:
+    """The file name a ``Content-Disposition`` response header line gives, without any directory part."""
+    if not header_line.lower().startswith("content-disposition:"):
+        return None
+    match = _DISPOSITION_NAME.search(header_line)
+    name = match.group(1).strip().replace("\\", "/").rsplit("/", 1)[-1] if match else ""
+    return name or None
+
+
 def many(row: Row, field: str) -> list[str]:
     out: list[str] = []
     for chunk in row.get(field, []):
@@ -691,6 +703,13 @@ class IndexBuilder:
                 exch.user_agent = first(row, "http.user_agent") or exch.user_agent
             if status:
                 exch.status = status
+                content_type = first(row, "http.content_type").split(";", 1)[0].strip().lower()
+                if content_type and content_type not in exch.content_types:
+                    exch.content_types.append(content_type)
+                for line in many(row, "http.response.line"):
+                    name = download_name(line)
+                    if name and name not in exch.download_names:
+                        exch.download_names.append(name)
             auth = first(row, "http.authorization")
             if auth:
                 scheme = auth.split(None, 1)[0] if " " in auth else "unknown"

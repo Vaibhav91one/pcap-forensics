@@ -242,6 +242,9 @@ class HttpExchange(BaseModel):
     cookie_flags_insecure: list[str] = Field(default_factory=list)
     body_frames: list[int] = Field(default_factory=list)
     is_encrypted: bool = False
+    #: response headers that name what was delivered (#130): Content-Type values and Content-Disposition file names
+    content_types: list[str] = Field(default_factory=list)
+    download_names: list[str] = Field(default_factory=list)
 
 
 class DnsQuery(BaseModel):
