@@ -128,6 +128,7 @@ def run_one(path: Path, timeout: int) -> dict[str, Any]:
                 record["defects"].append(f"no-report: report.json unreadable ({exc})")
                 envelope = {}
             report = envelope.get("report") or {}
+            record["report"] = report
             record["score"] = envelope.get("score")
             record["findings"] = [
                 {
@@ -143,12 +144,89 @@ def run_one(path: Path, timeout: int) -> dict[str, Any]:
         else:
             record["defects"].append("no-report: report.json missing")
 
+    if "report" in record:
+        record["oracle"] = oracle_for(path, record["report"], record["findings"])
+        record["defects"].extend(record["oracle"])
+    else:
+        record["oracle"] = []
     record["defects"].extend(defects_of(record["notes"], record["findings"]))
     if record["defects"] and record["state"] == "ok":
         record["state"] = "defective"
     record["seconds"] = round(time.monotonic() - started, 2)
     return record
 
+
+# --- capture-path oracle -------------------------------------------------------
+#
+# A crash is the loudest defect. The quiet one is a capture that tshark decodes fine and
+# pcap-doctor then says nothing about. So each capture is asked twice, by two tools that share no
+# code: tshark answers "how many handshake frames are in here", and the report answers "what did we
+# make of them". Disagreement is a candidate defect.
+#
+# Only checks with no legitimate way to pass silently are asserted. TLS is the tight one: a capture
+# with a Client Hello and zero TLS sessions is a bug, full stop. The others are reported as suspects
+# because a cleartext detector legitimately stays silent (DNS to a local resolver, HTTP inside TLS),
+# and an oracle that cannot tell the difference teaches its readers to ignore it.
+ORACLE_PROTOCOLS: tuple[tuple[str, str], ...] = (
+    # DTLS must be in the same filter: a dtls capture has zero tls.* frames, so asking only for
+    # tls.handshake.type makes the oracle report a false positive on every DTLS file in the corpus.
+    ("tls_client_hello", "tls.handshake.type == 1 || dtls.handshake.type == 1"),
+    ("tls_handshake", "tls.handshake || dtls.handshake"),
+    ("http", "http.request || http.response"),
+    ("dns", "dns"),
+    ("ssh", "ssh"),
+    ("sip", "sip"),
+    ("rtp", "rtp"),
+)
+
+
+def tshark_count(path: Path, display_filter: str) -> int:
+    """How many frames tshark matches. Independent of everything pcap-doctor does."""
+    try:
+        proc = subprocess.run(
+            ["tshark", "-r", str(path), "-Y", display_filter, "-T", "fields", "-e", "frame.number"],
+            capture_output=True, text=True, timeout=180,
+        )
+    except (subprocess.TimeoutExpired, FileNotFoundError):
+        return -1
+    if proc.returncode != 0:
+        return -1
+    return len([line for line in proc.stdout.splitlines() if line.strip()])
+
+
+def oracle_for(path: Path, report: dict[str, Any], findings: list[dict[str, Any]]) -> list[str]:
+    """Findings that two independent tools disagree about."""
+    suspects: list[str] = []
+    sessions = report.get("tls_sessions") or []
+    codes = {f.get("code") for f in findings}
+    notes = " ".join(report.get("notes") or []).lower()
+
+    hellos = tshark_count(path, "tls.handshake.type == 1 || dtls.handshake.type == 1")
+    if hellos > 0 and not sessions:
+        suspects.append(
+            f"false-negative: tshark counts {hellos} TLS Client Hello(s), the report has 0 TLS sessions"
+        )
+    elif sessions and hellos == 0:
+        suspects.append(
+            f"false-positive: the report has {len(sessions)} TLS session(s), tshark counts 0 Client Hello(s)"
+        )
+
+    # Suspects only: a cleartext detector is allowed to stay silent, so these need a human.
+    quiet = {
+        "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http"),
+        "dns": ({"DNS_CLEARTEXT"}, "dns"),
+        "ssh": ({"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}, "ssh"),
+        "sip": ({"SIP_CLEARTEXT_SIGNALLING"}, "sip"),
+        "rtp": ({"RTP_MEDIA_UNPROTECTED"}, "rtp"),
+    }
+    for name, (family, display_filter) in quiet.items():
+        seen = tshark_count(path, display_filter)
+        if seen > 0 and not (codes & family) and not any(n in notes for n in ("dns", "http", "ssh", "sip", "rtp")):
+            suspects.append(
+                f"suspect: tshark counts {seen} {name} frame(s) but no {sorted(family)} finding "
+                f"was reported (may be legitimate; check by hand)"
+            )
+    return suspects
 
 def captures() -> list[Path]:
     root = BLOBS / "capture"
