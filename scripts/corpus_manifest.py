@@ -46,6 +46,58 @@ PER_RELEASE = 6
 GITHUB_SOURCES: tuple[dict[str, Any], ...] = ()
 
 
+# Real key material with properties known by construction: the openssl project's own test
+# vectors. Unlike the firmware corpus these are not stock images -- they are the canonical corpus
+# for X.509 and key-parsing edge cases, and the name says what each file is.
+OPENSSL_CERTS = "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/"
+
+# (filename, expected flags). The expectation is what "keys scan" must report; the flags are keys
+# scan's own vocabulary (see src/pcapforensics/cli/keys.py).
+KNOWN_WEAK: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ca-key-768.pem", ("weak-key-768bit",)),
+    ("ca-cert-768.pem", ("weak-key-768bit",)),
+    ("ee-key-768.pem", ("weak-key-768bit",)),
+    ("ee-cert-768.pem", ("weak-key-768bit",)),
+    ("ee-key-1024.pem", ("weak-key-1024bit",)),
+    ("ee-cert-1024.pem", ("weak-key-1024bit",)),
+    ("root-key-768.pem", ("weak-key-768bit",)),
+    ("root-cert-768.pem", ("weak-key-768bit",)),
+)
+
+# ee-expired2.pem is deliberately NOT here despite the name: openssl reports notAfter 2035-09-16, so
+# it is valid today. The filename is a generation counter, not a promise. An oracle that trusts a
+# filename instead of the bytes invents defects.
+KNOWN_EXPIRED: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ca-expired.pem", ("expired",)),
+    ("ee-expired.pem", ("expired",)),
+    ("root-expired.pem", ("expired",)),
+)
+
+# A private key and the certificate carrying its public half, placed in one tree. Expected on the
+# key: private-key-for-a-shipped-cert. On the cert: private-key-present. This is the finding that
+# matters most in a firmware audit -- and the one the OpenWrt corpus cannot produce at all, because
+# those images ship no device keys (dropbear generates host keys on first boot).
+#
+# The algorithms are deliberately spread: RSA, DSA, ECDSA on P-256/P-384, brainpool, Ed25519, Ed448
+# and post-quantum ML-DSA. SPKI fingerprinting is exactly where exotic key types break, so they
+# belong here.
+KEY_AND_CERT: tuple[tuple[str, str], ...] = (
+    ("ca-key.pem", "ca-cert.pem"),
+    ("ee-key.pem", "ee-cert.pem"),
+    ("root-key.pem", "root-cert.pem"),
+    ("p256-server-key.pem", "p256-server-cert.pem"),
+    ("p256-ee-rsa-ca-key.pem", "p256-ee-rsa-ca-cert.pem"),
+    ("server-dsa-key.pem", "server-dsa-cert.pem"),
+    ("server-ecdsa-key.pem", "server-ecdsa-cert.pem"),
+    ("server-ed25519-key.pem", "server-ed25519-cert.pem"),
+    ("server-ed448-key.pem", "server-ed448-cert.pem"),
+    ("server-ecdsa-brainpoolP256r1-key.pem", "server-ecdsa-brainpoolP256r1-cert.pem"),
+    ("p384-server-key.pem", "p384-server-cert.pem"),
+    ("client-ed25519-key.pem", "client-ed25519-cert.pem"),
+    ("pc1-key.pem", "pc1-cert.pem"),
+)
+
+
 def fetch(url: str, timeout: int = 30) -> bytes:
     request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -172,6 +224,88 @@ def github_captures() -> list[dict[str, Any]]:
     return rows
 
 
+def openssl_test_certs() -> set[str]:
+    """Every filename under openssl's test/certs, fetched once and reused for verification."""
+    raw = json.loads(fetch("https://api.github.com/repos/openssl/openssl/contents/test/certs?ref=master"))
+    return {item["name"] for item in raw if item.get("name", "").endswith(".pem")}
+
+
+# Elliptic-curve keys report their *curve* size in the bits field. Applying the RSA threshold
+# (<=1024 bits) to that flags a P-256 key as weak, which is the opposite of the truth: EC P-256 is
+# roughly RSA-3072 equivalent. These entries exist so the oracle asserts the absence of that flag.
+EC_KEYS: tuple[tuple[str, str], ...] = (
+    ("server-ecdsa-key.pem", "server-ecdsa-cert.pem"),
+    ("server-ed25519-key.pem", "server-ed25519-cert.pem"),
+    ("server-ed448-key.pem", "server-ed448-cert.pem"),
+    ("server-ecdsa-brainpoolP256r1-key.pem", "server-ecdsa-brainpoolP256r1-cert.pem"),
+    ("p256-server-key.pem", "p256-server-cert.pem"),
+    ("p384-server-key.pem", "p384-server-cert.pem"),
+)
+
+
+def keymaterial() -> list[dict[str, Any]]:
+    """Key-material blobs grouped into trees, each carrying what keys scan must report.
+
+    Every named file is verified to exist upstream before the manifest is written. Guessing at a
+    filename is the obvious failure mode here and it is a quiet one: the build succeeds and the
+    download 404s an hour later, so the expectation silently never runs.
+    """
+    rows: list[dict[str, Any]] = []
+    available = openssl_test_certs()
+    named = {name for name, _ in KNOWN_WEAK} | {name for name, _ in KNOWN_EXPIRED}
+    named |= {part for pair in KEY_AND_CERT for part in pair}
+    absent = sorted(name for name in named if name not in available)
+    if absent:
+        raise SystemExit(
+            "corpus_manifest: these key-material files do not exist under openssl test/certs: "
+            + ", ".join(absent)
+        )
+
+    def add(group: str, name: str, expect: dict[str, Any]) -> None:
+        rows.append(
+            {
+                "id": f"ossl-{group}-{name}",
+                "kind": "keymaterial",
+                "group": group,
+                "vendor": "openssl",
+                "name": name,
+                "url": OPENSSL_CERTS + name,
+                "bytes": None,
+                "sha256": None,
+                "expect": expect,
+                "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+                "license": "Apache-2.0 (openssl)",
+                "note": "properties known by construction; the expectation is ground truth",
+            }
+        )
+
+    for name, flags in KNOWN_WEAK:
+        bits = 768 if "768" in name else 1024
+        add("known-weak", name, {"kind": "certificate" if "cert" in name else "private-key",
+                                 "bits": bits, "flags": list(flags)})
+    for name, flags in KNOWN_EXPIRED:
+        add("known-expired", name, {"kind": "certificate", "flags": list(flags)})
+    for key, cert in KEY_AND_CERT:
+        add("key-and-cert", key, {"kind": "private-key", "flags": ["private-key-for-a-shipped-cert"]})
+        add("key-and-cert", cert, {"kind": "certificate", "flags": ["private-key-present"]})
+
+    # EC keys: the pairing must still be found, and no weak-key flag may appear.
+    curves = {"256": "server-ecdsa-key.pem", "384": "p384-server-key.pem"}
+    for key, cert in EC_KEYS:
+        curve = "256"
+        for size in ("256", "384"):
+            if size in key or size in cert:
+                curve = size
+        add("ec-keys", key, {
+            "kind": "private-key",
+            "flags": ["private-key-for-a-shipped-cert"],
+            "forbid": [f"weak-key-{curve}bit"],
+        })
+        add("ec-keys", cert, {"kind": "certificate", "flags": ["private-key-present"]})
+    _ = curves
+    return rows
+
+
 def build() -> dict[str, Any]:
     picked_by_release: dict[str, list[dict[str, Any]]] = {}
     with concurrent.futures.ThreadPoolExecutor(max_workers=7) as pool:
@@ -182,6 +316,7 @@ def build() -> dict[str, Any]:
     firmware = [row for release in OPENWRT_RELEASES for row in picked_by_release[release]]
     captures = github_captures()
     firmware.extend(GITHUB_SOURCES)
+    materials = keymaterial()
 
     return {
         "schema": 1,
@@ -193,9 +328,14 @@ def build() -> dict[str, Any]:
             "traffic, no private key material, no exploit payload. Blobs are not committed; this "
             "manifest plus the SHA-256 recorded at fetch time is the whole contract."
         ),
-        "counts": {"firmware": len(firmware), "captures": len(captures)},
+        "counts": {
+            "firmware": len(firmware),
+            "captures": len(captures),
+            "keymaterial": len(materials),
+        },
         "firmware": firmware,
         "captures": captures,
+        "keymaterial": materials,
     }
 
 
@@ -220,7 +360,10 @@ def main() -> int:
     MANIFEST.parent.mkdir(parents=True, exist_ok=True)
     MANIFEST.write_text(payload)
     counts = manifest["counts"]
-    print(f"wrote {MANIFEST.relative_to(ROOT)}: {counts['firmware']} firmware + {counts['captures']} captures")
+    print(
+        f"wrote {MANIFEST.relative_to(ROOT)}: {counts['firmware']} firmware + "
+        f"{counts['captures']} captures + {counts['keymaterial']} key material"
+    )
     return 0
 
 

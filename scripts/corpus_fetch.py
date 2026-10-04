@@ -133,7 +133,7 @@ def fetch_one(entry: dict[str, Any], verify_only: bool, timeout: int) -> dict[st
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Fetch the corpus blobs.")
-    parser.add_argument("--kind", choices=("firmware", "captures", "capture"), default=None)
+    parser.add_argument("--kind", choices=("firmware", "captures", "capture", "keymaterial"), default=None)
     parser.add_argument("--limit", type=int, default=0, help="only the first N of each kind")
     parser.add_argument("--workers", type=int, default=6)
     parser.add_argument("--timeout", type=int, default=180)
@@ -143,9 +143,10 @@ def main() -> int:
 
     manifest = json.loads(MANIFEST.read_text())
     jobs: list[dict[str, Any]] = []
-    for section in ("firmware", "captures"):
-        entries = manifest[section]
-        if args.kind and not section.startswith(args.kind):
+    for section, entries in sorted(manifest.items()):
+        if not isinstance(entries, list):
+            continue
+        if args.kind and section != args.kind:
             continue
         jobs.extend(entries[: args.limit] if args.limit else entries)
 
