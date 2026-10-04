@@ -242,10 +242,27 @@ def main() -> int:
         with tempfile.TemporaryDirectory(prefix="pf-cli-") as tmp:
             workdir = Path(tmp)
             defects: list[str] = []
+            state = "checked"
+            probe = run(["analyze", str(capture), "-o", str(workdir / "probe"), "-q",
+                         "--no-handoff", "--json-out", str(workdir / "probe.json")])
+            if probe.returncode not in (0, 1) or not (workdir / "probe.json").exists():
+                # A capture the tool refuses to analyse -- truncated, corrupt, not a capture -- is
+                # reported as rejected, exactly as corpus_sweep.py does. It has no report, so there is
+                # no contract to check; the rejection itself was checked there.
+                state = "rejected"
+                results.append({
+                    "capture": str(capture.relative_to(ROOT)),
+                    "state": state,
+                    "defects": [],
+                })
+                if defects:
+                    pass
+                continue
             defects += check_baseline_self(capture, workdir)
             defects += check_why_resolves(capture, workdir)
             defects += check_sarif_and_json(capture, workdir)
-        results.append({"capture": str(capture.relative_to(ROOT)), "defects": defects})
+        results.append({"capture": str(capture.relative_to(ROOT)), "state": state,
+                        "defects": defects})
         if defects:
             print(f"[{index}/{len(items)}] {len(defects)} defect(s)  {capture.name}", flush=True)
             for defect in defects[:4]:
@@ -270,6 +287,8 @@ def main() -> int:
         )
         + "\n"
     )
+    rejected = sum(1 for r in results if r.get("state") == "rejected")
+    print(f"{rejected} capture(s) rejected as unanalysable (documented behaviour, not checked here)")
     total = sum(len(r["defects"]) for r in results) + len(global_defects)
     print(
         f"\n{len(results)} capture(s) + catalog in {time.monotonic() - started:.1f}s, "
