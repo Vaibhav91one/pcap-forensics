@@ -26,6 +26,22 @@ SEVERITY_FOR_DEPRECATION = {
     "recommended": "info",
 }
 
+# Elliptic-curve size policy. RFC 8422 section 5.1.1 deprecates NamedCurve values 1-22 for TLS
+# use -- that range includes secp192r1 (19), secp224r1 (20), secp192k1 (21) and secp224k1 (22) -- and
+# leaves only secp256r1 (23), secp384r1 (24), secp521r1 (25), x25519 (29) and x448 (30). For a tool
+# whose job is TLS, that is the specific authority: a curve under 256 bits is deprecated for this
+# protocol.
+#
+# These two numbers used to live only as literals inside detectors/tls_cipher.py, so the policy existed
+# in code and in no document, and no second consumer could read the same value. They live here so the
+# rule can be argued with rather than rediscovered.
+#
+# Below DEPRECATED_EC_CURVE_BITS a key is treated as broken; at or above it but under
+# MIN_EC_CURVE_BITS it is deprecated-for-TLS, which is a policy call rather than a break, so it ranks
+# below a genuinely weak RSA key even though RFC 8422 puts both in one deprecated bucket.
+DEPRECATED_EC_CURVE_BITS = 224
+MIN_EC_CURVE_BITS = 256
+
 VERSION_RANK: dict[str, int] = {
     "SSL 2.0": 0,
     "SSL 3.0": 10,

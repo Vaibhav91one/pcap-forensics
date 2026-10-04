@@ -93,7 +93,42 @@ capture never showed.
 | `recommended` | TLS 1.3 suite | info |
 | `signalling` | not a cipher | never a finding |
 
-## 6. Provenance
+## 6. Elliptic-curve size
+
+<!-- curve-policy: deprecated_below=224 minimum=256 -->
+
+The suite tiers above are about *cipher suites*. A curve size is a separate question, and until #151
+it was answered in exactly one place -- as two integer literals inside
+`detectors/tls_cipher.py::weak_key_verdict` -- with no document behind it and no way for a second
+consumer to read the same number. Both now live in `data_ciphers`.
+
+| Curve size | Verdict | Why |
+|---|---|---|
+| below 224 | `high` | far below anything still in use, and treated as broken |
+| 224 to 255 | `medium` | deprecated for TLS by RFC 8422, but not a break |
+| 256 and up | not reported | secp256r1 and up |
+
+**The citation is TLS-specific on purpose.** RFC 8422 section 5.1.1 says:
+
+> RFC 4492 defined 25 different curves in the NamedCurve registry [...] for use in TLS. Only three
+> have seen much use. This specification is deprecating the rest (with numbers 1-22).
+
+and the enumeration it leaves in place is `secp256r1 (23)`, `secp384r1 (24)`, `secp521r1 (25)`,
+`x25519 (29)` and `x448 (30)`. That range of 1-22 contains `secp192r1`, `secp224r1`, `secp192k1`
+and `secp224k1`, so for TLS a curve under 256 bits is deprecated. A general key-management document
+would also give a curve-size floor, but it would not be about TLS, and this tool reports on TLS.
+
+**Why 224 and 256 are two numbers and not one.** RFC 8422 puts `secp224r1` in the same deprecated
+bucket as `secp192r1`. The split is this project's judgement about severity, not the RFC's: a
+112-bit curve is not a practical break, so it does not rank beside a 512-bit RSA key. The rule doc
+says so in as many words, and the code's job is to keep them apart.
+
+**What is deliberately not here.** A DSA threshold. A DSA prime size is not comparable with an RSA
+modulus, and no source consulted gives a curve-style floor for it in TLS terms, so
+`weak_key_verdict` reports DSA as undecided rather than guessing. Adding a number would be the exact
+error that branch exists to prevent (#155).
+
+## 7. Provenance
 
 * **RFC 9325** section 4.1 — suites that MUST NOT be negotiated (NULL, RC4, under 112-bit/export) or SHOULD NOT be (under 128-bit, static RSA, non-ephemeral DH).
 * **NIST SP 800-52r2** — allowed cipher suites for TLS: static-RSA and 3DES restrictions.
@@ -102,7 +137,7 @@ capture never showed.
 * The tier boundaries are ours. Where a suite is legal in a specific context (CCM on an IoT device,
   PSK in a mesh network) the report says so in `summary` rather than pretending the rule is absolute.
 
-## 7. Working with the registry
+## 8. Working with the registry
 
 ```bash
 make regenerate                                    # rebuild from the vendored names
