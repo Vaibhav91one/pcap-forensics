@@ -35,10 +35,33 @@ WEAK_BITS = 1024  # RSA <= 1024 bits is breakable; flag it
 # `bits` is an RSA modulus size, and only an RSA modulus size: WEAK_BITS is an RSA threshold. openssl
 # reports every public key type through the same "Public-Key: (N bit)" line, but the number means
 # something different for each — a curve size for EC, a prime size for DSA — so the algorithm is what
-# decides whether the number may be compared against WEAK_BITS at all. See _cert_rsa_bits for the
+# decides whether the number may be compared against WEAK_BITS at all. See _read_cert_key for the
 # certificate path and _read_key_text for the private-key path: both set `bits` for RSA alone, so the
 # one comparison in _flag is an RSA statement by construction rather than by a second guess at the type.
-RSA_PUBLIC_KEY_ALGS = frozenset({"rsaEncryption", "rsassaPss"})
+
+# One vocabulary for `KeyEntry.algorithm`, whichever dump produced the value (#149). openssl names the
+# same fact differently depending on where it read it: a private key says "RSA"/"EC"/"DSA"/"ED25519"/
+# "ED448", a certificate says "rsaEncryption"/"id-ecPublicKey"/"dsaEncryption". The scan prints both
+# kinds of entry in one table, so one of those spellings has to go. We keep the private-key spelling: it
+# is the one `KeyEntry.algorithm` is documented in, the one `DECIDED_ALGORITHMS` and the
+# `strength-undecided-*` flag are written against, and the shorter one to read.
+#
+# Matched case-insensitively, because openssl is not self-consistent about the Ed names either: 3.6
+# prints "ED25519" where older releases print "id-Ed25519", so both are listed rather than one of them
+# being assumed (#149). A name absent from this table is not guessed at — see _algorithm_name.
+_ALGORITHM_NAMES = {
+    "rsa": "RSA",
+    "rsaencryption": "RSA",
+    "rsassapss": "RSA",
+    "ec": "EC",
+    "id-ecpublickey": "EC",
+    "dsa": "DSA",
+    "dsaencryption": "DSA",
+    "ed25519": "ED25519",
+    "id-ed25519": "ED25519",
+    "ed448": "ED448",
+    "id-ed448": "ED448",
+}
 
 # Algorithms whose strength this command can decide. RSA is judged on its modulus against WEAK_BITS.
 # Ed25519 and Ed448 are not parameterised by a secret size at all — RFC 8032 fixes the curve — so there
@@ -52,7 +75,8 @@ DECIDED_ALGORITHMS = frozenset({"RSA", "ED25519", "ED448"})
 class KeyEntry:
     path: str  # relative to the scanned root
     kind: str  # "private-key" or "certificate"
-    algorithm: str | None = None  # RSA / EC / DSA / ED25519 / ED448, or None if unreadable
+    # RSA / EC / DSA / ED25519 / ED448, or None if unreadable or a type this module does not name
+    algorithm: str | None = None
     bits: int | None = None  # an RSA modulus size, and only ever one — see WEAK_BITS
     encrypted: bool = False
     common_name: str | None = None
@@ -76,6 +100,23 @@ def _ossl(args: list[str], data: bytes | None = None) -> tuple[int, bytes]:
 
 def _spki_of_pubkey_der(der: bytes) -> str:
     return hashlib.sha256(der).hexdigest()[:16]
+
+
+def _algorithm_name(raw: str | None) -> str | None:
+    """openssl's name for a public-key algorithm -> this module's name for it (#149).
+
+    The one place an algorithm becomes a `KeyEntry.algorithm` value, so the certificate path and the
+    private-key path cannot drift into two vocabularies for one table. It reads no key and no
+    certificate; it is a pure mapping, and idempotent over both input shapes, which is what lets
+    `_read_key_text` keep naming the types it identifies while the spelling itself is chosen here.
+
+    An input that is absent, or that names a key type this table does not hold, comes back `None`
+    rather than a best guess — the same answer a private-key dump matching none of `_read_key_text`'s
+    markers already gets. A certificate naming a key type we hold no word for is still a certificate we
+    read; we just do not have the word for it, and #148 owns the surface that says so out loud
+    (AGENTS.md section 4).
+    """
+    return _ALGORITHM_NAMES.get(raw.lower()) if raw else None
 
 
 def _read_key_text(text: str) -> tuple[str | None, int | None]:
@@ -116,7 +157,8 @@ def _classify_private_key(path: Path) -> KeyEntry:
     if rc != 0:
         e.encrypted = True  # a key we can't read without a passphrase (still: key material is present)
         return e
-    e.algorithm, e.bits = _read_key_text(out.decode("latin-1"))
+    raw_algorithm, e.bits = _read_key_text(out.decode("latin-1"))
+    e.algorithm = _algorithm_name(raw_algorithm)
     rc, pub = _ossl(["pkey", "-in", str(path), "-pubout", "-outform", "DER"])
     if rc != 0:
         rc, pub = _ossl(["rsa", "-in", str(path), "-pubout", "-outform", "DER", "-passin", "pass:"])
@@ -147,29 +189,34 @@ def _classify_cert(path: Path) -> KeyEntry | None:
         rc3, der = _ossl(["pkey", "-pubin", "-outform", "DER"], pub)
         if rc3 == 0 and der:
             e.spki = _spki_of_pubkey_der(der)
-    _cert_rsa_bits(e, path)
+    _read_cert_key(e, path)
     return e
 
 
-def _cert_rsa_bits(e: KeyEntry, path: Path) -> None:
-    """Read a shipped certificate's RSA modulus size into ``e.bits`` (#143).
+def _read_cert_key(e: KeyEntry, path: Path) -> None:
+    """Read a shipped certificate's public-key algorithm, and for RSA alone its modulus size (#143, #149).
 
-    A certificate carries no key file to read, so this is where ``keys scan`` learns how big the key
-    it ships is — without it a 768-bit certificate reads as merely "private-key-present". openssl
-    reports the size as "Public-Key: (768 bit)", but it prints that same line for an EC key with the
-    curve size, where 256 is a *strong* key, and for a DSA key with a prime size. Handing either to
-    ``_flag``'s RSA threshold is issue #144, so those certificates keep ``bits=None`` here rather
-    than acquiring a number that would read as a breakable RSA key.
+    A certificate carries no key file to read, so this is where `keys scan` learns what kind of key
+    it ships and how big that key is — without it a 768-bit certificate reads as merely
+    "private-key-present". openssl reports the kind on a `Public Key Algorithm:` line and the size as
+    "Public-Key: (768 bit)", but it prints that same size line for an EC key with the curve size, where
+    256 is a *strong* key, and for a DSA key with a prime size. Handing either to `_flag`'s RSA
+    threshold is issue #144, so only RSA acquires a number here; the algorithm is read either way, so
+    the type column can say what the key is instead of showing `-` on every row (#149).
 
-    A certificate whose key size cannot be read keeps ``bits=None`` and is not flagged weak: an
-    unreadable key size is not a weak key, and guessing one would invent a fact the file does not
-    contain (AGENTS.md section 4).
+    Both values come out of :func:`parse_openssl_text`, the same parser the capture path reads, so
+    this command and the capture cannot end up answering "what algorithm is this" in two ways.
+
+    A certificate whose algorithm cannot be read keeps `algorithm=None`, and one whose *size* cannot
+    be read keeps `bits=None`: a key we could not read is not a weak key, and naming either one would
+    invent a fact the file does not contain (AGENTS.md section 4).
     """
     rc, text = _ossl(["x509", "-in", str(path), "-noout", "-text"])
     if rc != 0:
         return
     facts = parse_openssl_text(text.decode("latin-1"))
-    if facts.key_algorithm in RSA_PUBLIC_KEY_ALGS:
+    e.algorithm = _algorithm_name(facts.key_algorithm)
+    if e.algorithm == "RSA":
         e.bits = facts.public_key_bits
 
 
