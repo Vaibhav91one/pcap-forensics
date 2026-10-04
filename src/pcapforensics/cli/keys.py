@@ -24,13 +24,19 @@ from pathlib import Path
 import typer
 from rich.table import Table
 
-from ..certificates import openssl_path
+from ..certificates import openssl_path, parse_openssl_text
 from ._console import console
 
 keys_app = typer.Typer(help="Inspect key material in an extracted firmware tree.", no_args_is_help=True)
 
 KEY_EXT = (".pem", ".key", ".der", ".crt", ".cer")
 WEAK_BITS = 1024  # RSA <= 1024 bits is breakable; flag it
+
+# `bits` is an RSA modulus size, and only an RSA modulus size: WEAK_BITS is an RSA threshold. openssl
+# reports every public key type through the same "Public-Key: (N bit)" line, but the number means
+# something different for each — a curve size for EC, a prime size for DSA — so the algorithm is what
+# decides whether the number may be compared against WEAK_BITS at all. See _cert_rsa_bits.
+RSA_PUBLIC_KEY_ALGS = frozenset({"rsaEncryption", "rsassaPss"})
 
 
 @dataclass
@@ -105,7 +111,30 @@ def _classify_cert(path: Path) -> KeyEntry | None:
         rc3, der = _ossl(["pkey", "-pubin", "-outform", "DER"], pub)
         if rc3 == 0 and der:
             e.spki = _spki_of_pubkey_der(der)
+    _cert_rsa_bits(e, path)
     return e
+
+
+def _cert_rsa_bits(e: KeyEntry, path: Path) -> None:
+    """Read a shipped certificate's RSA modulus size into ``e.bits`` (#143).
+
+    A certificate carries no key file to read, so this is where ``keys scan`` learns how big the key
+    it ships is — without it a 768-bit certificate reads as merely "private-key-present". openssl
+    reports the size as "Public-Key: (768 bit)", but it prints that same line for an EC key with the
+    curve size, where 256 is a *strong* key, and for a DSA key with a prime size. Handing either to
+    ``_flag``'s RSA threshold is issue #144, so those certificates keep ``bits=None`` here rather
+    than acquiring a number that would read as a breakable RSA key.
+
+    A certificate whose key size cannot be read keeps ``bits=None`` and is not flagged weak: an
+    unreadable key size is not a weak key, and guessing one would invent a fact the file does not
+    contain (AGENTS.md section 4).
+    """
+    rc, text = _ossl(["x509", "-in", str(path), "-noout", "-text"])
+    if rc != 0:
+        return
+    facts = parse_openssl_text(text.decode("latin-1"))
+    if facts.key_algorithm in RSA_PUBLIC_KEY_ALGS:
+        e.bits = facts.public_key_bits
 
 
 def _is_private_key(path: Path) -> bool:
