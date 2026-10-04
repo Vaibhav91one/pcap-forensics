@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from typing import ClassVar
 
 from ..data_ciphers import (
+    DEPRECATED_EC_CURVE_BITS,
+    MIN_EC_CURVE_BITS,
     VERSION_RANK,
     classify,
     lookup,
@@ -584,9 +586,9 @@ def weak_key_verdict(algorithm: str | None, bits: int | None) -> tuple[str, str]
         return None
     algo = (algorithm or "").lower()
     if "ec" in algo or "ecdsa" in algo:
-        if bits < 224:
+        if bits < DEPRECATED_EC_CURVE_BITS:
             return "high", "Elliptic curves below 224 bits are outside current guidance."
-        if bits < 256:
+        if bits < MIN_EC_CURVE_BITS:
             return "medium", "P-224 is not recommended for new deployments; use P-256 or stronger."
         return None
     if not algo:

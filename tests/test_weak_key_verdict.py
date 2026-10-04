@@ -9,12 +9,15 @@ TLS_CERT_WEAK_KEY with its evidence table -- is covered in tests/test_detectors.
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
 from pcapforensics.certificates import openssl_path
+from pcapforensics.data_ciphers import DEPRECATED_EC_CURVE_BITS, MIN_EC_CURVE_BITS
 from pcapforensics.detectors.tls_cipher import weak_key_verdict
 
 
@@ -124,6 +127,45 @@ def test_ec_behaviour_is_unchanged(algorithm: str, bits: int, expected) -> None:
 def test_no_size_means_no_verdict() -> None:
     assert weak_key_verdict("rsaEncryption", None) is None
     assert weak_key_verdict(None, None) is None
+
+
+def test_the_curve_policy_is_the_documented_one() -> None:
+    """The numbers are in docs/cipher-policy.md and in data_ciphers; they must not drift apart.
+
+    The policy used to exist only as two literals inside the detector, which meant there was nothing
+    to drift from and nothing to argue with. Now there is a documented threshold, so a change to one
+    without the other should fail here rather than silently.
+    """
+    assert DEPRECATED_EC_CURVE_BITS < MIN_EC_CURVE_BITS
+    policy = (Path(__file__).parent.parent / "docs" / "cipher-policy.md").read_text()
+
+    # The numbers are checked against a machine-readable marker rather than by looking for them in
+    # prose: "224" appears in the document for several unrelated reasons (secp224r1, P-224), so a
+    # substring check passes even when the published boundary has changed underneath it.
+    declared = re.search(
+        r"<!-- curve-policy: deprecated_below=(\d+) minimum=(\d+) -->", policy
+    )
+    assert declared is not None, (
+        "docs/cipher-policy.md must carry a '<!-- curve-policy: deprecated_below=N minimum=N -->' "
+        "marker, or the published policy cannot be checked against the code"
+    )
+    assert int(declared.group(1)) == DEPRECATED_EC_CURVE_BITS
+    assert int(declared.group(2)) == MIN_EC_CURVE_BITS
+
+    # And the document must still say where the numbers come from, not just what they are.
+    assert "RFC 8422" in policy, "the curve policy must cite the document it comes from"
+
+
+def test_the_verdict_agrees_with_the_published_constants() -> None:
+    """The literal 224/256 in the messages must be the constants, not stale copies."""
+    below = weak_key_verdict("ec", DEPRECATED_EC_CURVE_BITS - 1)
+    at_floor = weak_key_verdict("ec", DEPRECATED_EC_CURVE_BITS)
+    at_min = weak_key_verdict("ec", MIN_EC_CURVE_BITS)
+    assert below is not None and below[0] == "high"
+    assert at_floor is not None and at_floor[0] == "medium"
+    assert at_min is None
+    assert str(DEPRECATED_EC_CURVE_BITS) in below[1]
+    assert str(DEPRECATED_EC_CURVE_BITS) in at_floor[1]
 
 
 def test_openssl_is_really_available() -> None:
