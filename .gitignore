@@ -23,3 +23,9 @@ out/
 # NOTE: captures/ is intentionally NOT ignored in this repo -- the regression
 # suite needs it and the files are small. Set PF_SKIP_CAPTURES=1 in CI to
 # download them at run time instead of storing them.
+
+# real-world stress corpus: manifest and tooling are committed, blobs are not
+# (244 MB of firmware images and 4 MB of captures; see corpus/README.md)
+corpus/blobs/
+corpus/reports/
+.corpus-venv/
