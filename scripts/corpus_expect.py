@@ -66,9 +66,9 @@ def materialise(entries: list[dict[str, Any]]) -> dict[str, Path]:
     return trees
 
 
-def scan(tree: Path) -> list[dict[str, Any]]:
+def scan(tree: Path, cli: Path = CLI) -> list[dict[str, Any]]:
     proc = subprocess.run(
-        [str(CLI), "keys", "scan", str(tree), "--json"],
+        [str(cli), "keys", "scan", str(tree), "--json"],
         capture_output=True, text=True, timeout=300, cwd=ROOT,
     )
     if proc.returncode not in (0, 1):
@@ -109,7 +109,14 @@ def compare(entries: list[dict[str, Any]], reported: list[dict[str, Any]]) -> li
 def main() -> int:
     parser = argparse.ArgumentParser(description="Compare keys scan against known-good material.")
     parser.add_argument("--verbose", action="store_true")
-    parser.parse_args()
+    parser.add_argument(
+        "--pcap-doctor",
+        type=Path,
+        default=CLI,
+        help="the pcap-doctor to test. Point this at a worktree's CLI when verifying a patch: "
+             "the default shells out to this repo, which runs the committed code, not yours.",
+    )
+    args = parser.parse_args()
 
     manifest = json.loads(MANIFEST.read_text())
     entries = manifest.get("keymaterial") or []
@@ -123,7 +130,7 @@ def main() -> int:
     for group in sorted(trees):
         tree = trees[group]
         members = [e for e in entries if e["group"] == group]
-        reported = scan(tree)
+        reported = scan(tree, args.pcap_doctor)
         defects = compare(members, reported)
         total_defects += len(defects)
         results.append(
