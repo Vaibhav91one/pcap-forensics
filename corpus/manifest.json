@@ -2631,7 +2631,8 @@
   ],
   "counts": {
     "captures": 219,
-    "firmware": 42
+    "firmware": 42,
+    "keymaterial": 49
   },
   "firmware": [
     {
@@ -3308,6 +3309,965 @@
     }
   ],
   "generated_by": "scripts/corpus_manifest.py",
+  "keymaterial": [
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ca-key-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ca-key-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ca-key-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ca-cert-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ca-cert-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ca-cert-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ee-key-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-key-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-key-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ee-cert-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-cert-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-cert-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 1024,
+        "flags": [
+          "weak-key-1024bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ee-key-1024.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-key-1024.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-key-1024.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 1024,
+        "flags": [
+          "weak-key-1024bit"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-ee-cert-1024.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-cert-1024.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-cert-1024.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-root-key-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "root-key-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/root-key-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "bits": 768,
+        "flags": [
+          "weak-key-768bit"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-weak",
+      "id": "ossl-known-weak-root-cert-768.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "root-cert-768.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/root-cert-768.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "expired"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-expired",
+      "id": "ossl-known-expired-ca-expired.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ca-expired.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ca-expired.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "expired"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-expired",
+      "id": "ossl-known-expired-ee-expired.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-expired.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-expired.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "expired"
+        ],
+        "kind": "certificate"
+      },
+      "group": "known-expired",
+      "id": "ossl-known-expired-root-expired.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "root-expired.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/root-expired.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-ca-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ca-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ca-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-ca-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ca-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ca-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-ee-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-ee-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "ee-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/ee-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-root-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "root-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/root-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-root-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "root-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/root-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p256-server-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-server-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-server-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p256-server-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-server-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-server-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p256-ee-rsa-ca-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-ee-rsa-ca-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-ee-rsa-ca-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p256-ee-rsa-ca-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-ee-rsa-ca-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-ee-rsa-ca-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-dsa-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-dsa-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-dsa-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-dsa-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-dsa-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-dsa-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ecdsa-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ecdsa-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ed25519-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed25519-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed25519-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ed25519-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed25519-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed25519-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ed448-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed448-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed448-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ed448-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed448-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed448-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ecdsa-brainpoolP256r1-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-brainpoolP256r1-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-brainpoolP256r1-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-server-ecdsa-brainpoolP256r1-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-brainpoolP256r1-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-brainpoolP256r1-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p384-server-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p384-server-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p384-server-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-p384-server-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p384-server-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p384-server-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-client-ed25519-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "client-ed25519-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/client-ed25519-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-client-ed25519-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "client-ed25519-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/client-ed25519-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "kind": "private-key"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-pc1-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "pc1-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/pc1-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "key-and-cert",
+      "id": "ossl-key-and-cert-pc1-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "pc1-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/pc1-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-256bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ecdsa-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ecdsa-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-256bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ed25519-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed25519-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed25519-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ed25519-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed25519-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed25519-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-256bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ed448-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed448-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed448-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ed448-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ed448-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ed448-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-256bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ecdsa-brainpoolP256r1-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-brainpoolP256r1-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-brainpoolP256r1-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-server-ecdsa-brainpoolP256r1-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "server-ecdsa-brainpoolP256r1-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/server-ecdsa-brainpoolP256r1-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-256bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-p256-server-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-server-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-server-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-p256-server-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p256-server-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p256-server-cert.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-for-a-shipped-cert"
+        ],
+        "forbid": [
+          "weak-key-384bit"
+        ],
+        "kind": "private-key"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-p384-server-key.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p384-server-key.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p384-server-key.pem",
+      "vendor": "openssl"
+    },
+    {
+      "bytes": null,
+      "expect": {
+        "flags": [
+          "private-key-present"
+        ],
+        "kind": "certificate"
+      },
+      "group": "ec-keys",
+      "id": "ossl-ec-keys-p384-server-cert.pem",
+      "kind": "keymaterial",
+      "license": "Apache-2.0 (openssl)",
+      "name": "p384-server-cert.pem",
+      "note": "properties known by construction; the expectation is ground truth",
+      "provenance": "the openssl project's own test vectors (raw.githubusercontent.com)",
+      "sha256": null,
+      "url": "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/p384-server-cert.pem",
+      "vendor": "openssl"
+    }
+  ],
   "policy": "Published vendor downloads and public repositories only. No capture of anyone else's traffic, no private key material, no exploit payload. Blobs are not committed; this manifest plus the SHA-256 recorded at fetch time is the whole contract.",
   "schema": 1,
   "tool": "pcap-doctor corpus",

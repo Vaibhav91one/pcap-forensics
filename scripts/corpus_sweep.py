@@ -248,7 +248,10 @@ def sweep_keys_scan(trees: list[Path], timeout: int) -> list[dict[str, Any]]:
                     record.update(state="defective", defects=[f"no-report: keys scan JSON unreadable ({exc})"])
                 else:
                     entries = payload.get("entries") or []
-                    keys = [e for e in entries if e.get("kind") == "private_key"]
+                    # The kind strings are hyphenated ("private-key"), not underscored. Getting this
+                    # wrong silently counts every private key as zero, which turns the whole oracle
+                    # into a no-op that always passes.
+                    keys = [e for e in entries if e.get("kind") == "private-key"]
                     certs = [e for e in entries if e.get("kind") == "certificate"]
                     record["keys"] = len(keys)
                     record["certs"] = len(certs)
