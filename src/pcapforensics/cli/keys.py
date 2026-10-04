@@ -35,16 +35,25 @@ WEAK_BITS = 1024  # RSA <= 1024 bits is breakable; flag it
 # `bits` is an RSA modulus size, and only an RSA modulus size: WEAK_BITS is an RSA threshold. openssl
 # reports every public key type through the same "Public-Key: (N bit)" line, but the number means
 # something different for each — a curve size for EC, a prime size for DSA — so the algorithm is what
-# decides whether the number may be compared against WEAK_BITS at all. See _cert_rsa_bits.
+# decides whether the number may be compared against WEAK_BITS at all. See _cert_rsa_bits for the
+# certificate path and _read_key_text for the private-key path: both set `bits` for RSA alone, so the
+# one comparison in _flag is an RSA statement by construction rather than by a second guess at the type.
 RSA_PUBLIC_KEY_ALGS = frozenset({"rsaEncryption", "rsassaPss"})
+
+# Algorithms whose strength this command can decide. RSA is judged on its modulus against WEAK_BITS.
+# Ed25519 and Ed448 are not parameterised by a secret size at all — RFC 8032 fixes the curve — so there
+# is no number to brute-force and no threshold to apply. Everything else (EC, DSA, and any key type
+# openssl describes in a way we do not recognise) is reported undecided by _flag rather than judged
+# by the RSA rule or silently passed over as acceptable (AGENTS.md section 4).
+DECIDED_ALGORITHMS = frozenset({"RSA", "ED25519", "ED448"})
 
 
 @dataclass
 class KeyEntry:
     path: str  # relative to the scanned root
     kind: str  # "private-key" or "certificate"
-    algorithm: str | None = None  # RSA / EC
-    bits: int | None = None
+    algorithm: str | None = None  # RSA / EC / DSA / ED25519 / ED448, or None if unreadable
+    bits: int | None = None  # an RSA modulus size, and only ever one — see WEAK_BITS
     encrypted: bool = False
     common_name: str | None = None
     self_signed: bool | None = None
@@ -69,6 +78,36 @@ def _spki_of_pubkey_der(der: bytes) -> str:
     return hashlib.sha256(der).hexdigest()[:16]
 
 
+def _read_key_text(text: str) -> tuple[str | None, int | None]:
+    """``(algorithm, RSA modulus size)`` read out of an ``openssl pkey -text`` dump (#144).
+
+    openssl prints the same ``Private-Key: (N bit)`` line for every key type, and N is a different
+    quantity in each: a modulus for RSA, a curve size for EC, a prime size for DSA. Only the RSA
+    modulus is returned, because only that is the quantity ``WEAK_BITS`` is a threshold for — handing
+    the curve size of a NIST-recommended P-256 key to an RSA breakability threshold reports a key
+    roughly as strong as RSA-3072 as weak.
+
+    Each algorithm is recognised from a marker openssl prints for that algorithm alone, and a key
+    matching none of them comes back as ``None`` rather than being assumed to be RSA: an unplaceable
+    key is then reported undecided by ``_flag``, which is honest, where a default of "RSA" would call
+    a strong key breakable (AGENTS.md section 4). The size of an EC curve is deliberately not
+    returned; judging curves is a policy this module does not have, and guessing one here would put it
+    nowhere (#144).
+    """
+    size = re.search(r"\((\d+)\s*bit", text)  # "Private-Key: (512 bit, 2 primes)"
+    modulus = int(size.group(1)) if size else None
+    header = text.lstrip().partition("\n")[0]
+    if header.startswith(("ED25519", "ED448")):
+        return header.partition(" ")[0], None  # "ED25519 Private-Key:" — fixed-parameter, no size
+    if "ASN1 OID:" in text:  # every EC key: "ASN1 OID: prime256v1", "ASN1 OID: brainpoolP256r1"
+        return "EC", None
+    if all(re.search(rf"^{name}:\s*$", text, re.M) for name in ("P", "Q", "G")):  # DSA prints p, q, g
+        return "DSA", None
+    if "modulus:" in text and "publicExponent:" in text:  # RSA alone
+        return "RSA", modulus
+    return None, None
+
+
 def _classify_private_key(path: Path) -> KeyEntry:
     e = KeyEntry(path="", kind="private-key")
     rc, out = _ossl(["pkey", "-in", str(path), "-noout", "-text"])
@@ -77,10 +116,7 @@ def _classify_private_key(path: Path) -> KeyEntry:
     if rc != 0:
         e.encrypted = True  # a key we can't read without a passphrase (still: key material is present)
         return e
-    text = out.decode("latin-1")
-    e.algorithm = "EC" if ("NIST" in text or "ASN1 OID" in text) else "RSA"
-    bits = re.search(r"\((\d+)\s*bit", text)  # "Private-Key: (512 bit, 2 primes)"
-    e.bits = int(bits.group(1)) if bits else None
+    e.algorithm, e.bits = _read_key_text(out.decode("latin-1"))
     rc, pub = _ossl(["pkey", "-in", str(path), "-pubout", "-outform", "DER"])
     if rc != 0:
         rc, pub = _ossl(["rsa", "-in", str(path), "-pubout", "-outform", "DER", "-passin", "pass:"])
@@ -164,8 +200,16 @@ def _flag(entries: list[KeyEntry]) -> None:
     cert_spki = {e.spki for e in entries if e.kind == "certificate" and e.spki}
     key_spki = {e.spki for e in entries if e.kind == "private-key" and e.spki}
     for e in entries:
+        # `bits` holds an RSA modulus and nothing else (WEAK_BITS), so this threshold says "this RSA key
+        # is breakable" and cannot say it about a curve or a DSA prime.
         if e.bits is not None and e.bits <= WEAK_BITS:
             e.flags.append(f"weak-key-{e.bits}bit")
+        # An algorithm with no threshold here is neither strong nor weak here, and saying nothing would
+        # read as the first. Say which one it is instead (#144). Certificates are left alone: #143 owns
+        # how they are classified and already leaves their `bits` as an RSA modulus or None.
+        if e.kind == "private-key" and e.algorithm not in DECIDED_ALGORITHMS:
+            reason = (e.algorithm or "unknown-algorithm").lower()
+            e.flags.append(f"strength-undecided-{reason}")
         if e.self_signed:
             e.flags.append("self-signed")
         if e.not_after:
