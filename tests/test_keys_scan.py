@@ -198,3 +198,126 @@ def test_without_openssl_the_scan_reports_it_instead_of_guessing(cli_runner, tmp
     monkeypatch.setattr(keys, "openssl_path", lambda: None)
     assert cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"]).exit_code == 2
     assert scan(fw) == []  # a certificate we cannot read is reported as nothing, not as a weak key
+
+# --- #144: key strength is judged per algorithm; `bits` is an RSA modulus and nothing else ---
+
+
+def _gen_key(fw, name, *args):
+    """Write a private key openssl can generate here; skip where it cannot."""
+    path = fw / f"{name}.key"
+    r = subprocess.run(["openssl", "genpkey", "-out", str(path), *args], capture_output=True)
+    if r.returncode != 0:
+        pytest.skip(f"this openssl cannot generate {name}: {r.stderr.decode()[:120]}")
+    return path
+
+
+@needs_openssl
+@pytest.mark.parametrize(
+    ("name", "curve"),
+    [("p256", "P-256"), ("p384", "P-384"), ("bp256", "brainpoolP256r1")],
+)
+def test_elliptic_curve_key_is_not_a_weak_key(tmp_path, name, curve):
+    """openssl prints `Private-Key: (256 bit)` for a P-256 key, and 256 is not a weak RSA modulus.
+
+    P-256 is roughly RSA-3072 equivalent, so raising weak-key-256bit on a NIST-recommended curve tells
+    an analyst their key is breakable when it is not (#144).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, name, "-algorithm", "EC", "-pkeyopt", f"ec_paramgen_curve:{curve}")
+    (e,) = scan(fw)
+    assert e.algorithm == "EC"
+    assert e.bits is None  # a curve size is not an RSA modulus, so it never reaches WEAK_BITS
+    assert not any(f.startswith("weak-key-") for f in e.flags)
+
+
+@needs_openssl
+@pytest.mark.parametrize("bits", [768, 1024, 2048])
+def test_rsa_key_keeps_its_weak_key_flag(tmp_path, bits):
+    """RSA is unchanged by #144: at or below 1024 is breakable, above it is not."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, f"rsa{bits}", "-algorithm", "RSA", "-pkeyopt", f"rsa_keygen_bits:{bits}")
+    (e,) = scan(fw)
+    assert e.algorithm == "RSA"
+    assert e.bits == bits
+    weak = [f for f in e.flags if f.startswith("weak-key-")]
+    assert weak == ([f"weak-key-{bits}bit"] if bits <= 1024 else [])
+
+
+@needs_openssl
+@pytest.mark.parametrize("pbits", [1024, 2048])
+def test_dsa_key_is_undecided_and_never_weak(tmp_path, pbits):
+    """A DSA prime size is not comparable with an RSA modulus, so it must not reach WEAK_BITS.
+
+    A 1024-bit DSA key is the case a naive fix gets wrong: the number is <= 1024, so handing it to
+    the RSA threshold raises weak-key-1024bit on a key type the project has never had a rule for.
+    DSA is reported undecided instead — neither strong nor weak, and saying which (#144).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    params = tmp_path / f"dsa{pbits}-params.pem"  # outside fw: a params file is not scanned
+    made = subprocess.run(["openssl", "genpkey", "-genparam", "-algorithm", "DSA",
+                           "-pkeyopt", f"pbits:{pbits}", "-out", str(params)], capture_output=True)
+    if made.returncode != 0:
+        pytest.skip(f"this openssl cannot generate a {pbits}-bit DSA key: {made.stderr.decode()[:120]}")
+    _gen_key(fw, f"dsa{pbits}", "-paramfile", str(params))
+    (e,) = scan(fw)
+    assert e.algorithm == "DSA"
+    assert e.bits is None  # a DSA prime size is not an RSA modulus
+    assert not any(f.startswith("weak-key-") for f in e.flags)
+    assert "strength-undecided-dsa" in e.flags
+
+
+_PKEY_TEXT = {
+    "rsa": "Private-Key: (1024 bit, 2 primes)\nmodulus:\n    00:ab\npublicExponent: 65537 (0x10001)\n",
+    "ec": "Private-Key: (256 bit)\npriv:\n    ab:cd\nASN1 OID: prime256v1\nNIST CURVE: P-256\n",
+    "dsa": "Private-Key: (1024 bit)\npriv:\n    ab:cd\nP:   \n    00:e1\nQ:   \n    00:9e\nG:   \n    68:48\n",
+    "ed25519": "ED25519 Private-Key:\npriv:\n    7e:ff\n",
+    "ed448": "ED448 Private-Key:\npriv:\n    57:da\n",
+    "unknown": "Some-Future-Key: (512 bit)\npriv:\n    ab:cd\n",
+}
+
+
+@pytest.mark.parametrize(
+    ("dump", "algorithm", "bits"),
+    [
+        # Only RSA gets a number back, because only an RSA modulus is what WEAK_BITS thresholds.
+        ("rsa", "RSA", 1024),
+        ("ec", "EC", None),
+        ("dsa", "DSA", None),
+        ("ed25519", "ED25519", None),
+        ("ed448", "ED448", None),
+        # Not recognised is not RSA: guessing "RSA" would call a 512-bit strong key breakable.
+        ("unknown", None, None),
+    ],
+)
+def test_only_an_rsa_modulus_is_read_out_of_a_private_key(dump, algorithm, bits):
+    assert keys._read_key_text(_PKEY_TEXT[dump]) == (algorithm, bits)
+
+
+@needs_openssl
+def test_fixed_curve_eddsa_key_is_decided_and_carries_no_undecided_note(tmp_path):
+    """Ed25519 has one size by definition (RFC 8032): there is no threshold to apply, nothing to undecide."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "ed25519", "-algorithm", "ED25519")
+    (e,) = scan(fw)
+    assert e.algorithm == "ED25519"
+    assert e.bits is None
+    assert e.flags == []
+
+
+def test_a_key_type_we_cannot_read_is_reported_undecided(tmp_path, monkeypatch):
+    """An unplaceable key is neither strong nor weak: it says so, rather than passing in silence (#144)."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    (fw / "thing.key").write_text("-----BEGIN PRIVATE KEY-----\nnot a real key\n-----END PRIVATE KEY-----\n")
+
+    def fake_ossl(args, data=None):
+        return (0, _PKEY_TEXT["unknown"].encode()) if "-text" in args else (1, b"")
+
+    monkeypatch.setattr(keys, "_ossl", fake_ossl)
+    (e,) = scan(fw)
+    assert e.bits is None
+    assert e.flags == ["strength-undecided-unknown-algorithm"]
