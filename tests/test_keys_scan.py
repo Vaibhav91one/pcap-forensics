@@ -321,3 +321,215 @@ def test_a_key_type_we_cannot_read_is_reported_undecided(tmp_path, monkeypatch):
     (e,) = scan(fw)
     assert e.bits is None
     assert e.flags == ["strength-undecided-unknown-algorithm"]
+
+
+# --- #149: a certificate reports its algorithm, in the one vocabulary the private-key path uses ---
+
+
+def _make_alg_cert(fw, name, spec, extra=()):
+    """A self-signed certificate of one key family, skipping where this openssl cannot generate one.
+
+    Which families are generable depends on the openssl build, so a family that cannot be made here is
+    skipped rather than dropped. The per-family contract does not actually depend on generating
+    anything: `_classify_canned_cert` above covers every family on every build, from the dump openssl
+    would print (#149).
+    """
+    try:
+        return _make_cert(fw, name, spec, extra)
+    except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on the local openssl
+        pytest.skip(f"this openssl cannot make a {name} certificate: {exc.stderr.decode()[:120]}")
+
+
+def _make_dsa_cert(fw, name, pbits):
+    """A self-signed DSA certificate; skip where this openssl will not generate DSA parameters."""
+    params = fw.parent / f"{name}-params.pem"  # outside fw: a params file is not scanned
+    made = subprocess.run(["openssl", "genpkey", "-genparam", "-algorithm", "DSA",
+                          "-pkeyopt", f"pbits:{pbits}", "-pkeyopt", "qbits:256",
+                          "-out", str(params)], capture_output=True)
+    if made.returncode != 0:
+        pytest.skip(f"this openssl cannot generate a {pbits}-bit DSA key: {made.stderr.decode()[:120]}")
+    key = fw / f"{name}.key"
+    made = subprocess.run(["openssl", "genpkey", "-paramfile", str(params), "-out", str(key)],
+                          capture_output=True)
+    if made.returncode != 0:
+        pytest.skip(f"this openssl cannot generate a {pbits}-bit DSA key: {made.stderr.decode()[:120]}")
+    cert = fw / f"{name}.crt"
+    made = subprocess.run(["openssl", "req", "-new", "-x509", "-key", str(key), "-days", "3650",
+                           "-subj", f"/CN={name}", "-out", str(cert)], capture_output=True)
+    if made.returncode != 0:  # pragma: no cover - depends on the local openssl
+        pytest.skip(f"this openssl cannot sign a DSA certificate: {made.stderr.decode()[:120]}")
+    return cert
+
+
+@needs_openssl
+@pytest.mark.parametrize(
+    ("name", "spec"),
+    [
+        ("rsa", ["rsa:2048"]),
+        ("ec", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"]),
+        ("ed25519", ["ed25519"]),
+        ("ed448", ["ed448"]),
+    ],
+)
+def test_certificate_reports_its_algorithm(tmp_path, name, spec):
+    """A certificate ships no key file, so its algorithm has to come out of the certificate itself.
+
+    openssl puts it on a "Public Key Algorithm:" line and :func:`parse_openssl_text` already reads it
+    into `CertFacts.key_algorithm`; the scan used that value to gate `bits` and then dropped it, so
+    the type column showed `-` for every certificate and the analyst could not see why one was or was
+    not flagged (#149).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, name, spec)
+    (cert,) = [e for e in scan(fw) if e.kind == "certificate"]
+    assert cert.algorithm == {"rsa": "RSA", "ec": "EC", "ed25519": "ED25519", "ed448": "ED448"}[name]
+
+
+@needs_openssl
+def test_dsa_certificate_reports_its_algorithm(tmp_path):
+    """DSA is a family of its own here, so it gets a real certificate rather than a canned dump."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_dsa_cert(fw, "dsa", 2048)
+    (cert,) = [e for e in scan(fw) if e.kind == "certificate"]
+    assert cert.algorithm == "DSA"
+    assert cert.bits is None  # a DSA prime size is not an RSA modulus (#143)
+
+
+@needs_openssl
+@pytest.mark.parametrize(
+    ("name", "spec"),
+    [
+        ("rsa", ["rsa:2048"]),
+        ("ec", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"]),
+        ("ed25519", ["ed25519"]),
+        ("ed448", ["ed448"]),
+    ],
+)
+def test_a_certificate_and_its_private_key_spell_one_algorithm_one_way(tmp_path, name, spec):
+    """One table gets one vocabulary: RSA cannot appear as both `RSA` and `rsaEncryption`.
+
+    openssl calls the same algorithm differently depending on the dump -- a key says `RSA`, a
+    certificate says `rsaEncryption` -- and the scan puts private keys and certificates in one
+    table, so exactly one of those spellings may survive. Both paths go through one helper (#149).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, name, spec)  # writes the matching private key beside the certificate
+    by_kind = {e.kind: e for e in scan(fw)}
+    assert by_kind["certificate"].algorithm is not None
+    assert by_kind["certificate"].algorithm == by_kind["private-key"].algorithm
+
+
+@needs_openssl
+def test_no_openssl_spelling_reaches_the_table(tmp_path):
+    """Every value in the table is one of our names, whichever dump openssl produced it from.
+
+    This is the property that fails if the certificate path is ever wired back to openssl's own names
+    without passing through the shared helper (#149).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    for name, spec in (("rsa", ["rsa:2048"]),
+                       ("ec", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"]),
+                       ("ed25519", ["ed25519"]),
+                       ("ed448", ["ed448"])):
+        _make_alg_cert(fw, name, spec)
+    reported = {e.algorithm for e in scan(fw)}
+    assert reported == {"RSA", "EC", "ED25519", "ED448"}
+    assert reported <= set(keys.DECIDED_ALGORITHMS) | {"EC"}
+
+
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        # What openssl writes after "Public Key Algorithm:" on a certificate ...
+        ("rsaEncryption", "RSA"),
+        ("rsassaPss", "RSA"),
+        ("id-ecPublicKey", "EC"),
+        ("dsaEncryption", "DSA"),
+        # ... which openssl has also spelled with an OID prefix and in another case: 3.6 prints
+        # "ED25519" where older releases print "id-Ed25519".
+        ("ED25519", "ED25519"),
+        ("id-Ed25519", "ED25519"),
+        ("ED448", "ED448"),
+        ("id-Ed448", "ED448"),
+        # And the tokens a private-key dump is identified by, which must survive unchanged.
+        ("RSA", "RSA"),
+        ("EC", "EC"),
+        ("DSA", "DSA"),
+        ("ED25519", "ED25519"),
+        ("ED448", "ED448"),
+        # A name we hold no word for is not guessed at: it is not RSA, so it acquires no modulus size.
+        ("dhpublicnumber", None),
+        ("X25519", None),
+        # Nothing read is nothing named (AGENTS.md section 4).
+        ("", None),
+        (None, None),
+    ],
+)
+def test_one_helper_names_every_algorithm_spelling(raw, expected):
+    assert keys._algorithm_name(raw) == expected
+
+
+@pytest.mark.parametrize("alg", ["dhpublicnumber", "X25519"])
+def test_a_certificate_algorithm_outside_the_vocabulary_is_reported_as_none(tmp_path, monkeypatch, alg):
+    """openssl naming a key type we hold no word for is not a licence to invent one for it (#149).
+
+    The alternative -- passing openssl's own string through -- is the two-vocabularies bug: the table
+    would read `RSA` on one row and `rsaEncryption` on the next. So an unnamed algorithm is
+    reported the way an unreadable one is, and #148 owns the surface that says so out loud.
+    """
+    e = _classify_canned_cert(tmp_path, monkeypatch, alg, "                Public-Key: (2048 bit)")
+    assert e.algorithm is None
+    assert e.bits is None  # not named RSA, so the number is not read as an RSA modulus
+    assert not any(f.startswith("weak-key-") for f in e.flags)
+    assert e.common_name == "gate"  # the rest of the certificate is still classified
+
+
+def test_a_certificate_algorithm_openssl_cannot_read_is_not_guessed(tmp_path, monkeypatch):
+    """A key we failed to read is named None, not filled in from whatever the size line hints at (#149)."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "ca", ["rsa:2048"])
+    real = keys._ossl
+    monkeypatch.setattr(keys, "_ossl", lambda args, data=None: (1, b"") if "-text" in args else real(args, data))
+    (entry,) = [e for e in scan(fw) if e.kind == "certificate"]
+    assert entry.algorithm is None
+    assert entry.bits is None
+    assert not any(f.startswith("weak-key-") for f in entry.flags)
+    assert entry.common_name == "ca"  # everything else about it is still read
+
+
+@needs_openssl
+def test_reporting_a_certificate_algorithm_changes_no_certificate_flag(tmp_path):
+    """Reading the algorithm is a reporting fix, not a judgement one: #143 and #155 own the flags.
+
+    `bits` is an RSA modulus and only an RSA modulus, so this must not give a certificate a
+    `weak-key-*` flag it did not already have, and it must not hand a certificate the private-key
+    path's `strength-undecided-*` note -- that one is keyed on `algorithm`, and would otherwise
+    start appearing on every EC and DSA certificate the moment this field became populated (#149).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "ca768", ["rsa:768"])  # still flagged weak, exactly as #143 left it
+    _make_alg_cert(fw, "p256", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"])
+    by = {e.path: e for e in scan(fw) if e.kind == "certificate"}
+    assert "weak-key-768bit" in by["ca768.crt"].flags
+    assert by["p256.crt"].algorithm == "EC"
+    for e in by.values():
+        assert not any(f.startswith("strength-undecided-") for f in e.flags)
+    assert not any(f.startswith("weak-key-") for f in by["p256.crt"].flags)
+
+
+@needs_openssl
+def test_the_certificate_algorithm_reaches_the_json_output(cli_runner, tmp_path):
+    """The field is on the entry, not only on the rendered table -- a machine reading --json gets it too."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "ca", ["rsa:2048"])
+    result = cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"])
+    assert result.exit_code == 0
+    certs = [e for e in json.loads(result.output)["entries"] if e["kind"] == "certificate"]
+    assert [c["algorithm"] for c in certs] == ["RSA"]
