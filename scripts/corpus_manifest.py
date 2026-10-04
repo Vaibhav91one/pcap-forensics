@@ -38,8 +38,11 @@ USER_AGENT = "pcap-doctor-corpus/0.6 (+https://github.com/Vaibhav91one/pcap-fore
 # different base and a different shipped filesystem.
 OPENWRT_RELEASES = ("17.01.7", "18.06.6", "19.07.10", "21.02.7", "22.03.7", "23.05.5", "24.10.0")
 
-# Per-release cap: keeps the corpus in the hundreds of MB while spanning every release.
-PER_RELEASE = 6
+# Per-release cap. Twenty keeps the corpus in the low gigabytes while tripling the device diversity
+# against the six-per-release first cut, which found no defects but also did not exercise many
+# distinct firmware layouts. The source has ~1000 devices per release; twenty is breadth with a
+# fetch time a person will actually wait for.
+PER_RELEASE = 20
 
 # Public GitHub repositories holding firmware artefacts, pinned to a tag or a commit so the corpus
 # cannot change under us. Empty until a licence review clears an entry.
