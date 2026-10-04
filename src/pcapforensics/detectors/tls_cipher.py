@@ -569,6 +569,16 @@ def weak_key_verdict(algorithm: str | None, bits: int | None) -> tuple[str, str]
     A blanket "fewer than 2048 bits is weak" rule is wrong for elliptic curves:
     P-384 is a 384-bit number that is stronger than RSA-2048. Getting this wrong
     turns every modern EC certificate into a false high-severity finding.
+
+    It is equally wrong for DSA, whose size is a prime and not a modulus, so
+    "below 2048 bits" means nothing there. DSA therefore gets its own branch that
+    does not apply the RSA threshold, and says why (#152).
+
+    An algorithm we could not identify is also not assumed to be RSA. The
+    unknown case is handled *before* the RSA rule rather than after it, because
+    after it the branch was unreachable for any key under 2048 bits: the RSA rule
+    returned first and the evidence quietly claimed a DSA key, an Ed25519 key or
+    an unnamed key was an RSA one.
     """
     if not bits:
         return None
@@ -579,12 +589,32 @@ def weak_key_verdict(algorithm: str | None, bits: int | None) -> tuple[str, str]
         if bits < 256:
             return "medium", "P-224 is not recommended for new deployments; use P-256 or stronger."
         return None
+    if not algo:
+        if bits < 1024:
+            return "high", ("The key algorithm could not be identified. This key is under 1024 bits, "
+                            "below the breakable threshold whatever algorithm it is.")
+        if bits < 2048:
+            return "medium", ("The key algorithm could not be identified, so the 2048-bit RSA rule was "
+                              "applied as the conservative choice.")
+        return "medium", ("The key algorithm could not be identified. The key is at least 2048 bits, "
+                          "which is acceptable for RSA but is not a verdict on an unknown algorithm.")
+    if "ed25519" in algo or "ed448" in algo:
+        # Fixed-parameter curves: there is no secret size to be small, so there is nothing here to
+        # judge. Unreachable in practice -- openssl prints no "Public-Key: (N bit)" for these, so bits
+        # is None and the guard above has already returned -- but reaching it would mean reporting a
+        # fixed-curve key as a small RSA one, which is worse than the branch costs.
+        return None
+    if "dsa" in algo:
+        # No citation is offered here on purpose: the size rule that follows from one is a prime
+        # size, and docs/cipher-policy.md has no DSA tier to apply. Borrowing the RSA threshold would
+        # be the exact error this branch exists to stop, so the key is reported and the gap named.
+        return "medium", ("DSA key. A DSA prime size is not comparable with an RSA modulus, so the "
+                          "RSA size policy does not apply to this key and pcap-doctor does not judge "
+                          "its strength here. Treat DSA as needing review.")
     if bits < 1024:
         return "high", "RSA keys below 1024 bits are trivially factorable."
     if bits < 2048:
         return "medium", "RSA keys below 2048 bits are outside current guidance."
-    if not algo:
-        return "medium", "The key algorithm could not be identified; the 2048-bit rule was applied."
     return None
 
 
