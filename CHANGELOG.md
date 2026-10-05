@@ -6,6 +6,68 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-10-05
+
+Every change in this release was found by stress-testing the tool against real firmware images and
+real captures rather than against its own fixtures. Two rounds of that work turned up defects in
+`keys scan` and in the TLS certificate path; a third found a way for attacker-chosen capture text to
+reach a report with raw terminal escapes still in it.
+
+Report schema **1.5.0 → 1.6.0**.
+
+### Fixed
+
+- **A DSA key was judged by the RSA threshold and described as RSA.** `weak_key_verdict` had an
+  elliptic-curve branch and then an RSA rule that everything else fell into, so a 1024-bit DSA key was
+  reported as `"RSA keys below 2048 bits are outside current guidance"`. A DSA prime size is not
+  comparable with an RSA modulus, so it is now reported as undecided with a reason rather than
+  borrowed (#155, #152).
+- **Elliptic-curve keys were flagged `weak-key-256bit`.** The `bits` field holds a modulus size for
+  RSA and a curve size for EC, and one threshold was applied to both -- so a NIST-recommended P-256 key
+  read as breakable. Strength is now decided per algorithm (#144, #153).
+- **A certificate's key size was never read,** so a shipped 768-bit RSA certificate produced no
+  weakness flag at all. Certificates now report their algorithm and their RSA modulus size (#143, #146,
+  #149, #159).
+- **`TLS_LEGACY_RECORD_VERSION` fired 26 times across the corpus and every one was the ClientHello
+  sentinel** that RFC 8446 and RFC 5246 require and tell readers to ignore. The record layer now
+  keeps a frame and a content type per record, so the post-handshake case -- a peer that really would
+  downgrade -- is distinguished from the sentinel instead of being reported as inventory (#157, #164,
+  #150, #158).
+- **An attacker-chosen HTTP `Host` header reached `03-findings.md` with raw ANSI escapes intact,**
+  including a screen clear followed by red text reading "no findings" -- in the file the README tells
+  people to paste into a ticket. `keys scan`'s table had the same problem with a firmware file name,
+  which rich would additionally have displayed as a path the analyst does not have (#167, #170, #172,
+  #169, #173, #174, #176).
+- **`keys scan --json` returned the raw escape,** because `json.dumps` encodes it as a six-character
+  sequence. It is a machine surface, so the value is now filtered at the envelope (#175, #177).
+- **The `watch` signal test raced the process reaper,** failing intermittently under load (#179).
+- `keys scan` applies the published curve policy (#162, #165), and an unreadable certificate is now a
+  row that says why instead of vanishing (#163).
+
+### Changed
+
+- Capture-chosen text is filtered once, where a finding is built, and again only where a surface
+  needs something different: a terminal additionally escapes markup, a JSON surface deliberately does
+  not. The rule is written down in AGENTS.md so the asymmetry is not "harmonised" into a bug (#171,
+  #172).
+
+### Added
+
+- A real-world stress corpus: 141 OpenWrt firmware images across seven releases, 219 captures from the
+  wireshark test suite, and 49 key-material vectors, each with the properties it must be expected to
+  report (#141, #142, #145, #147).
+- Harnesses that cross-check the tool against tshark, check its report contract, plant adversarial
+  capture text, and **prove they would still notice if the tool regressed** (#154, #160, #168, #178,
+  #180, #181, #182, #183, #184).
+
+### Known limits, unchanged
+
+- No fixture covers a genuine downgraded TLS application record; the positive path is covered by unit
+  tests over a constructed session (#166).
+- There is deliberately no DSA threshold (#155) and no minimum-curve policy in `keys scan` beyond the
+  published floor (#151).
+
+
 ## [0.6.0] — 2026-10-03
 
 Closes the caveats left after 0.5.0: re-captures match their baseline, live `watch` is proven and stops
