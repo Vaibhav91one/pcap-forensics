@@ -116,9 +116,16 @@ def main() -> int:
         help="the pcap-doctor to test. Point this at a worktree's CLI when verifying a patch: "
              "the default shells out to this repo, which runs the committed code, not yours.",
     )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=MANIFEST,
+        help="the manifest to check against. Point this at a mutated copy to prove the checker "
+             "still fails when the tool regresses; scripts/corpus_selftest.py does exactly that.",
+    )
     args = parser.parse_args()
 
-    manifest = json.loads(MANIFEST.read_text())
+    manifest = json.loads(args.manifest.read_text())
     entries = manifest.get("keymaterial") or []
     if not entries:
         print("no keymaterial entries; run scripts/corpus_manifest.py", file=sys.stderr)
