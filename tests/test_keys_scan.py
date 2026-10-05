@@ -8,9 +8,11 @@ import subprocess
 import pytest
 
 import pcapforensics.cli.keys as keys
+import pcapforensics.data_ciphers as data_ciphers
 from pcapforensics.certificates import openssl_path
 from pcapforensics.cli import app
 from pcapforensics.cli.keys import scan
+from pcapforensics.data_ciphers import MIN_EC_CURVE_BITS
 
 needs_openssl = pytest.mark.skipif(openssl_path() is None, reason="needs openssl")
 
@@ -188,16 +190,24 @@ def test_certificate_key_size_openssl_cannot_read_is_not_guessed(tmp_path, monke
     # the rest of the certificate is still classified
     assert entry.common_name == "ca"
     assert entry.self_signed is True
-
-
 def test_without_openssl_the_scan_reports_it_instead_of_guessing(cli_runner, tmp_path, monkeypatch):
-    """No openssl means no key size, and the command says so instead of inventing one (#143)."""
+    """No openssl means no key size, and the command says so instead of inventing one (#143, #163).
+
+    #143 wrote the last line of this test as `scan(fw) == []`, which pinned two things at once: that an
+    "unreadable certificate is not a weak key -- still true, and still what the test is for -- and that
+    "it is not a row at all, which made a tree holding one broken file report exactly what an empty
+    "tree reports. #163 keeps the first half and gives up the second (#148 says a note, not silence).
+    """
     fw = tmp_path / "fs"
     fw.mkdir()
     (fw / "thing.crt").write_text("-----BEGIN CERTIFICATE-----\n")
     monkeypatch.setattr(keys, "openssl_path", lambda: None)
     assert cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"]).exit_code == 2
-    assert scan(fw) == []  # a certificate we cannot read is reported as nothing, not as a weak key
+    (entry,) = scan(fw)  # the file is reported -- as something, rather than as nothing
+    assert entry.kind == "certificate"
+    assert entry.algorithm is None and entry.bits is None  # nothing invented about it
+    assert not any(f.startswith("weak-key-") for f in entry.flags)  # unreadable is not weak (#143)
+    assert entry.undecided == ["certificate-unreadable"]  # and unreadable is not silence (#163)
 
 # --- #144: key strength is judged per algorithm; `bits` is an RSA modulus and nothing else ---
 
@@ -280,20 +290,27 @@ _PKEY_TEXT = {
 
 
 @pytest.mark.parametrize(
-    ("dump", "algorithm", "bits"),
+    ("dump", "algorithm", "rsa_modulus", "curve_size"),
     [
-        # Only RSA gets a number back, because only an RSA modulus is what WEAK_BITS thresholds.
-        ("rsa", "RSA", 1024),
-        ("ec", "EC", None),
-        ("dsa", "DSA", None),
-        ("ed25519", "ED25519", None),
-        ("ed448", "ED448", None),
+        # RSA gets a modulus, because an RSA modulus is what WEAK_BITS thresholds.
+        ("rsa", "RSA", 1024, None),
+        # EC gets a curve size, and only a curve size (#143, #162).
+        ("ec", "EC", None, 256),
+        # DSA gets neither: a prime size answers no threshold this project has (#155).
+        ("dsa", "DSA", None, None),
+        ("ed25519", "ED25519", None, None),
+        ("ed448", "ED448", None, None),
         # Not recognised is not RSA: guessing "RSA" would call a 512-bit strong key breakable.
-        ("unknown", None, None),
+        ("unknown", None, None, None),
     ],
 )
-def test_only_an_rsa_modulus_is_read_out_of_a_private_key(dump, algorithm, bits):
-    assert keys._read_key_text(_PKEY_TEXT[dump]) == (algorithm, bits)
+def test_the_size_read_out_of_a_private_key_is_the_one_its_own_threshold_reads(dump, algorithm, rsa_modulus, curve_size):
+    """Two sizes, two slots, and neither number in the other's (#143, #162).
+
+    Handing a P-256 curve size to the RSA breakability threshold calls a key roughly as strong as
+    RSA-3072 weak; handing an RSA modulus to the curve floor calls a strong key deprecated. Only the
+    slot whose threshold applies is filled, so no comparison downstream can reach the wrong one."""
+    assert keys._read_key_text(_PKEY_TEXT[dump]) == (algorithm, rsa_modulus, curve_size)
 
 
 @needs_openssl
@@ -339,6 +356,17 @@ def _make_alg_cert(fw, name, spec, extra=()):
         return _make_cert(fw, name, spec, extra)
     except subprocess.CalledProcessError as exc:  # pragma: no cover - depends on the local openssl
         pytest.skip(f"this openssl cannot make a {name} certificate: {exc.stderr.decode()[:120]}")
+
+
+def _make_dsa_key(fw, name, pbits=2048):
+    """A DSA private key on its own; skip where this openssl will not generate DSA parameters."""
+    params = fw.parent / f"{name}-params.pem"  # outside fw: a params file is not scanned
+    made = subprocess.run(["openssl", "genpkey", "-genparam", "-algorithm", "DSA",
+                           "-pkeyopt", f"pbits:{pbits}", "-pkeyopt", "qbits:256",
+                           "-out", str(params)], capture_output=True)
+    if made.returncode != 0:
+        pytest.skip(f"this openssl cannot generate a {pbits}-bit DSA key: {made.stderr.decode()[:120]}")
+    return _gen_key(fw, name, "-paramfile", str(params))
 
 
 def _make_dsa_cert(fw, name, pbits):
@@ -543,21 +571,22 @@ def test_the_certificate_algorithm_reaches_the_json_output(cli_runner, tmp_path)
 
 
 @needs_openssl
-def test_a_healthy_curve_key_is_not_a_finding(tmp_path):
-    """The case #148 exists for: a P-256 key with nothing wrong with it.
+def test_a_healthy_curve_key_is_neither_a_finding_nor_an_unknown(tmp_path):
+    """The case #148 exists for, one answer further on than it could reach (#162).
 
-    #144 shipped `strength-undecided-ec` as a flag, which is honest and wrong in one respect: a flag is
-    what the risk column shows and what "N flagged" counts. So the single healthiest entry in a tree
-    was reported as a finding and tallied beside a factored 512-bit key, and nothing on the screen
-    said the two were not the same kind of thing (#144, #148).
+    #144 shipped `strength-undecided-ec` as a flag, which reported the single healthiest entry in a
+    tree as a finding and tallied it beside a factored 512-bit key. #148 moved that note into a column
+    of its own, where it was still not the same as "checked, fine"; #162 gave this command the curve
+    policy the capture path already had, so a P-256 key is now *decided*. Both columns empty is an
+    answer -- before, an empty `undecided` meant "we had no rule for this key".
     """
     fw = tmp_path / "fs"
     fw.mkdir()
     _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
     (e,) = scan(fw)
-    assert e.algorithm == "EC"
+    assert e.algorithm == "EC" and e.curve_bits == 256  # the size the verdict was reached from
     assert e.flags == []  # nothing is wrong with this key
-    assert e.undecided == ["strength-undecided-ec"]  # and that is still not the same as "checked, fine"
+    assert e.undecided == []  # and we did reach a verdict about it
 
 
 @needs_openssl
@@ -577,14 +606,18 @@ def test_a_decided_key_carries_no_undecided_note(tmp_path):
 
 @needs_openssl
 def test_an_undecided_note_does_not_hide_a_real_finding(tmp_path):
-    """Separation is by channel, not by deletion: an entry can be both, and stays both."""
+    """Separation is by channel, not by deletion: an entry can be both, and stays both.
+
+    DSA is what this case is made of now that a curve is decided (#162): the one key family this
+    project still has no strength tier for (#155), so it is a finding and an unknown at once.
+    """
     fw = tmp_path / "fs"
     fw.mkdir()
-    _make_alg_cert(fw, "p256", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"])  # writes a matching key
+    _make_dsa_cert(fw, "dsa", 2048)  # writes a matching key
     by_kind = {e.kind: e for e in scan(fw)}
     key = by_kind["private-key"]
     assert "private-key-for-a-shipped-cert" in key.flags  # the real finding is untouched
-    assert key.undecided == ["strength-undecided-ec"]  # and the unknown is still reported
+    assert key.undecided == ["strength-undecided-dsa"]  # and the unknown is still reported
 
 
 def _flat(text: str) -> str:
@@ -596,18 +629,18 @@ def _flat(text: str) -> str:
 def test_the_summary_counts_flagged_and_undecided_separately(cli_runner, tmp_path):
     """The summary must not add ignorance into the finding count (#148).
 
-    One healthy curve key and one genuinely dangerous pair, so the two numbers cannot coincide and a
-    test cannot pass by accident.
+    One key this command has no verdict for and one genuinely dangerous pair, so the two numbers
+    cannot coincide and a test cannot pass by accident.
     """
     fw = tmp_path / "fs"
     fw.mkdir()
-    _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    _make_dsa_key(fw, "dsa-orphan")  # no DSA tier exists, so this one is undecided (#155)
     _make_alg_cert(fw, "weak", ["rsa:768"])
     result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
     assert result.exit_code == 0
     summary = _flat(result.output).split("key material")[0]
     assert "2 flagged" in summary  # weak.crt and weak.key only
-    assert "1 undecided" in summary  # the healthy EC key, counted on its own
+    assert "1 undecided" in summary  # the DSA key, counted on its own
 
 
 @needs_openssl
@@ -615,12 +648,12 @@ def test_undecided_survives_the_json_output(cli_runner, tmp_path):
     """--json is what CI reads, so the distinction has to survive it or it does not exist (#148)."""
     fw = tmp_path / "fs"
     fw.mkdir()
-    _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    _make_dsa_key(fw, "dsa-orphan")  # the one family #162 leaves undecided, so this channel is tested
     result = cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"])
     assert result.exit_code == 0
     data = json.loads(result.output)
     (entry,) = data["entries"]
-    assert entry["undecided"] == ["strength-undecided-ec"]
+    assert entry["undecided"] == ["strength-undecided-dsa"]
     assert entry["flags"] == []  # a machine reading flags must not count this as a defect
     # and the counts are in the JSON too, so a CI gate does not have to re-derive them
     assert data["undecided"] == 1 and data["flagged"] == 0
@@ -644,20 +677,22 @@ def test_a_certificate_whose_key_size_cannot_be_read_says_so(tmp_path, monkeypat
 
 
 @needs_openssl
-def test_a_curve_certificate_is_undecided_exactly_like_its_private_key(cli_runner, tmp_path):
+def test_a_curve_certificate_is_decided_exactly_like_its_private_key(tmp_path):
     """#149 made certificates report their algorithm, and left this asymmetry behind.
 
-    A P-256 certificate and a P-256 private key are equally unjudgeable by this command, yet only the
-    private key said so. #144 judged key strength per algorithm and #149 deferred exactly this: the
-    note was "keyed on `algorithm`, and would otherwise start appearing on every EC certificate the
-    moment this field became populated". That moment has arrived, and #148 is the surface for it.
+    A P-256 certificate and a P-256 private key are the same key, and this command has to answer
+    about both the same way: #144 judged key strength per algorithm, #149 deferred the certificate
+    side of it, #148 gave the note a column, and #162 emptied that column for EC. What is left to
+    assert is that the answer is reached -- for either kind of entry, and identically.
     """
     fw = tmp_path / "fs"
     fw.mkdir()
     _make_alg_cert(fw, "p256", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"])  # writes a matching key
     by_kind = {e.kind: e for e in scan(fw)}
-    assert by_kind["certificate"].undecided == ["strength-undecided-ec"]
-    assert by_kind["private-key"].undecided == ["strength-undecided-ec"]
+    assert by_kind["certificate"].curve_bits == by_kind["private-key"].curve_bits == 256
+    assert by_kind["certificate"].undecided == []
+    assert by_kind["private-key"].undecided == []
+    assert not any("strength-undecided" in f for f in by_kind["certificate"].flags)
     assert not any("strength-undecided" in f for f in by_kind["certificate"].flags)
 
 
@@ -673,5 +708,228 @@ def test_a_fixed_curve_certificate_carries_no_undecided_note(tmp_path):
     _make_alg_cert(fw, "ed25519", ["ed25519"])
     (cert,) = [e for e in scan(fw) if e.kind == "certificate"]
     assert cert.algorithm == "ED25519" and cert.bits is None
+
+
+# --- #162: `keys scan` reads the curve policy #151 wrote down, instead of deciding EC on its own ---
+
+
+@needs_openssl
+@pytest.mark.parametrize(("curve", "bits"), [("P-192", 192), ("P-224", 224)])
+def test_a_curve_below_the_floor_is_a_weak_key(tmp_path, curve, bits):
+    """The case from the issue: a P-192 key reported as `strength-undecided-ec`.
+
+    `weak_key_verdict` rates the same key `high` in the capture path, off the constants #151 moved
+    into `data_ciphers`, so one key was a finding in one command and an unknown in the other -- and
+    "unknown" is the answer that keeps a deprecated curve off the list forever.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "tiny-curve", "-algorithm", "EC", "-pkeyopt", f"ec_paramgen_curve:{curve}")
+    (e,) = scan(fw)
+    assert e.algorithm == "EC"
+    assert e.curve_bits == bits  # the curve size, in the slot its own threshold reads
+    assert e.bits is None  # and never in the RSA one
+    assert f"weak-key-{bits}bit" in e.flags
+    assert e.undecided == []  # decided: weak is a verdict, not an absence of one
+
+
+@needs_openssl
+@pytest.mark.parametrize(("curve", "bits"), [("P-256", 256), ("P-384", 384), ("brainpoolP256r1", 256)])
+def test_a_curve_at_or_above_the_floor_is_decided_and_silent(tmp_path, curve, bits):
+    """P-256 is the smallest curve RFC 8422 still permits, so it is the boundary, not an edge case.
+
+    Its curve size is at the floor, so there is nothing to report and nothing to admit: both columns
+    empty, which #148 reserves for "checked, fine" (#162).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "curve", "-algorithm", "EC", "-pkeyopt", f"ec_paramgen_curve:{curve}")
+    (e,) = scan(fw)
+    assert e.curve_bits == bits
+    assert e.flags == [] and e.undecided == []
+
+
+@pytest.mark.parametrize(("bits", "flagged"), [(MIN_EC_CURVE_BITS - 1, True), (MIN_EC_CURVE_BITS, False)])
+def test_the_flag_boundary_is_exactly_the_documented_floor(bits, flagged):
+    """One bit either side of MIN_EC_CURVE_BITS, because "at or above it" is the whole rule (#162).
+
+    The entry is built rather than generated: the contract is the comparison, and no openssl build
+    has to be able to make a P-255 for this to hold.
+    """
+    e = keys.KeyEntry(path="k.key", kind="private-key", algorithm="EC", curve_bits=bits)
+    keys._flag([e])
+    assert bool(e.flags) is flagged
+    assert e.undecided == []  # decided either way: below the floor is weak, not unknown
+
+
+def test_the_curve_floor_is_the_policy_constant_rather_than_a_number_written_here():
+    """#151 moved these numbers out of a detector so a second consumer could read them (#162).
+
+    If `keys scan` carries its own idea of how big a curve has to be, the capture path and this
+    command can drift apart again, which is the whole complaint in the issue.
+    """
+    assert keys.MIN_EC_CURVE_BITS == data_ciphers.MIN_EC_CURVE_BITS
+
+
+@needs_openssl
+def test_the_threshold_follows_the_constant_instead_of_a_literal(tmp_path, monkeypatch):
+    """Proof that the floor is read rather than copied: move it, and the verdict moves with it.
+
+    A P-256 key is fine against the policy as written, and weak against a raised one -- which is
+    only possible if the comparison is against the imported name (#162).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "p256", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    (before,) = scan(fw)
+    assert before.flags == [] and before.curve_bits == 256  # decided, and fine
+    monkeypatch.setattr(keys, "MIN_EC_CURVE_BITS", 384)
+    (after,) = scan(fw)
+    assert "weak-key-256bit" in after.flags  # the same key, under a policy that rejects it
+
+
+@needs_openssl
+def test_a_curve_certificate_is_judged_by_the_same_policy_as_its_private_key(tmp_path):
+    """A certificate and its own key are the same key, and the two rows must not disagree (#162).
+
+    Before this, the certificate had no curve size to judge at all and the key it certifies did, so
+    the pair could report opposite verdicts about one piece of key material.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "tiny", ["ec", "-pkeyopt", "ec_paramgen_curve:P-192"])
+    by_kind = {e.kind: e for e in scan(fw)}
+    assert by_kind["certificate"].algorithm == by_kind["private-key"].algorithm == "EC"
+    assert by_kind["certificate"].curve_bits == by_kind["private-key"].curve_bits == 192
+    for e in by_kind.values():
+        assert "weak-key-192bit" in e.flags
+        assert e.undecided == []
+
+
+def test_a_curve_certificate_below_the_floor_is_flagged_weak(tmp_path, monkeypatch):
+    """The certificate half of the rule, from the dump openssl would print rather than a real one.
+
+    Which curves a given openssl build can sign a certificate with varies; the contract under test
+    does not. `_classify_canned_cert` hands over the text openssl writes, so this holds anywhere (#162).
+    """
+    cert = _classify_canned_cert(tmp_path, monkeypatch, "id-ecPublicKey", "                Public-Key: (192 bit)")
+    assert cert.algorithm == "EC" and cert.curve_bits == 192
+    assert cert.bits is None  # a curve size is not an RSA modulus (#143)
+    assert "weak-key-192bit" in cert.flags
     assert cert.undecided == []
 
+
+def test_a_curve_whose_size_openssl_will_not_read_says_so(tmp_path, monkeypatch):
+    """A curve size we failed to read is not a weak curve -- and it is not silence either (#162).
+
+    EC is decided by its size, so an EC key with no readable size is the same ignorance an RSA
+    certificate with no readable modulus is, and it says so in the same words (#148).
+    """
+    cert = _classify_canned_cert(tmp_path, monkeypatch, "id-ecPublicKey", "                (no size here)")
+    assert cert.algorithm == "EC" and cert.curve_bits is None
+    assert not any(f.startswith("weak-key-") for f in cert.flags)  # unreadable is not weak
+    assert cert.undecided == ["key-size-unreadable"]  # and unreadable is not silence
+
+
+@needs_openssl
+def test_a_dsa_certificate_is_not_measured_against_the_curve_floor(tmp_path):
+    """The floor is a *curve* floor; there is still no DSA tier, and that is correct (#162).
+
+    A DSA certificate prints a size the way a curve does, so reading it into the curve slot would
+    judge a prime size against a threshold written about curves -- the borrowing of another rule that
+    #143 and #155 both refused.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_dsa_cert(fw, "dsa", 2048)
+    (cert,) = [e for e in scan(fw) if e.kind == "certificate"]
+    assert cert.algorithm == "DSA"
+    assert cert.curve_bits is None and cert.bits is None  # neither slot takes a DSA prime
+    assert not any(f.startswith("weak-key-") for f in cert.flags)
+    assert cert.undecided == ["strength-undecided-dsa"]
+
+
+# --- #163: a certificate openssl cannot parse is a row that says why, not a file that vanished ---
+
+
+def _broken_cert_tree(tmp_path, name="fs"):
+    """The reproduction from the issue: one .crt-suffixed file that openssl will not parse."""
+    fw = tmp_path / name
+    (fw / "etc").mkdir(parents=True)
+    (fw / "etc" / "broken.crt").write_text("not a certificate" + chr(10))
+    return fw
+
+
+def test_a_certificate_openssl_cannot_parse_is_reported_rather_than_dropped(tmp_path):
+    """The case from the issue: `_classify_cert` returned None and `scan` skipped it.
+
+    A file with a certificate suffix, in the place a firmware keeps its certificates, that openssl
+    will not parse -- truncated, encrypted, a DER blob with the wrong header, a corrupted file -- used
+    to produce no row, no flag and no note, and did not appear in the count either. That is a silent
+    pass (AGENTS.md section 4), and it is now a row (#163).
+    """
+    fw = _broken_cert_tree(tmp_path)
+    (entry,) = scan(fw)
+    assert entry.path == "etc/broken.crt"  # the file is named, not merely counted
+    assert entry.kind == "certificate"
+    assert entry.undecided == ["certificate-unreadable"]
+
+
+@needs_openssl
+def test_a_tree_of_one_unreadable_certificate_does_not_report_a_clean_scan(cli_runner, tmp_path):
+    """The comparison that made the original report: this tree, and an empty one.
+
+    "0 private key(s), 0 certificate(s), 0 flagged, 0 undecided" is what a directory with nothing in
+    it says, and it is exactly what a directory holding a file we could not read used to say as well.
+    The summary has to be able to tell those two apart (#163).
+    """
+    broken = _broken_cert_tree(tmp_path, "broken")
+    empty = tmp_path / "empty"
+    (empty / "etc").mkdir(parents=True)
+    summaries = {}
+    for label, tree in (("broken", broken), ("empty", empty)):
+        result = cli_runner.invoke(app, ["keys", "scan", str(tree)])
+        assert result.exit_code == 0
+        summaries[label] = _flat(result.output).split("key material")[0]
+    assert summaries["broken"] != summaries["empty"]
+    assert "0 certificate(s)" in summaries["empty"] and "0 undecided" in summaries["empty"]
+    assert "1 certificate(s)" in summaries["broken"]  # it was counted
+    assert "0 flagged" in summaries["broken"]  # and nothing was accused of anything
+    assert "1 undecided" in summaries["broken"]  # it said which way it did not know
+
+
+@needs_openssl
+def test_the_unreadable_note_reaches_the_json_output(cli_runner, tmp_path):
+    """--json is what a CI gate reads, so a note only in the table would not exist (#163)."""
+    fw = _broken_cert_tree(tmp_path)
+    result = cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    (entry,) = data["entries"]
+    assert entry["path"] == "etc/broken.crt"
+    assert entry["undecided"] == ["certificate-unreadable"] and entry["flags"] == []
+    assert data["undecided"] == 1 and data["flagged"] == 0
+
+
+def test_an_unreadable_certificate_gets_one_note_and_it_is_the_right_one(tmp_path):
+    """Not "unreadable" *and* "strength-undecided-unknown-algorithm" (#163).
+
+    Two notes would read as two findings and be one: we did not read a key, so its strength was never
+    in question. The note that survives names what happened (#148).
+    """
+    (entry,) = scan(_broken_cert_tree(tmp_path))
+    assert entry.undecided == [keys._UNREADABLE_CERT]
+
+
+@needs_openssl
+def test_an_unreadable_certificate_is_not_offered_to_analyze_as_a_key(cli_runner, tmp_path):
+    """The row is an entry, but `--out` still only ships keys we could read (#163).
+
+    `--out` feeds `analyze --keys-from`, which hands every file in the directory to openssl; shipping
+    a file we could not parse would move the problem into the decryption path.
+    """
+    fw = _broken_cert_tree(tmp_path)
+    _make_key_and_cert(fw / "etc", "srv", 1024)  # one readable key beside the broken file
+    out = tmp_path / "keys.d"
+    assert cli_runner.invoke(app, ["keys", "scan", str(fw), "--out", str(out)]).exit_code == 0
+    assert [p.name for p in out.glob("*.pem")] == ["key000.pem"]  # the readable key, and only it
