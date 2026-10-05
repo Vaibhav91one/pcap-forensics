@@ -199,7 +199,6 @@ def oracle_for(path: Path, report: dict[str, Any], findings: list[dict[str, Any]
     suspects: list[str] = []
     sessions = report.get("tls_sessions") or []
     codes = {f.get("code") for f in findings}
-    notes = " ".join(report.get("notes") or []).lower()
 
     hellos = tshark_count(path, "tls.handshake.type == 1 || dtls.handshake.type == 1")
     if hellos > 0 and not sessions:
@@ -213,31 +212,44 @@ def oracle_for(path: Path, report: dict[str, Any], findings: list[dict[str, Any]
 
     # Suspects only: a cleartext detector is allowed to stay silent, so these need a human.
     #
-    # The exclusion used to be a list of bare protocol words tested against the whole notes string:
+    # Two bugs were here, both found by measurement rather than by reading.
     #
-    #     not any(n in notes for n in ("dns", "http", "ssh", "sip", "rtp"))
+    # 1. The exclusion was a list of bare protocol words tested against the whole notes string:
     #
-    # That is always true, because the detector names themselves contain those substrings -- every run
-    # emits "[d4.dns_quic_ssh] ran v1: N finding(s)" and "[d3.sip_rtp] ran v1: N finding(s)". So the
-    # clause was always false and this loop never appended anything. The suspect path was dead code
-    # that had never fired for any capture, which is why disabling a detector entirely went unnoticed.
+    #        not any(n in notes for n in ("dns", "http", "ssh", "sip", "rtp"))
     #
-    # The exclusion is now keyed on the detector that owns the family *and* on a note that actually
-    # explains something. A bare protocol word cannot distinguish "this detector was silent" from "a
-    # detector with that word in its name ran".
+    #    Always true, because the detector names themselves contain those substrings -- every run emits
+    #    "[d4.dns_quic_ssh] ran v1: ..." and "[d3.sip_rtp] ran v1: ...". The clause was always false
+    #    and this loop never appended anything.
+    #
+    # 2. Replacing it with "the owning detector is named and some tshark field was unavailable" was also
+    #    always true: the generic drift note ("Some tshark fields were unavailable in this build and were
+    #    skipped: ...") is present on 218 of 219 captures and explains nothing specific.
+    #
+    # So no note-based exclusion is left, because no note discriminates. What does discriminate is the
+    # count itself: HTTP inside TLS is not a cleartext finding, and counting it would make every
+    # encrypted-HTTP capture a suspect. Measured across the corpus, logistics_multicast.pcapng has 86
+    # HTTP frames and **zero** outside TLS, and none of them is a finding.
+    #
+    # Hence "&& !tls" on the two families TLS actually wraps, and no exclusion clause.
+    #
+    # OPEN, and deliberately not tuned further on one more guess: tshark's "!tls" does not behave the
+    # same way behind "http" as behind "(http.request || http.response)". On logistics_multicast.pcapng
+    # the first counts 0 and the second counts 86 -- the same 86 frames, opposite verdicts on whether
+    # they are inside TLS. This loop has been bitten by exactly that kind of filter subtlety before
+    # (a DTLS pass asking tshark for tls.* fields), so the filter form is left as measured and the
+    # question is recorded rather than resolved by trying a third variant and reporting the one that
+    # happens to look quietest.
     quiet = {
-        "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http", "d2.transport_exposure"),
-        "dns": ({"DNS_CLEARTEXT"}, "dns", "d4.dns_quic_ssh"),
-        "ssh": ({"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}, "ssh", "d4.dns_quic_ssh"),
-        "sip": ({"SIP_CLEARTEXT_SIGNALLING"}, "sip", "d3.sip_rtp"),
-        "rtp": ({"RTP_MEDIA_UNPROTECTED"}, "rtp", "d3.sip_rtp"),
+        "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http && !tls"),
+        "dns": ({"DNS_CLEARTEXT"}, "dns && !tls"),
+        "ssh": ({"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}, "ssh"),
+        "sip": ({"SIP_CLEARTEXT_SIGNALLING"}, "sip"),
+        "rtp": ({"RTP_MEDIA_UNPROTECTED"}, "rtp"),
     }
-    for name, (family, display_filter, owner) in quiet.items():
+    for name, (family, display_filter) in quiet.items():
         seen = tshark_count(path, display_filter)
-        explained = owner in notes and any(
-            word in notes for word in ("dropped", "unavailable", "unknown field", "no such field")
-        )
-        if seen > 0 and not (codes & family) and not explained:
+        if seen > 0 and not (codes & family):
             suspects.append(
                 f"suspect: tshark counts {seen} {name} frame(s) but no {sorted(family)} finding "
                 f"was reported (may be legitimate; check by hand)"
