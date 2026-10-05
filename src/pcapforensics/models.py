@@ -14,7 +14,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
-SCHEMA_VERSION = "1.5.0"
+SCHEMA_VERSION = "1.6.0"
 try:  # one source of truth: the installed distribution (pyproject.toml)
     TOOL_VERSION = version("pcap-doctor")
 except PackageNotFoundError:  # running from a source tree that was never installed
@@ -180,6 +180,23 @@ class TlsAlert(BaseModel):
     description: str
 
 
+class RecordVersion(BaseModel):
+    """One record's version field, with the frame that carried it (#157).
+
+    `TlsSession.record_versions` used to be a de-duplicated list of version *names*, which made the
+    ClientHello sentinel and a genuine post-handshake downgrade indistinguishable: RFC 8446 has a TLS
+    1.3 ClientHello put 0x0301 in the record layer, and an older peer that honours the legacy field on
+    application data downgrades the same way. The names were the same either way.
+
+    Keeping the frame and the content type is what lets a detector tell those apart. Content type 22
+    is handshake, 23 is application data.
+    """
+
+    frame: int
+    version: str
+    content_type: int | None = None  # 22 handshake, 23 application_data
+
+
 class TlsSession(BaseModel):
     key: str
     proto: Literal["tls", "dtls"] = "tls"
@@ -188,7 +205,7 @@ class TlsSession(BaseModel):
     server_hello: Handshake | None = None
     renegotiations: int = 0
     negotiated_version: str | None = None
-    record_versions: list[str] = Field(default_factory=list)
+    record_versions: list[RecordVersion] = Field(default_factory=list)
     chosen_cipher: int | None = None
     offered_ciphers: list[int] = Field(default_factory=list)
     alpn: list[str] = Field(default_factory=list)

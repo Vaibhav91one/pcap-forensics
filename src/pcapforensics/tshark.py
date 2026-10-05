@@ -99,7 +99,14 @@ BASE_PASS = PassSpec(
 
 TLS_PASS = PassSpec(
     name="tls",
-    display_filter="tls.handshake || tls.alert_message",
+    # Application-data records are matched only when they carry a pre-TLS-1.2 record version, which
+    # is the downgrade a legacy peer would perform (#157). The bound is "< 0x0303" rather than
+    # "!= 0x0303" on purpose: a DTLS record version is 0xfefd/0xfeff, which is numerically far above
+    # 0x0303, so the loose form would pull in every DTLS data record in every capture.
+    display_filter=(
+        "tls.handshake || tls.alert_message "
+        "|| (tls.record.content_type == 23 && tls.record.version < 0x0303)"
+    ),
     fields=with_addr((
         "tcp.srcport",
         "tcp.dstport",
@@ -108,6 +115,7 @@ TLS_PASS = PassSpec(
         "tcp.stream",
         "udp.stream",
         "tls.record.version",
+        "tls.record.content_type",
         "tls.handshake.type",
         "tls.handshake.version",
         "tls.handshake.ciphersuite",
@@ -309,7 +317,10 @@ TELNET_PASS = PassSpec(
 #: normalises the prefix away, so one parser serves both.
 DTLS_PASS = PassSpec(
     name="dtls",
-    display_filter="dtls.handshake || dtls.alert_message",
+    display_filter=(
+        "dtls.handshake || dtls.alert_message "
+        "|| (dtls.record.content_type == 23 && dtls.record.version < 0x0303)"
+    ),
     fields=with_addr(
         tuple("dtls." + f[4:] if f.startswith("tls.") else f for f in TLS_PASS.fields)
     ),

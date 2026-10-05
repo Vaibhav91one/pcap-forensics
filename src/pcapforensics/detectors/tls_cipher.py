@@ -21,7 +21,7 @@ from ..data_ciphers import (
     weakness_reasons,
 )
 from ..index import CaptureIndex
-from ..models import Finding, Severity, TlsSession
+from ..models import Finding, RecordVersion, Severity, TlsSession
 from .base import Detector, ev
 
 CIPHER_POLICY_DOC = "docs/cipher-policy.md"
@@ -96,21 +96,27 @@ class TlsCipherDetector(Detector):
         a TLS 1.2 or 1.3 session, so it is reported separately -- calling it
         "negotiated TLS 1.0" would be wrong.
 
-        The separate record-layer finding is ``info``, not ``low``, and at
-        ``medium`` confidence (#150). The compatibility sentinel is not an
-        observation about this traffic, it is a constant of the protocol: RFC
-        8446 has a TLS 1.3 ClientHello put 0x0301 in the record layer and tells
-        readers to ignore it, and RFC 5246 does the same for the first record
-        of a TLS 1.2 ClientHello. It only carries meaning on a post-handshake
-        application record.
+        A legacy value on a handshake record is the compatibility sentinel
+        and nothing else: RFC 8446 has a TLS 1.3 ClientHello put 0x0301 in the
+        record layer and tells readers to ignore it in favour of
+        supported_versions, and RFC 5246 does the same for the first record of
+        a TLS 1.2 ClientHello. #150 could only report that at ``info``, because
+        the index kept a de-duplicated list of version *names* and a sentinel
+        ClientHello and a downgraded application record looked identical.
 
-        This detector cannot make that call. ``TlsSession.record_versions`` is a
-        de-duplicated list of version *names*: it keeps no frame number and no
-        record content type, so a sentinel ClientHello and a downgraded
-        application record leave an identical index. Reporting the value at
-        ``low`` with ``high`` confidence claimed certainty about a non-issue.
-        The finding still fires, so the downgrade case keeps its evidence; see
-        docs/severity-model.md.
+        #157 gave ``TlsSession.record_versions`` a frame and a content type per
+        record, so the call can now be made rather than hedged:
+
+        * the legacy value appears only on **handshake** records -- the sentinel.
+          No finding. This is the case on all 26 occurrences in the 219-capture
+          corpus, every one of which was noise.
+        * it appears on an **application data** record -- a peer honouring the
+          legacy field would downgrade the record layer. Reported at ``medium``
+          with the frame that carried it, which is the first time this could be
+          evidenced at all: the evidence used to point at the ClientHello
+          whether or not the ClientHello was the record that carried the value.
+        * the content type was not readable -- unknown, so still reported, now
+          at ``medium`` rather than ``info``. Ignoring it would be a silent pass.
         """
         out: list[Finding] = []
         negotiated = session.negotiated_version
@@ -147,43 +153,94 @@ class TlsCipherDetector(Detector):
                     tags=["tls", "version"],
                 )
             )
-        for version in session.record_versions:
+        # One finding per legacy version, not per record: a session that puts 0x0301 on a hundred
+        # application records is one downgrade, not a hundred. The record chosen to represent a
+        # version is the most informative one carrying it -- an application record if there is one,
+        # otherwise a record whose type this build could not read. Only when every record carrying
+        # the value is a handshake record is the value the sentinel, and nothing is reported.
+        by_version: dict[str, list[RecordVersion]] = {}
+        for record in session.record_versions:
+            by_version.setdefault(record.version, []).append(record)
+
+        for version, records in sorted(by_version.items()):
             if version == negotiated or (rule is not None and version == negotiated):
                 continue
             if version not in VERSION_FINDING:
                 continue
+            application = next((r for r in records if r.content_type == 23), None)
+            unreadable = next((r for r in records if r.content_type != 22), None)
+            if application is not None:
+                record = application
+            elif unreadable is not None:
+                record = unreadable
+            else:
+                # Every record carrying this value is a handshake record: the compatibility
+                # sentinel that RFC 8446 and RFC 5246 require before negotiation.
+                continue
+            downgraded = record.content_type == 23
+            if downgraded:
+                title = (
+                    f"Application data downgraded to a {version} record on {session.key} "
+                    f"(session negotiated {negotiated or 'unknown'})"
+                )
+                summary = (
+                    f"Frame {record.frame} carries application data (content type 23) with the legacy "
+                    f"record version {version}, while this session negotiated "
+                    f"{negotiated or 'unknown'}. A peer that honours the legacy record version rather "
+                    "than the negotiated one downgrades the record layer, and any middlebox keyed on "
+                    "that field may reject or rewrite the traffic. RFC 8446 section 4.1.2 has the "
+                    "legacy field set to a fixed sentinel before negotiation and ignored afterwards; "
+                    "after the handshake it carries no such exemption."
+                )
+                remediation = (
+                    "Upgrade whichever peer emits the legacy record version after the handshake. To "
+                    "find it: tshark -r <capture> -Y 'tls.record.content_type == 23 && "
+                    "tls.record.version < 0x0303'."
+                )
+                tags = ["tls", "version", "legacy", "downgrade"]
+                severity = "medium"
+                evidence = [
+                    ev(
+                        record.frame,
+                        "tls.record.version",
+                        f"{version} on application data (content type 23)",
+                    )
+                ]
+            else:
+                title = (
+                    f"Legacy {version} value in the record layer on {session.key} "
+                    f"(session negotiated {negotiated or 'unknown'}, record type not observable)"
+                )
+                summary = (
+                    f"A record in this session carries the legacy version value {version} while the "
+                    f"session negotiated {negotiated or 'unknown'}, and this build did not report "
+                    "whether that record was a handshake or application data. Before version negotiation "
+                    "the value is the compatibility sentinel that RFC 8446 and RFC 5246 both require and "
+                    "tell readers to ignore; on application data it is a downgrade. Since this build "
+                    "cannot tell the two apart, the value is reported rather than assumed harmless."
+                )
+                remediation = (
+                    "Confirm with tshark -r <capture> -Y 'tls.record.content_type == 23 && "
+                    "tls.record.version < 0x0303'. If that returns nothing, this is the sentinel."
+                )
+                tags = ["tls", "version", "legacy", "expected"]
+                severity = "medium"
+                evidence = [ev(record.frame, "tls.record.version", version)]
+
             out.append(
                 self.finding(
                     code="TLS_LEGACY_RECORD_VERSION",
-                    title=(
-                        f"Legacy {version} value in the record layer on {session.key} "
-                        f"(session negotiated {negotiated or 'unknown'})"
-                    ),
-                    severity="info",
-                    confidence="medium",
-                    summary=(
-                        f"A record in this session carries the legacy version value {version} while the "
-                        f"session negotiated {negotiated or 'unknown'}. Before version negotiation that value "
-                        "is the compatibility sentinel, not a statement about this session: RFC 8446 has a TLS "
-                        "1.3 ClientHello put it in the record layer and says it MUST be ignored in favour of "
-                        "supported_versions, and RFC 5246 does the same for the first record of a TLS 1.2 "
-                        "ClientHello. It only carries meaning on a post-handshake application record, where a "
-                        "peer that honours the legacy field would downgrade. This detector cannot separate the "
-                        "two cases -- the index keeps the versions a session saw but not the record that carried "
-                        "them -- so it is reported as inventory, not as a defect."
-                    ),
+                    title=title,
+                    severity=severity,  # type: ignore[arg-type]
+                    confidence="high" if downgraded else "medium",
+                    summary=summary,
                     scope=f"{session.key}|record|{version}",
                     flow_key=session.key,
                     subjects=subjects,
-                    evidence=[ev(self._client_hello_frame(session), "tls.record.version", version)],
-                    remediation=(
-                        "None for a ClientHello; that is the value the protocol mandates. To confirm this is not "
-                        "a downgrade, look for a legacy version on an application-data record (content type "
-                        "23) rather than a handshake record: "
-                        "tshark -r <capture> -Y 'tls.record.content_type == 23 && tls.record.version < 0x0303'."
-                    ),
+                    evidence=evidence,
+                    remediation=remediation,
                     references=["RFC 8446", "RFC 5246"],
-                    tags=["tls", "version", "legacy", "expected"],
+                    tags=tags,
                 )
             )
         return out

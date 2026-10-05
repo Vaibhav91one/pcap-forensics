@@ -60,7 +60,22 @@ def test_tls12_psk_ccm_is_flagged_weak_and_without_pfs(analyze_capture) -> None:
     # layer says TLS 1.0 -- reporting that as "negotiated TLS 1.0" would be wrong
     assert session.negotiated_version == "TLS 1.2"
     assert "TLS_VERSION_DEPRECATED" not in found
-    assert "TLS_LEGACY_RECORD_VERSION" in found
+
+    # This assertion used to be "TLS_LEGACY_RECORD_VERSION in found", and it blocked the fix that
+    # #157 made possible. It encoded the confusion rather than the intent: TLS 1.0 in the record
+    # layer of a ClientHello is the compatibility sentinel RFC 8446 and RFC 5246 both require, and
+    # this capture carries it on handshake records only. Check that against tshark rather than
+    # against a finding, so the test states the fact instead of the consequence.
+    ground_records = tshark_fields(
+        pcap,
+        "tls.record.content_type == 23 && tls.record.version < 0x0303",
+        "tls.record.version",
+    )
+    assert ground_records == [], (
+        "expected no application-data record below TLS 1.2 in this capture; if tshark says otherwise "
+        "the capture changed and TLS_LEGACY_RECORD_VERSION should fire here"
+    )
+    assert "TLS_LEGACY_RECORD_VERSION" not in found
 
 
 def test_tls13_capture_is_clean(analyze_capture) -> None:
