@@ -46,7 +46,7 @@ ENCRYPTION_LABEL = {True: "encrypted", False: "**cleartext**", None: "unknown"}
 CAPTURE_VALUE_LIMIT = 400
 
 
-def _capture_text(value):
+def _capture_text(value: str) -> str:
     # Capture-controlled text on its way into a Markdown artifact.
     #
     # report.json and the AI prompt were already clean because both route through prompts.clean().
