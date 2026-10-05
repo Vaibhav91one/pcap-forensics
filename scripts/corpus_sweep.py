@@ -212,16 +212,32 @@ def oracle_for(path: Path, report: dict[str, Any], findings: list[dict[str, Any]
         )
 
     # Suspects only: a cleartext detector is allowed to stay silent, so these need a human.
+    #
+    # The exclusion used to be a list of bare protocol words tested against the whole notes string:
+    #
+    #     not any(n in notes for n in ("dns", "http", "ssh", "sip", "rtp"))
+    #
+    # That is always true, because the detector names themselves contain those substrings -- every run
+    # emits "[d4.dns_quic_ssh] ran v1: N finding(s)" and "[d3.sip_rtp] ran v1: N finding(s)". So the
+    # clause was always false and this loop never appended anything. The suspect path was dead code
+    # that had never fired for any capture, which is why disabling a detector entirely went unnoticed.
+    #
+    # The exclusion is now keyed on the detector that owns the family *and* on a note that actually
+    # explains something. A bare protocol word cannot distinguish "this detector was silent" from "a
+    # detector with that word in its name ran".
     quiet = {
-        "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http"),
-        "dns": ({"DNS_CLEARTEXT"}, "dns"),
-        "ssh": ({"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}, "ssh"),
-        "sip": ({"SIP_CLEARTEXT_SIGNALLING"}, "sip"),
-        "rtp": ({"RTP_MEDIA_UNPROTECTED"}, "rtp"),
+        "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http", "d2.transport_exposure"),
+        "dns": ({"DNS_CLEARTEXT"}, "dns", "d4.dns_quic_ssh"),
+        "ssh": ({"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}, "ssh", "d4.dns_quic_ssh"),
+        "sip": ({"SIP_CLEARTEXT_SIGNALLING"}, "sip", "d3.sip_rtp"),
+        "rtp": ({"RTP_MEDIA_UNPROTECTED"}, "rtp", "d3.sip_rtp"),
     }
-    for name, (family, display_filter) in quiet.items():
+    for name, (family, display_filter, owner) in quiet.items():
         seen = tshark_count(path, display_filter)
-        if seen > 0 and not (codes & family) and not any(n in notes for n in ("dns", "http", "ssh", "sip", "rtp")):
+        explained = owner in notes and any(
+            word in notes for word in ("dropped", "unavailable", "unknown field", "no such field")
+        )
+        if seen > 0 and not (codes & family) and not explained:
             suspects.append(
                 f"suspect: tshark counts {seen} {name} frame(s) but no {sorted(family)} finding "
                 f"was reported (may be legitimate; check by hand)"
