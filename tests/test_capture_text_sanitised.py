@@ -8,14 +8,17 @@ The reproduction is a plain HTTP request whose Host header is chosen by whoever 
 
 from __future__ import annotations
 
+import json
 import struct
 import subprocess
 import sys
 from pathlib import Path
 
 from conftest import requires_tshark
+from pcapforensics.prompts import clean, clean_capture_text
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
 ESC = chr(27)
 
 # What a hostile party would actually send: clear the screen, then print reassuring text.
@@ -99,3 +102,37 @@ def test_an_ordinary_value_still_renders_unchanged(tmp_path: Path) -> None:
 def test_report_json_was_and_stays_clean(tmp_path: Path) -> None:
     """The JSON envelope already routed through the sanitiser; assert that so it cannot regress."""
     assert bytes([27]) not in (_analyze(tmp_path) / "report.json").read_bytes()
+
+
+@requires_tshark
+def test_the_model_itself_holds_no_control_character(tmp_path: Path) -> None:
+    """#171: the fix belongs at the factory, so the model -- not just the renderer -- is clean.
+
+    #167 and #169 each fixed one consumer. This asserts the property that makes those fixes
+    redundant: anything built through Detector.finding() arrives filtered.
+    """
+    env = json.loads((_analyze(tmp_path) / "report.json").read_text())
+    blob = json.dumps(env)
+    assert chr(27) not in blob, "the report model still carries raw escape bytes"
+
+
+@requires_tshark
+def test_the_json_envelope_honours_the_documented_cap(tmp_path: Path) -> None:
+    """#171: report.json grew linearly with the input before this; the README says values are capped."""
+    import corpus_hostile as hostile
+
+    original = hostile.HOSTILE_HOST
+    try:
+        hostile.HOSTILE_HOST = ("h" * 32000) + ".example"
+        report = json.loads((_analyze(tmp_path) / "report.json").read_text())
+    finally:
+        hostile.HOSTILE_HOST = original
+    summary = next(f for f in report["findings"] if f["code"] == "HTTP_CLEARTEXT")["summary"]
+    assert len(summary) <= 1000, f"summary is {len(summary)} chars, expected the documented cap"
+
+
+@requires_tshark
+def test_a_backtick_in_capture_text_is_data_not_a_rewrite(tmp_path: Path) -> None:
+    """The prompt sanitiser rewrites backticks; the model must not, or the report disagrees with the capture."""
+    assert chr(96) in clean_capture_text("CN=a`b")
+    assert chr(96) not in clean("CN=a`b")

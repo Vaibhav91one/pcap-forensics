@@ -27,6 +27,21 @@ def clean(value: str, limit: int = MAX_VALUE) -> str:
     return _CONTROL.sub(" ", value).replace("`", "'")[:limit]
 
 
+#: Longer than the prompt's cap: the model is a machine interface, so a consumer correlating values
+#: still needs enough of each one to match. Renderers cap again on the way out (#171).
+CAPTURE_MODEL_LIMIT = 1000
+
+
+def clean_capture_text(value: str, limit: int = CAPTURE_MODEL_LIMIT) -> str:
+    # The model-level filter, used where a finding is built rather than where it is printed.
+    #
+    # clean() above replaces backticks, which is right for a prompt -- the value is fenced prose there
+    # -- and wrong for the model: a backtick in a certificate subject or a hostname is data, and
+    # rewriting it would make the report disagree with the capture. So control and invisible characters
+    # are removed and the length is capped, and nothing else is touched.
+    return _CONTROL.sub(" ", value)[:limit]
+
+
 def build_prompt(finding: Finding, report: Report) -> str:
     facts = [
         f"title: {clean(finding.title)}",
