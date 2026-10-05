@@ -25,6 +25,7 @@ from ..models import (
     TlsSession,
     endpoints_of,
 )
+from ..prompts import clean
 from . import mermaid
 
 SEVERITY_BADGE = {
@@ -36,6 +37,23 @@ SEVERITY_BADGE = {
 }
 
 ENCRYPTION_LABEL = {True: "encrypted", False: "**cleartext**", None: "unknown"}
+
+
+#: Report values are longer than prompt values: a summary sentence in a report is meant to be read in
+#: full, while a prompt fact is a label. The sanitiser is the one the prompt and the JSON envelope
+#: already use -- capture text is attacker-controlled, and this renderer was the place that printed
+#: it without going through that (#167).
+CAPTURE_VALUE_LIMIT = 400
+
+
+def _capture_text(value: str) -> str:
+    # Capture-controlled text on its way into a Markdown artifact.
+    #
+    # report.json and the AI prompt were already clean because both route through prompts.clean().
+    # 03-findings.md built its own sentences and did not, so an HTTP Host header could put a raw
+    # ANSI escape -- including a screen clear and a red "no findings" -- into the file the README
+    # tells people to paste into a ticket. This is the same call, not a new sanitiser.
+    return clean(value, limit=CAPTURE_VALUE_LIMIT).replace("|", chr(92) + "|")
 
 
 def _sorted_findings(findings: list[Finding]) -> list[Finding]:
@@ -390,14 +408,15 @@ def render_findings(report: Report, index: CaptureIndex) -> Path:
             lines.append(f"- **Flow**: `{finding.flow_key}`")
         if finding.subjects:
             lines.append(f"- **Subjects**: {', '.join(f'`{s}`' for s in finding.subjects[:8])}")
-        lines += ["", finding.summary, ""]
+        lines += ["", _capture_text(finding.summary), ""]
         if finding.evidence:
             lines.append("**Evidence**")
             lines.append("")
             lines.append(
                 _table(
                     ["Frame", "Field", "Value"],
-                    [[str(e.frame), f"`{e.field}`", f"`{e.value}`"] for e in finding.evidence],
+                    [[str(e.frame), f"`{_capture_text(e.field)}`", f"`{_capture_text(e.value)}`"]
+                     for e in finding.evidence],
                 )
             )
         if finding.remediation:
