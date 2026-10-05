@@ -9,6 +9,7 @@ import typer
 from rich.console import Console
 from rich.markup import escape
 
+from ..prompts import clean_capture_text
 from ..tshark import TsharkMissingError, TsharkRunError
 
 console = Console()
@@ -41,3 +42,21 @@ SEVERITY_STYLE = {
     "low": "cyan",
     "info": "dim",
 }
+
+#: Long enough for a path or a certificate subject, short enough that one hostile value cannot turn a
+#: table into a wall. The prompt caps harder on purpose: a table is read, not parsed.
+CAPTURE_CELL_LIMIT = 400
+
+
+def capture_cell(value: str) -> str:
+    # Capture-chosen text on its way into a rich render.
+    #
+    # Two separate problems meet here, on the same string. Control characters are removed first,
+    # because a raw escape moves the cursor and clears the screen (#169). Then the markup is escaped,
+    # because rich renders cell strings as markup: a firmware file named [bold]x.pem displays as
+    # x.pem, so the analyst reads a path that is not the file on disk -- no error, and nothing visibly
+    # dropped (#174).
+    #
+    # The order matters. Escaped first, the backslash would sit in front of every tag the sanitiser
+    # would otherwise have removed, and the two would fight over the same characters.
+    return escape(clean_capture_text(value, limit=CAPTURE_CELL_LIMIT))

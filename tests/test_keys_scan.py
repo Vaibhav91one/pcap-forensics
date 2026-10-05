@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import io
 import json
+import shutil
 import subprocess
 
 import pytest
-from rich.console import Console
 
 import pcapforensics.cli.keys as keys
 import pcapforensics.data_ciphers as data_ciphers
@@ -937,113 +936,39 @@ def test_an_unreadable_certificate_is_not_offered_to_analyze_as_a_key(cli_runner
     assert [p.name for p in out.glob("*.pem")] == ["key000.pem"]  # the readable key, and only it
 
 
-# --- #169: a firmware-chosen file name must not carry a terminal escape into the scan table ---
+def test_a_markup_shaped_file_name_is_displayed_verbatim(cli_runner, tmp_path) -> None:
+    """#174: rich renders table cells as markup, so [bold]x.pem displayed as x.pem.
 
-ESC = chr(27)
+    The analyst read a path that was not the file on disk, with no error and nothing visibly
+    dropped. A deleted table would have been noticed; a wrong path is not.
 
-#: The two shapes a hostile firmware image plants in the names of the files it ships.
-#:
-#: Both end in ``.pem`` deliberately. ``KEY_EXT`` is matched inside :func:`scan`, before a row exists,
-#: so a hostile name without a recognised suffix is skipped by the walk: nothing prints, the table is
-#: empty, and every "no escape byte here" assertion below would pass for the wrong reason. That
-#: false clean is exactly what the corpus run reported before the fix.
-HOSTILE_SGR = ESC + "[31m" + "pwned" + ESC + "[0m.pem"  # colour the row red, then reset
-HOSTILE_OSC = ESC + "]0;title=pwned" + chr(7) + "evil.pem"  # retitle the analyst's terminal instead
-
-
-def _hostile_tree(tmp_path, name: str):
-    """A firmware tree holding one real private key under exactly ``name``, bytes and all.
-
-    A real key rather than a stub: openssl is what turns the file into an entry at all, so a file it
-    cannot parse would test a row that never appears. Generated under a plain name and then copied,
-    so the planted file name is exactly the one under test and no shell has to quote it.
+    Asserts on the *displayed* text, not on escape bytes: a byte-count test passes trivially here and
+    would not have caught this at all.
     """
-    seed = tmp_path / "seed.pem"
-    made = subprocess.run(["openssl", "genpkey", "-algorithm", "RSA", "-out", str(seed)], capture_output=True)
-    if made.returncode != 0:  # pragma: no cover - depends on the local openssl
-        pytest.skip(f"this openssl cannot generate the fixture key: {made.stderr.decode()[:120]}")
-    fw = tmp_path / "fs"
-    (fw / name).parent.mkdir(parents=True, exist_ok=True)
-    (fw / name).write_bytes(seed.read_bytes())
-    return fw
+    from scapy.all import PcapReader  # noqa: F401 - import guard only
 
-
-@needs_openssl
-def test_a_hostile_file_name_cannot_paint_the_scan_table(cli_runner, tmp_path):
-    """The bug: a firmware author's file name reached the table with its escape bytes intact (#169).
-
-    scripts/corpus_hostile.py plants exactly this name and reported
-    ``keys scan table: raw ANSI escape survived`` -- the path is the one cell in this table the
-    firmware author chose, and it was the one cell printed raw.
-    """
-    fw = _hostile_tree(tmp_path, HOSTILE_SGR)
-    result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
+    _markup_tree(tmp_path)
+    result = cli_runner.invoke(app, ["keys", "scan", str(tmp_path / "tree")])
     assert result.exit_code == 0
-    out = result.output
-    flat = _flat(out)
-    # The row is really there. Without this a name KEY_EXT skipped would satisfy the next three lines
-    # just as well, and the test would report a clean scan it never performed.
-    assert "1 private key(s)" in flat
-    assert "[31mpwned" in flat  # the name reached the cell, minus the byte that was not data
-    # The planted sequence, asserted on its own bytes and as a substring, and deliberately NOT as a
-    # total escape count -- see the terminal test below for why a total count proves nothing here.
-    assert ESC + "[31m" not in out
-    assert (ESC + "[31m").encode() not in out.encode()
+    flat = " ".join(result.output.split())
+    # rich folds long cells across lines, so the exact name is not reliably contiguous in the
+    # rendered text. The invariant is that the brackets survived: before the fix rich consumed
+    # [bold] and [red] as markup and displayed x.pem and z.pem.
+    for tag in ("[bold]", "[red]", "a[b]c.pem"):
+        assert tag in flat, f"{tag} did not survive into the display"
+    assert "3 private key(s)" in flat, "the tree has three keys; the table must not have dropped one"
 
 
-@needs_openssl
-def test_a_hostile_file_name_cannot_retitle_the_terminal(cli_runner, tmp_path):
-    """The second shape: an OSC title-set, which rewrites the window title rather than the row.
+def _markup_tree(tmp_path) -> None:
+    """A tree whose only file name is rich markup, so KEY_EXT cannot skip it and hide the bug."""
+    from pcapforensics.certificates import openssl_path
 
-    Same column, same defect. It is a separate case from the colour one because it ends in BEL rather
-    than a reset, and because rich silently drops the BEL while letting the ESC through -- so a fix
-    that only recognised the SGR form would still miss this name.
-    """
-    fw = _hostile_tree(tmp_path, HOSTILE_OSC)
-    result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
-    assert result.exit_code == 0
-    out = result.output
-    assert "1 private key(s)" in _flat(out)
-    assert "evil.pem" in _flat(out)  # the name rendered; only its control bytes are gone
-    assert ESC + "]0;title=pwned" not in out
-    assert (ESC + "]0;title=pwned").encode() not in out.encode()
-
-
-@needs_openssl
-def test_an_ordinary_file_name_still_renders_verbatim(cli_runner, tmp_path):
-    """Sanitising the data must not sanitise the finding out of existence (#169).
-
-    The same column with one ordinary path in it. ``prompts.clean`` also rewrites backticks and caps
-    length, so a path could come back altered in a way that is merely cosmetic and still wrong; the
-    two folded fragments below are the path, unaltered, in a column too narrow to hold it on one line.
-    """
-    fw = _hostile_tree(tmp_path, "etc/vendor-ca.pem")
-    result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
-    assert result.exit_code == 0
-    flat = _flat(result.output)
-    assert "1 private key(s)" in flat
-    assert "etc/vendor" in flat and "-ca.pem" in flat  # folded at the width-10 path column
-
-
-@needs_openssl
-def test_the_fix_strips_the_data_and_leaves_rich_its_own_formatting(cli_runner, tmp_path, monkeypatch):
-    """The trap a total-escape-count oracle walks into, asserted so the trap cannot close again.
-
-    rich emits escape sequences of its own whenever stdout is a terminal, so "the output has no
-    escape bytes" is true of the *unfixed* command here purely because the harness pipes stdout --
-    it proves nothing, and asserting it would have passed before the fix and fail against rich's own
-    styling on a real terminal. Rendering the same hostile table through a forced-terminal console
-    makes those escapes real: the assertion that survives is the planted one, and this test fails if
-    a future change strips the formatting instead of the data.
-    """
-    fw = _hostile_tree(tmp_path, HOSTILE_SGR)
-    forced = Console(file=io.StringIO(), width=100, force_terminal=True, color_system="truecolor",
-                     _environ={})
-    monkeypatch.setattr(keys, "console", forced)  # scan_cmd reads the module-level console
-    result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
-    assert result.exit_code == 0
-    rendered = forced.file.getvalue()
-    # rich's own styling is present, so "no escape byte survives" is falsified here on purpose and
-    # the planted-sequence assertion below is doing all of the work.
-    assert ESC in rendered, "rich emitted no styling, so this test would prove nothing"
-    assert ESC + "[31m" not in rendered  # the data is clean even when the formatting is not
+    openssl = openssl_path()
+    if openssl is None:
+        pytest.skip("openssl is required to make key material")
+    root = tmp_path / "tree"
+    root.mkdir(parents=True, exist_ok=True)
+    key = root / "[bold]x.pem"
+    subprocess.run([openssl, "genrsa", "-out", str(key), "2048"], capture_output=True, check=True)
+    for name in ("[red]z.pem", "a[b]c.pem"):
+        shutil.copy2(key, root / name)

@@ -29,12 +29,12 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 import typer
+from rich.markup import escape
 from rich.table import Table
 
 from ..certificates import openssl_path, parse_openssl_text
 from ..data_ciphers import MIN_EC_CURVE_BITS
-from ..prompts import clean
-from ._console import console
+from ._console import capture_cell, console
 
 keys_app = typer.Typer(help="Inspect key material in an extracted firmware tree.", no_args_is_help=True)
 
@@ -107,37 +107,6 @@ DECIDED_ALGORITHMS = frozenset({"RSA", "EC", "ED25519", "ED448"})
 # what an empty tree reports. It is a `undecided` note and not a flag: we could not read the file,
 # which is a fact about this command, not a claim that what the device ships is unsafe (#148).
 _UNREADABLE_CERT = "certificate-unreadable"
-
-#: A path in the scan table is read in full by an analyst triaging a firmware image, so it gets the
-#: report value limit rather than the prompt's 200-character label limit -- the same number #170 chose
-#: for 03-findings.md, and for the same reason. The sanitiser is not re-implemented here.
-CAPTURE_VALUE_LIMIT = 400
-
-
-def _capture_text(value: str) -> str:
-    """A firmware-chosen file name on its way into the `keys scan` table (#169).
-
-    Whoever built the firmware chooses every name in the unpacked tree, and the path reached the
-    table raw: \x1b[31m coloured a row and \x1b]0;title=pwned retitled the terminal an analyst
-    was reading. A hostile image could therefore lie about the very inventory meant to show what it
-    ships.
-
-    This is the same call #170 made in the Markdown renderer -- one more caller of the sanitiser the
-    JSON envelope and every prompt path already use, not a second sanitiser and not a second copy of
-    the control-character regex.
-
-    Applied to the *rendered cell* only, never in :func:`scan`. By the time a row is built,
-    ``KEY_EXT`` has already matched the suffix and the walk has already produced the entry, so
-    sanitising here cannot change which files were scanned -- only how the one that was is shown.
-    (It is also why the hostile names in the tests end in ``.pem``: a name without a recognised
-    suffix is skipped by the walk, prints nothing, and would make any "no escapes here" assertion
-    pass for the wrong reason.)
-
-    Unlike #170's helper this one does not escape ``|``: a rich table is delimited by box drawing,
-    not by pipes, and rewriting a pipe inside a file name would corrupt a name that is merely
-    ordinary rather than hostile.
-    """
-    return clean(value, limit=CAPTURE_VALUE_LIMIT)
 
 
 @dataclass
@@ -454,7 +423,7 @@ def scan_cmd(
         return
     keys = [e for e in entries if e.kind == "private-key"]
     certs = [e for e in entries if e.kind == "certificate"]
-    console.print(f"[bold]{directory}[/bold]: {len(keys)} private key(s), {len(certs)} certificate(s), "
+    console.print(f"[bold]{escape(str(directory))}[/bold]: {len(keys)} private key(s), {len(certs)} certificate(s), "
                   f"{flagged} flagged, {undecided} undecided")
     table = Table(title="key material")
     for col in ("path", "kind", "type", "bits", "CN", "SPKI", "flags", "undecided"):
@@ -463,12 +432,9 @@ def scan_cmd(
         # One "bits" column, both sizes: a column showing `-` next to a `weak-key-192bit` flag would
         # hide the number the flag is about, and an EC row whose verdict is "decided" should show the
         # curve size that decided it (#162).
-        #
-        # `path` goes through the sanitiser and nothing else does, because it is the one cell here the
-        # firmware author chose: every other column is derived by openssl or by this module (#169).
-        table.add_row(_capture_text(e.path), e.kind, e.algorithm or "-", str(e.bits or e.curve_bits or "-"),
-                      e.common_name or "-", e.spki or "-", ", ".join(e.flags) or "-",
-                      ", ".join(e.undecided) or "-")
+        table.add_row(capture_cell(e.path), capture_cell(e.kind), capture_cell(e.algorithm or "-"),
+                      str(e.bits or e.curve_bits or "-"), capture_cell(e.common_name or "-"),
+                      e.spki or "-", ", ".join(e.flags) or "-", ", ".join(e.undecided) or "-")
     console.print(table)
     # "undecided" is what this command could not decide, not something it found wrong: an entry may
     # appear in both counts, and an empty cell means the answer was "checked, fine" rather than
