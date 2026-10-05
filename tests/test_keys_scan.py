@@ -266,7 +266,7 @@ def test_dsa_key_is_undecided_and_never_weak(tmp_path, pbits):
     assert e.algorithm == "DSA"
     assert e.bits is None  # a DSA prime size is not an RSA modulus
     assert not any(f.startswith("weak-key-") for f in e.flags)
-    assert "strength-undecided-dsa" in e.flags
+    assert "strength-undecided-dsa" in e.undecided  # and is no longer counted as a finding (#148)
 
 
 _PKEY_TEXT = {
@@ -320,7 +320,8 @@ def test_a_key_type_we_cannot_read_is_reported_undecided(tmp_path, monkeypatch):
     monkeypatch.setattr(keys, "_ossl", fake_ossl)
     (e,) = scan(fw)
     assert e.bits is None
-    assert e.flags == ["strength-undecided-unknown-algorithm"]
+    assert e.flags == []  # not knowing is not a finding (#148)
+    assert e.undecided == ["strength-undecided-unknown-algorithm"]  # but it is not silence either (#144)
 
 
 # --- #149: a certificate reports its algorithm, in the one vocabulary the private-key path uses ---
@@ -510,6 +511,10 @@ def test_reporting_a_certificate_algorithm_changes_no_certificate_flag(tmp_path)
     `weak-key-*` flag it did not already have, and it must not hand a certificate the private-key
     path's `strength-undecided-*` note -- that one is keyed on `algorithm`, and would otherwise
     start appearing on every EC and DSA certificate the moment this field became populated (#149).
+
+    The note itself now reaches certificates, but in `undecided` rather than `flags`, so this
+    assertion is what stops that from quietly turning into a certificate flag: see
+    `test_a_curve_certificate_is_undecided_exactly_like_its_private_key` (#148).
     """
     fw = tmp_path / "fs"
     fw.mkdir()
@@ -533,3 +538,140 @@ def test_the_certificate_algorithm_reaches_the_json_output(cli_runner, tmp_path)
     assert result.exit_code == 0
     certs = [e for e in json.loads(result.output)["entries"] if e["kind"] == "certificate"]
     assert [c["algorithm"] for c in certs] == ["RSA"]
+
+# --- #148: "I could not determine this" is not a finding, and has to be visible as its own thing ---
+
+
+@needs_openssl
+def test_a_healthy_curve_key_is_not_a_finding(tmp_path):
+    """The case #148 exists for: a P-256 key with nothing wrong with it.
+
+    #144 shipped `strength-undecided-ec` as a flag, which is honest and wrong in one respect: a flag is
+    what the risk column shows and what "N flagged" counts. So the single healthiest entry in a tree
+    was reported as a finding and tallied beside a factored 512-bit key, and nothing on the screen
+    said the two were not the same kind of thing (#144, #148).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    (e,) = scan(fw)
+    assert e.algorithm == "EC"
+    assert e.flags == []  # nothing is wrong with this key
+    assert e.undecided == ["strength-undecided-ec"]  # and that is still not the same as "checked, fine"
+
+
+@needs_openssl
+def test_a_decided_key_carries_no_undecided_note(tmp_path):
+    """The other half of the pair: "fine" is a real, distinct answer and must look like one.
+
+    An Ed25519 key is fixed-parameter (RFC 8032), so there is no threshold to apply and nothing to
+    undecide. #148 needs both halves asserted together, because the bug is precisely that these two
+    rows used to be told apart only by the absence of a flag.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "ed25519", "-algorithm", "ED25519")
+    (e,) = scan(fw)
+    assert e.flags == [] and e.undecided == []  # decided and fine: neither a finding nor an unknown
+
+
+@needs_openssl
+def test_an_undecided_note_does_not_hide_a_real_finding(tmp_path):
+    """Separation is by channel, not by deletion: an entry can be both, and stays both."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "p256", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"])  # writes a matching key
+    by_kind = {e.kind: e for e in scan(fw)}
+    key = by_kind["private-key"]
+    assert "private-key-for-a-shipped-cert" in key.flags  # the real finding is untouched
+    assert key.undecided == ["strength-undecided-ec"]  # and the unknown is still reported
+
+
+def _flat(text: str) -> str:
+    """One line with runs of whitespace collapsed, so a width-80 rich console cannot fail an assert."""
+    return " ".join(text.split())
+
+
+@needs_openssl
+def test_the_summary_counts_flagged_and_undecided_separately(cli_runner, tmp_path):
+    """The summary must not add ignorance into the finding count (#148).
+
+    One healthy curve key and one genuinely dangerous pair, so the two numbers cannot coincide and a
+    test cannot pass by accident.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    _make_alg_cert(fw, "weak", ["rsa:768"])
+    result = cli_runner.invoke(app, ["keys", "scan", str(fw)])
+    assert result.exit_code == 0
+    summary = _flat(result.output).split("key material")[0]
+    assert "2 flagged" in summary  # weak.crt and weak.key only
+    assert "1 undecided" in summary  # the healthy EC key, counted on its own
+
+
+@needs_openssl
+def test_undecided_survives_the_json_output(cli_runner, tmp_path):
+    """--json is what CI reads, so the distinction has to survive it or it does not exist (#148)."""
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _gen_key(fw, "ec-orphan", "-algorithm", "EC", "-pkeyopt", "ec_paramgen_curve:P-256")
+    result = cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    (entry,) = data["entries"]
+    assert entry["undecided"] == ["strength-undecided-ec"]
+    assert entry["flags"] == []  # a machine reading flags must not count this as a defect
+    # and the counts are in the JSON too, so a CI gate does not have to re-derive them
+    assert data["undecided"] == 1 and data["flagged"] == 0
+
+
+@needs_openssl
+def test_a_certificate_whose_key_size_cannot_be_read_says_so(tmp_path, monkeypatch):
+    """#148's own motivating evidence: a certificate openssl could not size.
+
+    `bits=None` here means "we did not read it". For RSA that is ignorance and has to say so; for
+    a curve it is "there is no RSA modulus here" and must not. Reporting both as an empty cell is
+    what made the original bug report possible (#143 raised the flag, #148 gives it a voice).
+    """
+    # openssl names the algorithm and prints the modulus size on one dump, and the two are read
+    # independently, so "this is an RSA key" and "here is how many bits" can disagree. The canned
+    # dump is the disagreement itself: rsaEncryption, and no size line for parse_openssl_text to read.
+    e = _classify_canned_cert(tmp_path, monkeypatch, "rsaEncryption", "                (no size here)")
+    assert e.algorithm == "RSA" and e.bits is None
+    assert not any(f.startswith("weak-key-") for f in e.flags)  # unreadable is not weak (#143)
+    assert e.undecided == ["key-size-unreadable"]  # and unreadable is not silence either (#148)
+
+
+@needs_openssl
+def test_a_curve_certificate_is_undecided_exactly_like_its_private_key(cli_runner, tmp_path):
+    """#149 made certificates report their algorithm, and left this asymmetry behind.
+
+    A P-256 certificate and a P-256 private key are equally unjudgeable by this command, yet only the
+    private key said so. #144 judged key strength per algorithm and #149 deferred exactly this: the
+    note was "keyed on `algorithm`, and would otherwise start appearing on every EC certificate the
+    moment this field became populated". That moment has arrived, and #148 is the surface for it.
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "p256", ["ec", "-pkeyopt", "ec_paramgen_curve:P-256"])  # writes a matching key
+    by_kind = {e.kind: e for e in scan(fw)}
+    assert by_kind["certificate"].undecided == ["strength-undecided-ec"]
+    assert by_kind["private-key"].undecided == ["strength-undecided-ec"]
+    assert not any("strength-undecided" in f for f in by_kind["certificate"].flags)
+
+
+@needs_openssl
+def test_a_fixed_curve_certificate_carries_no_undecided_note(tmp_path):
+    """The symmetry must not make every certificate an unknown.
+
+    ED25519 and ED448 are in DECIDED_ALGORITHMS and have no size to be unable to read, so a decision
+    is reached and the note is absent -- the "checked, fine" answer from the other side (#148).
+    """
+    fw = tmp_path / "fs"
+    fw.mkdir()
+    _make_alg_cert(fw, "ed25519", ["ed25519"])
+    (cert,) = [e for e in scan(fw) if e.kind == "certificate"]
+    assert cert.algorithm == "ED25519" and cert.bits is None
+    assert cert.undecided == []
+

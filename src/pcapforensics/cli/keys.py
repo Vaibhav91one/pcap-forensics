@@ -6,6 +6,11 @@ ones (weak key, self-signed, expired, and — critically — a private key whose
 certificate, meaning the operator *holds the key for that cert*), and can normalise the private keys into a
 directory that ``analyze --keys-from`` consumes to decrypt a capture.
 
+Findings and non-answers are kept apart, because they are not the same kind of statement. ``KeyEntry.flags``
+is what is wrong with the key; ``KeyEntry.undecided`` is what this command could not decide about it. An entry
+may be in both, and a healthy curve key that no rule here covers belongs only in the second — counting it in
+the first reports a NIST-recommended key as a defect and tells a reader to act on nothing (#144, #148).
+
 Private-key **bytes are never printed** — only paths, types, sizes and the public SPKI fingerprint (a
 non-secret SHA-256 of the DER public key), which is also what ``analyze`` matches against a capture's server
 certificate.
@@ -85,6 +90,17 @@ class KeyEntry:
     expired: bool | None = None
     spki: str | None = None  # sha256(DER public key)[:16] — non-secret
     flags: list[str] = field(default_factory=list)
+    # What this command could not determine about this entry, kept apart from `flags` because it is
+    # not the same kind of statement. A flag is a claim about the key: this modulus is breakable, you
+    # hold the key for this certificate. An entry in `undecided` is a claim about *us*: we have no
+    # rule covering this algorithm, or openssl would not read a size we asked for. Counting the
+    # second as the first reports a healthy P-256 key as a defect, and gives `I do not know` the same
+    # weight as `this is dangerous` (AGENTS.md section 4). #144 shipped the note as a flag and
+    # #148 gave it a channel of its own.
+    #
+    # The vocabulary is unchanged from #144 -- `strength-undecided-<algorithm>` -- so a consumer of
+    # --json reads the same words as before, out of a different field.
+    undecided: list[str] = field(default_factory=list)
 
 
 def _ossl(args: list[str], data: bytes | None = None) -> tuple[int, bytes]:
@@ -242,6 +258,32 @@ def scan(root: Path) -> list[KeyEntry]:
     return entries
 
 
+def _mark_undecided(e: KeyEntry) -> None:
+    """Everything about this entry's strength that this command has no verdict for (#148).
+
+    Two reasons, and they are kept apart because `bits=None` means both of them at once:
+
+    * the algorithm is one that no rule here covers. EC and DSA have no threshold in this module, and
+      an algorithm openssl named in a way `_ALGORITHM_NAMES` holds no word for is not assumed to be
+      anything. Judging curves is a policy this module does not have (#144); that the capture path
+      now has one (#151) is a separate decision, and wiring it in would change which keys are flagged
+      for weakness, which #143, #144 and #155 settled.
+    * the algorithm is RSA and the modulus did not come back. For RSA a size *is* readable, so a
+      missing one is us failing rather than the key having no size -- the unreadable certificate in
+      #148's own evidence. ED25519 and ED448 are in `DECIDED_ALGORITHMS` and are
+      fixed-parameter, so their `bits` is None by design and they are *decided*, which is a
+      different answer and gets no note at all.
+
+    Mutates `e.undecided` rather than returning, so an entry may carry more than one reason and
+    the caller never has to know how many there are.
+    """
+    if e.algorithm not in DECIDED_ALGORITHMS:
+        reason = (e.algorithm or "unknown-algorithm").lower()
+        e.undecided.append(f"strength-undecided-{reason}")
+    elif e.algorithm == "RSA" and e.bits is None:
+        e.undecided.append("key-size-unreadable")
+
+
 def _flag(entries: list[KeyEntry]) -> None:
     now = datetime.now(UTC)
     cert_spki = {e.spki for e in entries if e.kind == "certificate" and e.spki}
@@ -252,11 +294,9 @@ def _flag(entries: list[KeyEntry]) -> None:
         if e.bits is not None and e.bits <= WEAK_BITS:
             e.flags.append(f"weak-key-{e.bits}bit")
         # An algorithm with no threshold here is neither strong nor weak here, and saying nothing would
-        # read as the first. Say which one it is instead (#144). Certificates are left alone: #143 owns
-        # how they are classified and already leaves their `bits` as an RSA modulus or None.
-        if e.kind == "private-key" and e.algorithm not in DECIDED_ALGORITHMS:
-            reason = (e.algorithm or "unknown-algorithm").lower()
-            e.flags.append(f"strength-undecided-{reason}")
+        # read as the first. Say which one it is instead (#144) -- in a column and a count of its own,
+        # because it is a claim about this command rather than about the key (KeyEntry.undecided).
+        _mark_undecided(e)
         if e.self_signed:
             e.flags.append("self-signed")
         if e.not_after:
@@ -299,20 +339,30 @@ def scan_cmd(
                 (out / f"key{copied:03d}.pem").write_bytes((directory / e.path).read_bytes())
                 copied += 1
         console.print(f"wrote {copied} private key(s) to {out} (use: pcap-doctor analyze <pcap> --keys-from {out})")
+    flagged = sum(1 for e in entries if e.flags)
+    undecided = sum(1 for e in entries if e.undecided)
     if as_json:
-        typer.echo(jsonlib.dumps({"root": str(directory), "entries": [asdict(e) for e in entries]}, indent=2))
+        # The two counts ride along at the top level as well as per entry: a CI gate should be able to
+        # read "how many findings" and "how many unknowns" without re-deriving either from the list
+        # (#148). Every key already in this payload is unchanged; both are additive.
+        typer.echo(jsonlib.dumps({"root": str(directory), "flagged": flagged, "undecided": undecided,
+                                  "entries": [asdict(e) for e in entries]}, indent=2))
         return
     keys = [e for e in entries if e.kind == "private-key"]
     certs = [e for e in entries if e.kind == "certificate"]
-    risky = sum(1 for e in entries if e.flags)
-    console.print(f"[bold]{directory}[/bold]: {len(keys)} private key(s), {len(certs)} certificate(s), {risky} flagged")
+    console.print(f"[bold]{directory}[/bold]: {len(keys)} private key(s), {len(certs)} certificate(s), "
+                  f"{flagged} flagged, {undecided} undecided")
     table = Table(title="key material")
-    for col in ("path", "kind", "type", "bits", "CN", "SPKI", "flags"):
+    for col in ("path", "kind", "type", "bits", "CN", "SPKI", "flags", "undecided"):
         table.add_column(col, overflow="fold")
     for e in entries:
         table.add_row(e.path, e.kind, e.algorithm or "-", str(e.bits or "-"), e.common_name or "-",
-                      e.spki or "-", ", ".join(e.flags) or "-")
+                      e.spki or "-", ", ".join(e.flags) or "-", ", ".join(e.undecided) or "-")
     console.print(table)
+    # "undecided" is what this command could not decide, not something it found wrong: an entry may
+    # appear in both counts, and an empty cell means the answer was "checked, fine" rather than
+    # "not looked at". Both readings are needed and neither implies the other (#148).
+    console.print("[dim]undecided = strength this command has no verdict for, not a finding; flagged and undecided overlap.[/dim]")
     console.print("[dim]Feed the private keys to a capture: pcap-doctor keys scan <dir> --out keys.d && "
                   "pcap-doctor analyze <pcap> --keys-from keys.d[/dim]")
 
