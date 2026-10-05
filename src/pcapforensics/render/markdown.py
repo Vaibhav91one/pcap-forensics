@@ -243,7 +243,8 @@ def render_ciphers(report: Report, index: CaptureIndex) -> Path:
                 f"`{client}:{cport}`",
                 f"`{server}:{sport}`",
                 session.proto.upper(),
-                session.negotiated_version or (session.record_versions[0] if session.record_versions else "-"),
+                session.negotiated_version
+                or (session.record_versions[0].version if session.record_versions else "-"),
                 f"`{name_of(session.chosen_cipher)}`",
                 str(len(session.offered_ciphers)),
                 _pfs(session),
@@ -268,7 +269,8 @@ def render_ciphers(report: Report, index: CaptureIndex) -> Path:
             f"### `{a}:{ap}` <-> `{b}:{bp}`",
             "",
             f"- Negotiated version: {session.negotiated_version or 'unknown'}",
-            f"- Record versions seen: {', '.join(session.record_versions) or 'none'}",
+            f"- Record versions seen: "
+            f"{', '.join(dict.fromkeys(r.version for r in session.record_versions)) or 'none'}",
             f"- Chosen suite: `{name_of(session.chosen_cipher)}` (id 0x{session.chosen_cipher:04x})"
             if session.chosen_cipher is not None
             else "- Chosen suite: not observed",

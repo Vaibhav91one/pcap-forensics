@@ -72,7 +72,9 @@ def cipher_matrix(sessions: list[TlsSession], limit: int = 20) -> str:
         src = node(f"{cli[0]}:{cli[1]}")
         dst = node(f"{srv[0]}:{srv[1]}")
         cipher = name_of(session.chosen_cipher)
-        version = session.negotiated_version or (session.record_versions[0] if session.record_versions else "?")
+        version = session.negotiated_version or (
+            session.record_versions[0].version if session.record_versions else "?"
+        )
         pfs = "PFS" if session.forward_secrecy else ("no-PFS" if session.forward_secrecy is False else "PFS?")
         sni = f" {session.sni}" if session.sni else ""
         lines.append(f'  {src} -->|"{_label(version)} / {cipher} / {pfs}{sni}"| {dst}')

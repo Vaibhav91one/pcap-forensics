@@ -30,13 +30,11 @@
     "HTTP_CLEARTEXT"
   ],
   "mixed_ciphers.pcap": [
-    "TLS_LEGACY_RECORD_VERSION",
     "TLS_OFFERS_WEAK_CIPHERS",
     "TLS_SELF_SIGNED_CHAIN"
   ],
   "no_pfs_tls12.pcap": [
     "TLS_CIPHER_WEAK",
-    "TLS_LEGACY_RECORD_VERSION",
     "TLS_NO_FORWARD_SECRECY",
     "TLS_SELF_SIGNED_CHAIN"
   ],
@@ -65,9 +63,7 @@
     "SSH_WEAK_KEX",
     "SSH_WEAK_MAC"
   ],
-  "strong_tls13.pcap": [
-    "TLS_LEGACY_RECORD_VERSION"
-  ],
+  "strong_tls13.pcap": [],
   "syn_scan.pcap": [
     "SYN_SCAN_SHAPE"
   ],

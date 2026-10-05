@@ -25,6 +25,7 @@ from .models import (
     Host,
     HttpExchange,
     QuicSession,
+    RecordVersion,
     Role,
     RtpStream,
     ServiceHit,
@@ -527,9 +528,22 @@ class IndexBuilder:
             # One packet can carry several handshake messages (ServerHello +
             # Certificate usually arrive together), and every value matters.
             hts = [to_int(v) for v in row.get("tls.handshake.type", [])]
+            # Keep every record's version with the frame and content type that carried it (#157).
+            # The list is no longer de-duplicated by name: the point is to tell a ClientHello
+            # carrying the mandated sentinel from an application record carrying a real downgrade,
+            # and those two have the same version and nothing else in common.
             record_version = version_name(first(row, "tls.record.version"))
-            if record_version and record_version not in session.record_versions:
-                session.record_versions.append(record_version)
+            if record_version:
+                content_type = to_int(first(row, "tls.record.content_type"))
+                seen_pairs = {(r.version, r.content_type) for r in session.record_versions}
+                if (record_version, content_type) not in seen_pairs:
+                    session.record_versions.append(
+                        RecordVersion(
+                            frame=frame,
+                            version=record_version,
+                            content_type=content_type,
+                        )
+                    )
             src = first(row, "ip.src") or first(row, "ipv6.src")
             if 1 in hts and session.client_hello is None:
                 session.client_hello = self._parse_hello(row, 1, frame)
