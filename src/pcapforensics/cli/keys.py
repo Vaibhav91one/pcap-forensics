@@ -100,6 +100,13 @@ _ALGORITHM_NAMES = {
 # from nothing (#162).
 DECIDED_ALGORITHMS = frozenset({"RSA", "EC", "ED25519", "ED448"})
 
+# The note an entry carries when openssl would not parse it at all (#163). A file with a key-ish
+# suffix that no longer holds anything we can read is still a file we looked at, and the scan says so
+# here rather than dropping the row -- a tree whose only member is unreadable used to report exactly
+# what an empty tree reports. It is a `undecided` note and not a flag: we could not read the file,
+# which is a fact about this command, not a claim that what the device ships is unsafe (#148).
+_UNREADABLE_CERT = "certificate-unreadable"
+
 
 @dataclass
 class KeyEntry:
@@ -212,10 +219,24 @@ def _classify_private_key(path: Path) -> KeyEntry:
     return e
 
 
-def _classify_cert(path: Path) -> KeyEntry | None:
+def _classify_cert(path: Path) -> KeyEntry:
+    """Classify a certificate, and say so when there is not one to read (#163).
+
+    This used to return ``None`` when openssl would not parse the file, and ``scan`` dropped that, so
+    a truncated, encrypted or mislabelled PEM vanished: no row, no flag, no note, and not in the count.
+    A tree holding one unreadable certificate then reported exactly what an empty tree reports, and an
+    analyst reading "0 certificate(s)" could not tell a clean scan from a skipped file -- which is the
+    silent pass AGENTS.md section 4 forbids.
+
+    The decision is to keep the row and mark it. The file had a certificate-ish suffix and was not a
+    private key, so it is a certificate we failed to read: an entry with no algorithm, no dates and no
+    CN, `flags` empty because there is nothing here to accuse the key of, and
+    `KeyEntry.undecided = ["certificate-unreadable"]` because the one true thing we know is that we
+    could not read it (#148). The row counts as a certificate so the summary cannot read as clean.
+    """
     rc, out = _ossl(["x509", "-in", str(path), "-noout", "-subject", "-issuer", "-enddate", "-nameopt", "RFC2253"])
     if rc != 0:
-        return None
+        return KeyEntry(path="", kind="certificate", undecided=[_UNREADABLE_CERT])
     e = KeyEntry(path="", kind="certificate")
     fields = {k: v for k, _, v in (line.partition("=") for line in out.decode("latin-1").splitlines())}
 
@@ -283,9 +304,9 @@ def scan(root: Path) -> list[KeyEntry]:
     for path in sorted(root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in KEY_EXT:
             continue
+        # Both classifiers answer with an entry now: a file we could not read comes back marked, not
+        # as `None` to be dropped here (#163). Nothing on this walk is silently skipped.
         entry = _classify_private_key(path) if _is_private_key(path) else _classify_cert(path)
-        if entry is None:
-            continue
         entry.path = str(path.relative_to(root))
         entries.append(entry)
     _flag(entries)
@@ -313,6 +334,11 @@ def _mark_undecided(e: KeyEntry) -> None:
     Mutates `e.undecided` rather than returning, so an entry may carry more than one reason and
     the caller never has to know how many there are.
     """
+    if _UNREADABLE_CERT in e.undecided:
+        # We never read a key here, so there is no strength to have a verdict about. Adding the
+        # algorithm note as well would give a file we could not open two reasons and neither would be
+        # right: its strength is not undecided, it is unknown because there was nothing to read (#163).
+        return
     if e.algorithm not in DECIDED_ALGORITHMS:
         reason = (e.algorithm or "unknown-algorithm").lower()
         e.undecided.append(f"strength-undecided-{reason}")
@@ -410,8 +436,10 @@ def scan_cmd(
     console.print(table)
     # "undecided" is what this command could not decide, not something it found wrong: an entry may
     # appear in both counts, and an empty cell means the answer was "checked, fine" rather than
-    # "not looked at". Both readings are needed and neither implies the other (#148).
-    console.print("[dim]undecided = strength this command has no verdict for, not a finding; flagged and undecided overlap.[/dim]")
+    # "not looked at". Both readings are needed and neither implies the other (#148). Since #163 the
+    # column also carries `certificate-unreadable`, so the legend names both things it can mean.
+    console.print("[dim]undecided = what this command could not decide: no strength verdict, or a file "
+                  "it could not read. Not a finding; flagged and undecided overlap.[/dim]")
     console.print("[dim]Feed the private keys to a capture: pcap-doctor keys scan <dir> --out keys.d && "
                   "pcap-doctor analyze <pcap> --keys-from keys.d[/dim]")
 

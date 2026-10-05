@@ -190,16 +190,24 @@ def test_certificate_key_size_openssl_cannot_read_is_not_guessed(tmp_path, monke
     # the rest of the certificate is still classified
     assert entry.common_name == "ca"
     assert entry.self_signed is True
-
-
 def test_without_openssl_the_scan_reports_it_instead_of_guessing(cli_runner, tmp_path, monkeypatch):
-    """No openssl means no key size, and the command says so instead of inventing one (#143)."""
+    """No openssl means no key size, and the command says so instead of inventing one (#143, #163).
+
+    #143 wrote the last line of this test as `scan(fw) == []`, which pinned two things at once: that an
+    "unreadable certificate is not a weak key -- still true, and still what the test is for -- and that
+    "it is not a row at all, which made a tree holding one broken file report exactly what an empty
+    "tree reports. #163 keeps the first half and gives up the second (#148 says a note, not silence).
+    """
     fw = tmp_path / "fs"
     fw.mkdir()
     (fw / "thing.crt").write_text("-----BEGIN CERTIFICATE-----\n")
     monkeypatch.setattr(keys, "openssl_path", lambda: None)
     assert cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"]).exit_code == 2
-    assert scan(fw) == []  # a certificate we cannot read is reported as nothing, not as a weak key
+    (entry,) = scan(fw)  # the file is reported -- as something, rather than as nothing
+    assert entry.kind == "certificate"
+    assert entry.algorithm is None and entry.bits is None  # nothing invented about it
+    assert not any(f.startswith("weak-key-") for f in entry.flags)  # unreadable is not weak (#143)
+    assert entry.undecided == ["certificate-unreadable"]  # and unreadable is not silence (#163)
 
 # --- #144: key strength is judged per algorithm; `bits` is an RSA modulus and nothing else ---
 
@@ -839,3 +847,89 @@ def test_a_dsa_certificate_is_not_measured_against_the_curve_floor(tmp_path):
     assert cert.curve_bits is None and cert.bits is None  # neither slot takes a DSA prime
     assert not any(f.startswith("weak-key-") for f in cert.flags)
     assert cert.undecided == ["strength-undecided-dsa"]
+
+
+# --- #163: a certificate openssl cannot parse is a row that says why, not a file that vanished ---
+
+
+def _broken_cert_tree(tmp_path, name="fs"):
+    """The reproduction from the issue: one .crt-suffixed file that openssl will not parse."""
+    fw = tmp_path / name
+    (fw / "etc").mkdir(parents=True)
+    (fw / "etc" / "broken.crt").write_text("not a certificate" + chr(10))
+    return fw
+
+
+def test_a_certificate_openssl_cannot_parse_is_reported_rather_than_dropped(tmp_path):
+    """The case from the issue: `_classify_cert` returned None and `scan` skipped it.
+
+    A file with a certificate suffix, in the place a firmware keeps its certificates, that openssl
+    will not parse -- truncated, encrypted, a DER blob with the wrong header, a corrupted file -- used
+    to produce no row, no flag and no note, and did not appear in the count either. That is a silent
+    pass (AGENTS.md section 4), and it is now a row (#163).
+    """
+    fw = _broken_cert_tree(tmp_path)
+    (entry,) = scan(fw)
+    assert entry.path == "etc/broken.crt"  # the file is named, not merely counted
+    assert entry.kind == "certificate"
+    assert entry.undecided == ["certificate-unreadable"]
+
+
+@needs_openssl
+def test_a_tree_of_one_unreadable_certificate_does_not_report_a_clean_scan(cli_runner, tmp_path):
+    """The comparison that made the original report: this tree, and an empty one.
+
+    "0 private key(s), 0 certificate(s), 0 flagged, 0 undecided" is what a directory with nothing in
+    it says, and it is exactly what a directory holding a file we could not read used to say as well.
+    The summary has to be able to tell those two apart (#163).
+    """
+    broken = _broken_cert_tree(tmp_path, "broken")
+    empty = tmp_path / "empty"
+    (empty / "etc").mkdir(parents=True)
+    summaries = {}
+    for label, tree in (("broken", broken), ("empty", empty)):
+        result = cli_runner.invoke(app, ["keys", "scan", str(tree)])
+        assert result.exit_code == 0
+        summaries[label] = _flat(result.output).split("key material")[0]
+    assert summaries["broken"] != summaries["empty"]
+    assert "0 certificate(s)" in summaries["empty"] and "0 undecided" in summaries["empty"]
+    assert "1 certificate(s)" in summaries["broken"]  # it was counted
+    assert "0 flagged" in summaries["broken"]  # and nothing was accused of anything
+    assert "1 undecided" in summaries["broken"]  # it said which way it did not know
+
+
+@needs_openssl
+def test_the_unreadable_note_reaches_the_json_output(cli_runner, tmp_path):
+    """--json is what a CI gate reads, so a note only in the table would not exist (#163)."""
+    fw = _broken_cert_tree(tmp_path)
+    result = cli_runner.invoke(app, ["keys", "scan", str(fw), "--json"])
+    assert result.exit_code == 0
+    data = json.loads(result.output)
+    (entry,) = data["entries"]
+    assert entry["path"] == "etc/broken.crt"
+    assert entry["undecided"] == ["certificate-unreadable"] and entry["flags"] == []
+    assert data["undecided"] == 1 and data["flagged"] == 0
+
+
+def test_an_unreadable_certificate_gets_one_note_and_it_is_the_right_one(tmp_path):
+    """Not "unreadable" *and* "strength-undecided-unknown-algorithm" (#163).
+
+    Two notes would read as two findings and be one: we did not read a key, so its strength was never
+    in question. The note that survives names what happened (#148).
+    """
+    (entry,) = scan(_broken_cert_tree(tmp_path))
+    assert entry.undecided == [keys._UNREADABLE_CERT]
+
+
+@needs_openssl
+def test_an_unreadable_certificate_is_not_offered_to_analyze_as_a_key(cli_runner, tmp_path):
+    """The row is an entry, but `--out` still only ships keys we could read (#163).
+
+    `--out` feeds `analyze --keys-from`, which hands every file in the directory to openssl; shipping
+    a file we could not parse would move the problem into the decryption path.
+    """
+    fw = _broken_cert_tree(tmp_path)
+    _make_key_and_cert(fw / "etc", "srv", 1024)  # one readable key beside the broken file
+    out = tmp_path / "keys.d"
+    assert cli_runner.invoke(app, ["keys", "scan", str(fw), "--out", str(out)]).exit_code == 0
+    assert [p.name for p in out.glob("*.pem")] == ["key000.pem"]  # the readable key, and only it
