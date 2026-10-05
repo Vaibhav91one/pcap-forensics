@@ -120,6 +120,75 @@ def check_corpus_hostile(verbose: bool) -> tuple[bool, str]:
     return noticed, detail
 
 
+def _first_finding(document):
+    for finding in document.get("findings") or []:
+        if finding.get("evidence"):
+            return finding
+    return (document.get("findings") or [{}])[0]
+
+
+def check_corpus_cli(verbose: bool) -> tuple[bool, str]:
+    # corpus_cli.py: corrupt a real report and require the contract check to notice.
+    #
+    # The thing this harness watches is the *shape* of a report -- stable ids, a real frame on every
+    # finding, a remediation, a severity from the known set. So the mutation has to be a report, not a
+    # capture: re-analysing would regenerate a good one and hide the damage.
+    #
+    # Four mutations rather than one, because a check that only notices a deleted field is barely a
+    # check.
+    fixture = ROOT / "tests" / "fixtures" / "http_basic.pcap"
+    if not fixture.exists():
+        return False, "fixture missing; cannot produce a report to mutate"
+
+    def drop_schema(document):
+        document.pop("schema_version", None)
+
+    def break_id(document):
+        _first_finding(document)["id"] = "not-a-fingerprint"
+
+    def zero_frame(document):
+        _first_finding(document)["evidence"][0]["frame"] = 0
+
+    def drop_remediation(document):
+        _first_finding(document).pop("remediation", None)
+
+    mutations = (
+        ("schema_version removed", drop_schema),
+        ("id corrupted", break_id),
+        ("evidence frame zeroed", zero_frame),
+        ("remediation removed", drop_remediation),
+    )
+
+    missed = []
+    for label, mutate in mutations:
+        with tempfile.TemporaryDirectory() as td:
+            work = Path(td)
+            produced = subprocess.run(
+                [str(ROOT / ".venv/bin/pcap-doctor"), "analyze", str(fixture),
+                 "-o", str(work / "out"), "-q", "--no-handoff"],
+                capture_output=True, cwd=ROOT, timeout=300,
+            )
+            report_path = work / "out" / "report.json"
+            if produced.returncode not in (0, 1) or not report_path.exists():
+                return False, "could not produce a report to mutate"
+            document = json.loads(report_path.read_text())
+            if not document.get("findings"):
+                return False, "the fixture produced no findings, so there is nothing to corrupt"
+
+            clean = run([PYTHON, "scripts/corpus_cli.py", "--reports", str(work / "out")])
+            mutate(document)
+            report_path.write_text(json.dumps(document, indent=2))
+            broken = run([PYTHON, "scripts/corpus_cli.py", "--reports", str(work / "out")])
+            if clean.returncode != 0 or broken.returncode == 0:
+                missed.append(label)
+            elif verbose:
+                for line in broken.stdout.strip().splitlines()[1:3]:
+                    print("      " + label + ": " + line.strip())
+
+    if missed:
+        return False, "stayed quiet for: " + ", ".join(missed)
+    return True, "all " + str(len(mutations)) + " report mutations noticed"
+
 def check_board_is_reachable(_verbose: bool) -> tuple[bool, str]:
     """A sanity floor: the harnesses must exist and be runnable, whatever they report."""
     missing = [
@@ -141,6 +210,7 @@ def main() -> int:
     for name, check in (
         ("corpus_expect (ground truth corrupted)", check_corpus_expect),
         ("corpus_hostile (JSON fix reverted)", check_corpus_hostile),
+        ("corpus_cli (report corrupted)", check_corpus_cli),
         ("harnesses present", check_board_is_reachable),
     ):
         try:
