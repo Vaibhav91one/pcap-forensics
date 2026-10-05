@@ -16,6 +16,21 @@ from typing import ClassVar
 
 from ..index import CaptureIndex
 from ..models import Confidence, Evidence, Finding, Severity
+from ..prompts import CAPTURE_MODEL_LIMIT, clean_capture_text
+
+
+def _model_text(value: str) -> str:
+    # Every field a detector fills from the capture passes through here (#171).
+    #
+    # Captured text is attacker-controlled: an HTTP Host header, a DNS name, an SNI, a certificate
+    # subject. It reached Finding.summary raw, so the model itself carried raw escape bytes and every
+    # consumer inherited them -- the markdown renderer (#167) and the keys scan table (#169) each had
+    # to be fixed separately. Filtering once, at the factory every detector builds its findings with,
+    # closes the class instead of one call site at a time.
+    #
+    # Only capture-derived fields are filtered. remediation, references and tags are this project's
+    # own text and are left exactly as written.
+    return clean_capture_text(value, limit=CAPTURE_MODEL_LIMIT)
 
 
 class Detector(ABC):
@@ -51,15 +66,22 @@ class Detector(ABC):
         return Finding.make(
             detector=self.name,
             code=code,
-            title=title,
+            title=_model_text(title),
             severity=severity,
             confidence=confidence,
             category=category or self.category,
-            summary=summary,
-            scope=scope,
-            evidence=evidence or [],
-            subjects=subjects or [],
-            flow_key=flow_key,
+            summary=_model_text(summary),
+            scope=_model_text(scope),
+            evidence=[
+                Evidence(
+                    frame=item.frame,
+                    field=_model_text(item.field),
+                    value=_model_text(item.value),
+                )
+                for item in (evidence or [])
+            ],
+            subjects=[_model_text(item) for item in (subjects or [])],
+            flow_key=_model_text(flow_key) if flow_key else None,
             remediation=remediation,
             references=references or [],
             tags=tags or [],
