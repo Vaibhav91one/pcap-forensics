@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import subprocess
 
@@ -972,3 +973,22 @@ def _markup_tree(tmp_path) -> None:
     subprocess.run([openssl, "genrsa", "-out", str(key), "2048"], capture_output=True, check=True)
     for name in ("[red]z.pem", "a[b]c.pem"):
         shutil.copy2(key, root / name)
+
+
+def test_the_json_envelope_never_returns_a_control_character(cli_runner, tmp_path) -> None:
+    """#175: json.dumps encodes ESC as \u001b, so counting bytes reported this surface clean.
+
+    The question for JSON is not whether the file contains an escape byte -- it never does -- but
+    whether *parsing* it yields a string containing a control character.
+    """
+    _markup_tree(tmp_path)
+    result = cli_runner.invoke(app, ["keys", "scan", str(tmp_path / "tree"), "--json"])
+    assert result.exit_code == 0
+    entries = json.loads(result.stdout)["entries"]
+    assert entries, "the tree has keys; an empty list would pass this test vacuously"
+    for entry in entries:
+        for field_name, value in entry.items():
+            if isinstance(value, str):
+                assert not re.search(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", value), (
+                    f"{field_name} carries a control character: {value[:60]!r}"
+                )
