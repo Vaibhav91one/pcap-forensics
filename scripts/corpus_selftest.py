@@ -120,6 +120,84 @@ def check_corpus_hostile(verbose: bool) -> tuple[bool, str]:
     return noticed, detail
 
 
+def clear_caches() -> None:
+    for cache in (ROOT / "src").rglob("__pycache__"):
+        shutil.rmtree(cache, ignore_errors=True)
+
+
+def check_corpus_sweep(verbose: bool) -> tuple[bool, str]:
+    # corpus_sweep.py: disable a detector and require the sweep to notice the false negative.
+    #
+    # This harness exists to catch a capture tshark decodes and pcap-doctor then says nothing about.
+    # The cheapest honest way to test that claim is to make it true: stub out d1, so a TLS capture
+    # produces no sessions, and require the sweep to say so.
+    #
+    # The mutation has to be in the *tool*, because what is being watched is what the tool does with a
+    # capture -- not what the corpus holds. Corrupting a capture instead would test the reader, not the
+    # claim, which is the standing failure mode in this loop.
+    #
+    # Detection-only stub: scan() is untouched, so this cannot turn into a second keys_scan test.
+    # Pick the mutation from what the run can actually see. A fixed choice is a trap: --limit takes
+    # the first N captures in name order and those start with arp and cbor, which produce no findings
+    # at all -- so a disabled detector changes nothing and the check reads MUTE while testing nothing.
+    # Asking the sweep first is what makes the mutation observable rather than assumed.
+    limit = 60
+    run([PYTHON, "scripts/corpus_sweep.py", "--kind", "capture", "--limit", str(limit),
+         "--workers", "4", "--out", "/tmp/selftest-sweep-clean.json"])
+    clean_report = json.loads(Path("/tmp/selftest-sweep-clean.json").read_text())
+    with_findings = [item for item in clean_report["results"] if item.get("findings")]
+    if not with_findings:
+        return False, "no capture in the first " + str(limit) + " produces a finding to remove"
+
+    codes = sorted({f["code"] for f in with_findings[0]["findings"]})
+    detector = _detector_file_for(codes[0])
+    if detector is None:
+        return False, "could not map code " + codes[0] + " to a detector file"
+    marker = "    def detect(self, index: CaptureIndex) -> list[Finding]:"
+    if marker not in detector.read_text():
+        return False, "could not find the detect() entry point to stub in " + detector.name
+
+    keep = detector.read_bytes()
+    try:
+        stub = keep.decode().replace(
+            marker,
+            marker + chr(10) + "        return []  # corpus_selftest mutation: detector disabled",
+            1,
+        )
+        detector.write_text(stub)
+        clear_caches()
+        run([PYTHON, "scripts/corpus_sweep.py", "--kind", "capture", "--limit", str(limit),
+             "--workers", "4", "--out", "/tmp/selftest-sweep-broken.json"])
+        report = json.loads(Path("/tmp/selftest-sweep-broken.json").read_text())
+        defects = [
+            (item.get("capture", ""), defect)
+            for item in report["results"]
+            for defect in item.get("defects", [])
+            if any(tag in defect for tag in ("false-negative", "false-positive", "suspect"))
+        ]
+    finally:
+        detector.write_bytes(keep)
+        clear_caches()
+
+    if not defects:
+        return False, detector.name + " was disabled and the sweep reported nothing at all"
+    if verbose:
+        for name, defect in defects[:3]:
+            print("      " + Path(name).parent.name + ": " + defect)
+    return True, detector.name + " disabled -> " + str(len(defects)) + " false-negative report(s)"
+
+
+def _detector_file_for(code: str):
+    """The detector module that emits a code, so the mutation is aimed by code rather than guessed."""
+    sys.path.insert(0, str(ROOT / "src"))
+    from pcapforensics.rules import RULES
+
+    rule = RULES.get(code)
+    if rule is None:
+        return None
+    return ROOT / "src" / "pcapforensics" / "detectors" / (rule.detector.split(".", 1)[1] + ".py")
+
+
 def _first_finding(document):
     for finding in document.get("findings") or []:
         if finding.get("evidence"):
@@ -211,6 +289,7 @@ def main() -> int:
         ("corpus_expect (ground truth corrupted)", check_corpus_expect),
         ("corpus_hostile (JSON fix reverted)", check_corpus_hostile),
         ("corpus_cli (report corrupted)", check_corpus_cli),
+        ("corpus_sweep (detector disabled)", check_corpus_sweep),
         ("harnesses present", check_board_is_reachable),
     ):
         try:
