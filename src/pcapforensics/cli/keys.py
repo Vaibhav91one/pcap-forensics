@@ -8,8 +8,10 @@ directory that ``analyze --keys-from`` consumes to decrypt a capture.
 
 Findings and non-answers are kept apart, because they are not the same kind of statement. ``KeyEntry.flags``
 is what is wrong with the key; ``KeyEntry.undecided`` is what this command could not decide about it. An entry
-may be in both, and a healthy curve key that no rule here covers belongs only in the second — counting it in
-the first reports a NIST-recommended key as a defect and tells a reader to act on nothing (#144, #148).
+may be in both — a DSA key that ships beside its own certificate is both — and counting ignorance as a
+finding reports a key the project has no rule for as a defect and tells a reader to act on nothing (#144,
+#148). A key this command *can* judge belongs in neither column: that is the "checked, fine" answer, and an
+empty cell means it rather than "not looked at" (#162).
 
 Private-key **bytes are never printed** — only paths, types, sizes and the public SPKI fingerprint (a
 non-secret SHA-256 of the DER public key), which is also what ``analyze`` matches against a capture's server
@@ -30,6 +32,7 @@ import typer
 from rich.table import Table
 
 from ..certificates import openssl_path, parse_openssl_text
+from ..data_ciphers import MIN_EC_CURVE_BITS
 from ._console import console
 
 keys_app = typer.Typer(help="Inspect key material in an extracted firmware tree.", no_args_is_help=True)
@@ -43,6 +46,22 @@ WEAK_BITS = 1024  # RSA <= 1024 bits is breakable; flag it
 # decides whether the number may be compared against WEAK_BITS at all. See _read_cert_key for the
 # certificate path and _read_key_text for the private-key path: both set `bits` for RSA alone, so the
 # one comparison in _flag is an RSA statement by construction rather than by a second guess at the type.
+
+# An EC curve size is a second quantity with a second threshold, so it gets its own field
+# (`KeyEntry.curve_bits`) rather than being folded into `bits`: one field holding two meanings is
+# exactly what #143 removed, and a `bits <= WEAK_BITS` left unguarded is a P-256 key reported as weak.
+#
+# The threshold itself is not written here. MIN_EC_CURVE_BITS is imported from `data_ciphers`, where
+# #151 moved the numbers out of `detectors/tls_cipher.py` so that a second consumer could read the same
+# policy instead of rediscovering it (#162). RFC 8422 section 5.1.1 deprecates NamedCurve 1-22 for TLS,
+# which is every curve below 256 bits, so the floor is the minimum curve TLS still permits.
+#
+# The policy draws one more line inside that range: below DEPRECATED_EC_CURVE_BITS (224) a curve is
+# treated as broken, and between the two constants it is deprecated-for-TLS rather than a break. That
+# distinction is a ranking, and this command has no severity to rank with — one flag says `weak-key-<n>bit`
+# — so both bands read the same way here. `weak_key_verdict`, which does have severities, keeps the two
+# apart for the capture path; the floor, which is the part that decides whether a key is reported at all,
+# is the part shared.
 
 # One vocabulary for `KeyEntry.algorithm`, whichever dump produced the value (#149). openssl names the
 # same fact differently depending on where it read it: a private key says "RSA"/"EC"/"DSA"/"ED25519"/
@@ -68,12 +87,18 @@ _ALGORITHM_NAMES = {
     "id-ed448": "ED448",
 }
 
-# Algorithms whose strength this command can decide. RSA is judged on its modulus against WEAK_BITS.
+# Algorithms whose strength this command can decide. RSA is judged on its modulus against WEAK_BITS, and
+# EC on its curve size against MIN_EC_CURVE_BITS, which is the same policy the capture path reads (#162).
 # Ed25519 and Ed448 are not parameterised by a secret size at all — RFC 8032 fixes the curve — so there
-# is no number to brute-force and no threshold to apply. Everything else (EC, DSA, and any key type
-# openssl describes in a way we do not recognise) is reported undecided by _flag rather than judged
-# by the RSA rule or silently passed over as acceptable (AGENTS.md section 4).
-DECIDED_ALGORITHMS = frozenset({"RSA", "ED25519", "ED448"})
+# is no number to brute-force and no threshold to apply. Everything else (DSA, for which there is still
+# no tier, and any key type openssl describes in a way we do not recognise) is reported undecided by
+# _flag rather than judged by another algorithm's rule or silently passed over as acceptable
+# (AGENTS.md section 4).
+#
+# Decided is a property of the algorithm, not of the entry: an EC key whose curve size openssl would not
+# read is not decidable, and says so in `undecided` as `key-size-unreadable` rather than being judged
+# from nothing (#162).
+DECIDED_ALGORITHMS = frozenset({"RSA", "EC", "ED25519", "ED448"})
 
 
 @dataclass
@@ -83,6 +108,9 @@ class KeyEntry:
     # RSA / EC / DSA / ED25519 / ED448, or None if unreadable or a type this module does not name
     algorithm: str | None = None
     bits: int | None = None  # an RSA modulus size, and only ever one — see WEAK_BITS
+    # An EC curve size, and only ever one — see MIN_EC_CURVE_BITS. Kept out of `bits` on purpose: that
+    # field is an RSA modulus and one threshold, and a curve is neither (#143, #162).
+    curve_bits: int | None = None
     encrypted: bool = False
     common_name: str | None = None
     self_signed: bool | None = None
@@ -135,34 +163,35 @@ def _algorithm_name(raw: str | None) -> str | None:
     return _ALGORITHM_NAMES.get(raw.lower()) if raw else None
 
 
-def _read_key_text(text: str) -> tuple[str | None, int | None]:
-    """``(algorithm, RSA modulus size)`` read out of an ``openssl pkey -text`` dump (#144).
+def _read_key_text(text: str) -> tuple[str | None, int | None, int | None]:
+    """``(algorithm, RSA modulus size, EC curve size)`` read out of an ``openssl pkey -text`` dump (#144).
 
     openssl prints the same ``Private-Key: (N bit)`` line for every key type, and N is a different
-    quantity in each: a modulus for RSA, a curve size for EC, a prime size for DSA. Only the RSA
-    modulus is returned, because only that is the quantity ``WEAK_BITS`` is a threshold for — handing
-    the curve size of a NIST-recommended P-256 key to an RSA breakability threshold reports a key
-    roughly as strong as RSA-3072 as weak.
+    quantity in each: a modulus for RSA, a curve size for EC, a prime size for DSA. The two sizes come
+    back in two different slots because they are answered by two different thresholds — handing the curve
+    size of a NIST-recommended P-256 key to an RSA breakability threshold reports a key roughly as strong
+    as RSA-3072 as weak, and handing an RSA modulus to a curve floor reports a strong key as deprecated.
+    Only the slot whose threshold applies is filled (#143, #162).
 
     Each algorithm is recognised from a marker openssl prints for that algorithm alone, and a key
     matching none of them comes back as ``None`` rather than being assumed to be RSA: an unplaceable
     key is then reported undecided by ``_flag``, which is honest, where a default of "RSA" would call
-    a strong key breakable (AGENTS.md section 4). The size of an EC curve is deliberately not
-    returned; judging curves is a policy this module does not have, and guessing one here would put it
-    nowhere (#144).
+    a strong key breakable (AGENTS.md section 4). A DSA prime size is read by neither slot: there is
+    still no DSA tier to compare it against (#155), so it is left undecided rather than measured against
+    someone else's floor.
     """
     size = re.search(r"\((\d+)\s*bit", text)  # "Private-Key: (512 bit, 2 primes)"
     modulus = int(size.group(1)) if size else None
     header = text.lstrip().partition("\n")[0]
     if header.startswith(("ED25519", "ED448")):
-        return header.partition(" ")[0], None  # "ED25519 Private-Key:" — fixed-parameter, no size
+        return header.partition(" ")[0], None, None  # "ED25519 Private-Key:" — fixed-parameter, no size
     if "ASN1 OID:" in text:  # every EC key: "ASN1 OID: prime256v1", "ASN1 OID: brainpoolP256r1"
-        return "EC", None
+        return "EC", None, modulus
     if all(re.search(rf"^{name}:\s*$", text, re.M) for name in ("P", "Q", "G")):  # DSA prints p, q, g
-        return "DSA", None
+        return "DSA", None, None
     if "modulus:" in text and "publicExponent:" in text:  # RSA alone
-        return "RSA", modulus
-    return None, None
+        return "RSA", modulus, None
+    return None, None, None
 
 
 def _classify_private_key(path: Path) -> KeyEntry:
@@ -173,7 +202,7 @@ def _classify_private_key(path: Path) -> KeyEntry:
     if rc != 0:
         e.encrypted = True  # a key we can't read without a passphrase (still: key material is present)
         return e
-    raw_algorithm, e.bits = _read_key_text(out.decode("latin-1"))
+    raw_algorithm, e.bits, e.curve_bits = _read_key_text(out.decode("latin-1"))
     e.algorithm = _algorithm_name(raw_algorithm)
     rc, pub = _ossl(["pkey", "-in", str(path), "-pubout", "-outform", "DER"])
     if rc != 0:
@@ -217,15 +246,18 @@ def _read_cert_key(e: KeyEntry, path: Path) -> None:
     "private-key-present". openssl reports the kind on a `Public Key Algorithm:` line and the size as
     "Public-Key: (768 bit)", but it prints that same size line for an EC key with the curve size, where
     256 is a *strong* key, and for a DSA key with a prime size. Handing either to `_flag`'s RSA
-    threshold is issue #144, so only RSA acquires a number here; the algorithm is read either way, so
-    the type column can say what the key is instead of showing `-` on every row (#149).
+    threshold is issue #144, so the number is routed to the field whose threshold it answers: an RSA
+    modulus to `bits`, a curve size to `curve_bits` (#162), and a DSA prime to neither, because there
+    is still no DSA tier (#155). The algorithm is read either way, so the type column can say what the
+    key is instead of showing `-` on every row (#149).
 
-    Both values come out of :func:`parse_openssl_text`, the same parser the capture path reads, so
-    this command and the capture cannot end up answering "what algorithm is this" in two ways.
+    All of these values come out of :func:`parse_openssl_text`, the same parser the capture path
+    reads, so this command and the capture cannot end up answering "what algorithm is this", or "how
+    big is this key", in two ways.
 
     A certificate whose algorithm cannot be read keeps `algorithm=None`, and one whose *size* cannot
-    be read keeps `bits=None`: a key we could not read is not a weak key, and naming either one would
-    invent a fact the file does not contain (AGENTS.md section 4).
+    be read keeps `bits=None` and `curve_bits=None`: a key we could not read is not a weak key, and
+    naming either one would invent a fact the file does not contain (AGENTS.md section 4).
     """
     rc, text = _ossl(["x509", "-in", str(path), "-noout", "-text"])
     if rc != 0:
@@ -234,6 +266,8 @@ def _read_cert_key(e: KeyEntry, path: Path) -> None:
     e.algorithm = _algorithm_name(facts.key_algorithm)
     if e.algorithm == "RSA":
         e.bits = facts.public_key_bits
+    elif e.algorithm == "EC":
+        e.curve_bits = facts.public_key_bits
 
 
 def _is_private_key(path: Path) -> bool:
@@ -261,17 +295,19 @@ def scan(root: Path) -> list[KeyEntry]:
 def _mark_undecided(e: KeyEntry) -> None:
     """Everything about this entry's strength that this command has no verdict for (#148).
 
-    Two reasons, and they are kept apart because `bits=None` means both of them at once:
+    Two reasons, and they are kept apart because a missing size means both of them at once:
 
-    * the algorithm is one that no rule here covers. EC and DSA have no threshold in this module, and
-      an algorithm openssl named in a way `_ALGORITHM_NAMES` holds no word for is not assumed to be
-      anything. Judging curves is a policy this module does not have (#144); that the capture path
-      now has one (#151) is a separate decision, and wiring it in would change which keys are flagged
-      for weakness, which #143, #144 and #155 settled.
-    * the algorithm is RSA and the modulus did not come back. For RSA a size *is* readable, so a
-      missing one is us failing rather than the key having no size -- the unreadable certificate in
-      #148's own evidence. ED25519 and ED448 are in `DECIDED_ALGORITHMS` and are
-      fixed-parameter, so their `bits` is None by design and they are *decided*, which is a
+    * the algorithm is one that no rule here covers. DSA has no tier in this module — there is
+      nothing to compare a prime size against — and an algorithm openssl named in a way
+      `_ALGORITHM_NAMES` holds no word for is not assumed to be anything. EC used to belong here too,
+      until #162 gave this command the curve policy the capture path already had (#151): a curve is
+      now judged against MIN_EC_CURVE_BITS, so `strength-undecided-ec` is no longer a thing this
+      command can say.
+    * the algorithm is one this command judges on a size, and the size did not come back. For RSA
+      that is the modulus in `bits`, for EC the curve size in `curve_bits`; in both cases the number
+      *is* readable, so a missing one is us failing rather than the key having no size -- the
+      unreadable certificate in #148's own evidence. ED25519 and ED448 are in `DECIDED_ALGORITHMS`
+      and are fixed-parameter, so their size is None by design and they are *decided*, which is a
       different answer and gets no note at all.
 
     Mutates `e.undecided` rather than returning, so an entry may carry more than one reason and
@@ -280,8 +316,12 @@ def _mark_undecided(e: KeyEntry) -> None:
     if e.algorithm not in DECIDED_ALGORITHMS:
         reason = (e.algorithm or "unknown-algorithm").lower()
         e.undecided.append(f"strength-undecided-{reason}")
-    elif e.algorithm == "RSA" and e.bits is None:
-        e.undecided.append("key-size-unreadable")
+    elif e.algorithm in ("RSA", "EC"):
+        # Both are judged on a size, and each keeps it in the slot its own threshold reads (#162);
+        # asking the wrong slot would report every key this command cannot size as unreadable.
+        size = e.bits if e.algorithm == "RSA" else e.curve_bits
+        if size is None:
+            e.undecided.append("key-size-unreadable")
 
 
 def _flag(entries: list[KeyEntry]) -> None:
@@ -293,6 +333,12 @@ def _flag(entries: list[KeyEntry]) -> None:
         # is breakable" and cannot say it about a curve or a DSA prime.
         if e.bits is not None and e.bits <= WEAK_BITS:
             e.flags.append(f"weak-key-{e.bits}bit")
+        # A curve is judged against the policy #151 wrote down, imported rather than restated, so the
+        # same P-192 key is a finding here and `high` in the capture path instead of being an unknown
+        # in one and a defect in the other (#162). The flag keeps the `weak-key-<n>bit` shape: below the
+        # floor a curve is reported, at or above it there is nothing to say and nothing is said.
+        if e.algorithm == "EC" and e.curve_bits is not None and e.curve_bits < MIN_EC_CURVE_BITS:
+            e.flags.append(f"weak-key-{e.curve_bits}bit")
         # An algorithm with no threshold here is neither strong nor weak here, and saying nothing would
         # read as the first. Say which one it is instead (#144) -- in a column and a count of its own,
         # because it is a claim about this command rather than about the key (KeyEntry.undecided).
@@ -356,7 +402,10 @@ def scan_cmd(
     for col in ("path", "kind", "type", "bits", "CN", "SPKI", "flags", "undecided"):
         table.add_column(col, overflow="fold")
     for e in entries:
-        table.add_row(e.path, e.kind, e.algorithm or "-", str(e.bits or "-"), e.common_name or "-",
+        # One "bits" column, both sizes: a column showing `-` next to a `weak-key-192bit` flag would
+        # hide the number the flag is about, and an EC row whose verdict is "decided" should show the
+        # curve size that decided it (#162).
+        table.add_row(e.path, e.kind, e.algorithm or "-", str(e.bits or e.curve_bits or "-"), e.common_name or "-",
                       e.spki or "-", ", ".join(e.flags) or "-", ", ".join(e.undecided) or "-")
     console.print(table)
     # "undecided" is what this command could not decide, not something it found wrong: an entry may
