@@ -91,6 +91,26 @@ def test_capture_failure_prints_the_linux_fix(cli_runner, tmp_path, monkeypatch)
     assert "setcap cap_net_raw" in result.output
 
 
+def _await_exit(pid: int, deadline_s: float = 5.0) -> int | None:
+    # Wait for a child to actually disappear, and return its pid while it is still there.
+    #
+    # os.kill(pid, 0) succeeds for a process that has been killed but not yet reaped, because
+    # the zombie still has an entry in the process table. Checking once therefore races the
+    # reaper, which is why this test failed intermittently under load and passed every time it
+    # ran alone. Polling for what the test actually cares about removes the race without
+    # loosening the assertion.
+    import os
+    import time
+
+    deadline = time.monotonic() + deadline_s
+    while time.monotonic() < deadline:
+        try:
+            os.kill(pid, 0)
+        except ProcessLookupError:
+            return None
+        time.sleep(0.02)
+    return pid
+
 def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_path, monkeypatch) -> None:
     # #128: `watch &` starts with SIGINT ignored, and service managers send SIGTERM; either must stop the capture
     import os
@@ -111,13 +131,8 @@ def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_
             result = cli_runner.invoke(app, ["watch", "-i", "lo", "--dir", str(tmp_path / f"ring{sig}")])
             assert result.exit_code == 0, result.output
             assert "stopped:" in result.output
-            pid = int(pidfile.read_text())
-            try:
-                os.kill(pid, 0)
-                alive = True
-            except ProcessLookupError:
-                alive = False
-            assert not alive  # the capture was terminated and reaped
+            assert _await_exit(int(pidfile.read_text()), deadline_s=5.0) is None, (
+                "the capture was still running after the stop")
         assert signal.getsignal(signal.SIGINT) is signal.SIG_IGN  # watch put the old handlers back
     finally:
         signal.signal(signal.SIGINT, before)
