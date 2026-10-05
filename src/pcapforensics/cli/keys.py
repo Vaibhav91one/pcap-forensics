@@ -24,7 +24,7 @@ import hashlib
 import json as jsonlib
 import re
 import subprocess
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -34,6 +34,7 @@ from rich.table import Table
 
 from ..certificates import openssl_path, parse_openssl_text
 from ..data_ciphers import MIN_EC_CURVE_BITS
+from ..prompts import clean_capture_text
 from ._console import capture_cell, console
 
 keys_app = typer.Typer(help="Inspect key material in an extracted firmware tree.", no_args_is_help=True)
@@ -418,8 +419,15 @@ def scan_cmd(
         # The two counts ride along at the top level as well as per entry: a CI gate should be able to
         # read "how many findings" and "how many unknowns" without re-deriving either from the list
         # (#148). Every key already in this payload is unchanged; both are additive.
+        # The path is filtered here rather than inside scan(), because scan() reads the
+        # filesystem: the entry must keep the name on disk so --out copies the right file.
+        #
+        # --json is a machine surface, so it takes clean_capture_text and NOT capture_cell. JSON has
+        # no markup, and escaping brackets there would make the reported path differ from the path on
+        # disk -- the opposite of what #174 fixed for the table (#175).
+        payload = [replace(e, path=clean_capture_text(e.path)) for e in entries]
         typer.echo(jsonlib.dumps({"root": str(directory), "flagged": flagged, "undecided": undecided,
-                                  "entries": [asdict(e) for e in entries]}, indent=2))
+                                  "entries": [asdict(e) for e in payload]}, indent=2))
         return
     keys = [e for e in entries if e.kind == "private-key"]
     certs = [e for e in entries if e.kind == "certificate"]

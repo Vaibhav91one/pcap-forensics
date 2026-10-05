@@ -148,6 +148,39 @@ def scan_bytes(problems: list[str], where: str, blob: bytes) -> None:
         problems.append(f"{where}: control characters survived {found}")
 
 
+def scan_json(problems, where, blob):
+    # Ask the JSON question, not the byte question.
+    #
+    # For a markdown artifact the escape really is a byte, so counting bytes is right. For JSON it is
+    # not: json.dumps encodes ESC as  -- six printable characters -- so a byte count reports
+    # the file clean while every consumer that parses it gets the escape back.
+    #
+    # The question for a JSON surface is therefore "does *parsing* this yield a string containing a
+    # control character", and that is what this walks (#175).
+    try:
+        document = json.loads(blob)
+    except json.JSONDecodeError as exc:
+        problems.append(f"{where}: not valid JSON ({exc})")
+        return
+    for pointer, value in _strings(document):
+        if _CONTROL_BYTES.sub(" ", value) != value:
+            problems.append(f"{where}: parsed string at {pointer} contains a control character")
+
+
+def _strings(node, pointer="$"):
+    if isinstance(node, str):
+        yield pointer, node
+    elif isinstance(node, dict):
+        for key, item in node.items():
+            yield from _strings(item, f"{pointer}.{key}")
+    elif isinstance(node, list):
+        for index, item in enumerate(node):
+            yield from _strings(item, f"{pointer}[{index}]")
+
+
+_CONTROL_BYTES = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Adversarial capture data stress test.")
     parser.add_argument("--verbose", action="store_true")
@@ -177,6 +210,7 @@ def main() -> int:
 
             env = out / "env.json"
             if env.exists():
+                scan_json(problems, f"{name} -> envelope", env.read_bytes())
                 report = json.loads(env.read_text()).get("report") or {}
                 for finding in (report.get("findings") or [])[:5]:
                     why = subprocess.run(
@@ -200,7 +234,7 @@ def main() -> int:
         if js.returncode not in (0, 1):
             problems.append(f"keys scan exited {js.returncode}")
         else:
-            scan_bytes(problems, "keys scan stdout", js.stdout.encode())
+            scan_json(problems, "keys scan --json", js.stdout.encode())
             checked.append("keys scan json")
         table = subprocess.run([str(CLI), "keys", "scan", str(tree)],
                                capture_output=True, text=True, cwd=ROOT)
