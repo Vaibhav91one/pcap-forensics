@@ -62,6 +62,52 @@ def run(args: list[str], timeout: int = 600) -> subprocess.CompletedProcess[str]
     )
 
 
+def check_report_file(report_path: Path, workdir: Path) -> list[str]:
+    """Check a report that already exists, without re-analysing the capture.
+
+    Two reasons this exists. In CI it is the cheap way to re-check a report you already have. And it
+    is the only honest way to mutation-test this harness: the thing it watches is the *shape* of a
+    report, so the mutation has to be a report, and re-analysing a capture would regenerate a good one
+    and hide the damage (scripts/corpus_selftest.py).
+    """
+    defects: list[str] = []
+    try:
+        report = json.loads(report_path.read_text())
+    except json.JSONDecodeError as exc:
+        return [f"{report_path.name}: not valid JSON ({exc})"]
+
+    if not str(report.get("schema_version", "")).strip():
+        defects.append(f"{report_path.name}: no schema_version")
+
+    findings = report.get("findings") or []
+    for finding in findings:
+        identifier = str(finding.get("id", ""))
+        if not re.fullmatch(r"[a-z0-9_.]+\.[A-Z][A-Z0-9_]*\.[0-9a-f]{16}", identifier):
+            defects.append(f"{report_path.name}: id {identifier!r} is not detector.CODE.16-hex")
+        if finding.get("severity") not in SARIF_LEVELS:
+            defects.append(
+                f"{report_path.name}: {finding.get('code')} has severity {finding.get('severity')!r}"
+            )
+        for evidence in finding.get("evidence") or []:
+            if int(evidence.get("frame", 1)) <= 0:
+                defects.append(
+                    f"{report_path.name}: {finding.get('code')} cites frame {evidence.get('frame')}"
+                )
+                break
+        if not finding.get("remediation"):
+            defects.append(f"{report_path.name}: {finding.get('code')} has no remediation")
+        if not finding.get("evidence"):
+            defects.append(f"{report_path.name}: {finding.get('code')} carries no evidence")
+
+    for note in report.get("notes") or []:
+        for trigger in ("dropped", "unknown field", "no such field", "preference"):
+            if trigger in str(note).lower():
+                defects.append(f"{report_path.name}: note mentions {trigger!r}")
+                break
+
+    return defects
+
+
 def captures() -> list[Path]:
     root = BLOBS / "capture"
     found: list[Path] = []
@@ -228,7 +274,33 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Check the CLI contract over the real corpus.")
     parser.add_argument("--samples", type=int, default=40, help="captures to walk; 0 means all")
     parser.add_argument("--out", type=Path, default=REPORTS / "cli-contract.json")
+    parser.add_argument(
+        "--reports",
+        type=Path,
+        default=None,
+        help="check report.json files already in this directory instead of analysing captures. "
+             "Used by scripts/corpus_selftest.py to mutate a report and prove this harness "
+             "notices, and useful in CI to re-check a report you already have.",
+    )
     args = parser.parse_args()
+
+    if args.reports:
+        reports = sorted(args.reports.rglob("report.json"))
+        if not reports:
+            print(f"no report.json under {args.reports}", file=sys.stderr)
+            return 2
+        results = [{"capture": r.name, "state": "checked",
+                    "defects": check_report_file(r, ROOT)} for r in reports]
+        defective = [r for r in results if r["defects"]]
+        print(f"{len(results)} report(s) checked, {len(defective)} with defects")
+        for record in defective[:10]:
+            print("  " + record["capture"])
+            for defect in record["defects"][:4]:
+                print("      " + defect)
+        out = args.out.resolve()
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps({"count": len(results), "results": results}, indent=2) + chr(10))
+        return 1 if defective else 0
 
     items = captures()
     if args.samples:
