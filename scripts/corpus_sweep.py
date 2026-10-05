@@ -226,20 +226,31 @@ def oracle_for(path: Path, report: dict[str, Any], findings: list[dict[str, Any]
     #    always true: the generic drift note ("Some tshark fields were unavailable in this build and were
     #    skipped: ...") is present on 218 of 219 captures and explains nothing specific.
     #
-    # So no note-based exclusion is left, because no note discriminates. What does discriminate is the
-    # count itself: HTTP inside TLS is not a cleartext finding, and counting it would make every
-    # encrypted-HTTP capture a suspect. Measured across the corpus, logistics_multicast.pcapng has 86
-    # HTTP frames and **zero** outside TLS, and none of them is a finding.
+    # So no note-based exclusion is left, because no note discriminates.
     #
-    # Hence "&& !tls" on the two families TLS actually wraps, and no exclusion clause.
+    # What does discriminate is which frame is counted. Measured on the corpus:
     #
-    # OPEN, and deliberately not tuned further on one more guess: tshark's "!tls" does not behave the
-    # same way behind "http" as behind "(http.request || http.response)". On logistics_multicast.pcapng
-    # the first counts 0 and the second counts 86 -- the same 86 frames, opposite verdicts on whether
-    # they are inside TLS. This loop has been bitten by exactly that kind of filter subtlety before
-    # (a DTLS pass asking tshark for tls.* fields), so the filter form is left as measured and the
-    # question is recorded rather than resolved by trying a third variant and reporting the one that
-    # happens to look quietest.
+    #     cbor_variety.pcap          1   protocol HTTP        -> counts, and a finding exists
+    #     tcp-badsegments.pcap       6   protocol stays TCP    -> counts, no finding: attempted
+    #                                                          dissection, no method or URI
+    #     logistics_multicast.pcapng 0   protocol SSDP        -> not counted
+    #     tls12-chacha20poly1305.p  0   inside TLS           -> not counted
+    #
+    # Two earlier explanations of these numbers were wrong and are recorded here so they are not
+    # repeated. The first was "logistics_multicast has 86 HTTP frames and zero outside TLS": the 86
+    # exists only under `(http.request || http.response)`, and those frames are SSDP -- plaintext UPnP
+    # discovery whose *fields* are HTTP-shaped while the protocol column reads SSDP. They are not inside
+    # TLS; they are not counted because `http` as a protocol does not match them.
+    #
+    # The second was that the filter form mattered, because `http && !tls` and
+    # `(http.request || http.response) && !tls` disagreed by 86 on the same capture. They do, and the
+    # reason is the same SSDP fact rather than a TLS subtlety. The form shipped is `http && !tls`.
+    #
+    # The one remaining noise source is tcp-badsegments, which is a capture built to be malformed. Its
+    # frames carry http fields without the protocol being set to HTTP. Flagging it is the honest answer:
+    # tshark saw something HTTP-shaped, pcap-doctor reported no HTTP finding, and the message says
+    # "may be legitimate; check by hand". Two such suspects across 219 captures is a fair price for an
+    # oracle that is no longer dead.
     quiet = {
         "http": ({"HTTP_CLEARTEXT", "HTTP_CLEARTEXT_AUTH", "HTTP_BASIC_AUTH"}, "http && !tls"),
         "dns": ({"DNS_CLEARTEXT"}, "dns && !tls"),
