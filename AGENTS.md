@@ -80,6 +80,19 @@ These are the project's rules about itself, and a reviewer will fail a PR that b
   and the policy lives in `docs/severity-model.md`.
 - If you find a bug in core while working, **do not fix it in your PR**. File it, link it, and keep
   your detector working against the current contract.
+- **Filter capture-chosen text once, where it enters the model, and again only where a surface
+  needs something different.** Capture text is attacker-controlled. `Detector.finding()` is the
+  boundary and it applies `prompts.clean_capture_text()` to every capture-derived field; a
+  consumer must not add its own regex, and must not read a clean field as permission to skip the
+  filter.
+
+  The exception is deliberate and must not be harmonised away. A **terminal** surface
+  additionally escapes markup, because rich renders cell strings as markup and a firmware file
+  named `[bold]x.pem` would otherwise display as `x.pem` -- a path the analyst does not have.
+  A **JSON** surface must **not**: JSON has no markup, and escaping brackets there would make
+  the reported value differ from the value on disk. Backticks are the same story -- replace
+  them in a prompt, keep them everywhere else, because a backtick in a certificate subject is
+  data.
 
 ## 5. Severity and confidence
 
