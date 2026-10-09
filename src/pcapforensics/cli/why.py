@@ -8,6 +8,7 @@ import typer
 from rich.markdown import Markdown
 from rich.markup import escape
 
+from ..baseline import finding_fingerprint
 from ..models import Finding, Report
 from ..prompts import build_prompt, rule_text
 from ._console import console
@@ -29,11 +30,11 @@ def _match(report: Report, query: str) -> list[Finding]:
     if query.isdigit():
         frame = int(query)
         return [f for f in report.findings if any(e.frame == frame for e in f.evidence)]
-    return [f for f in report.findings if f.id.startswith(query) or f.id.rsplit(".", 1)[-1].startswith(query)]
+    return [f for f in report.findings if f.id.startswith(query) or f.id.rsplit(".", 1)[-1].startswith(query) or finding_fingerprint(f).startswith(query)]
 
 
 def why(
-    query: str = typer.Argument(..., help="finding id (or a prefix of it or of its hash), or a frame number"),
+    query: str = typer.Argument(..., help="finding id (or a prefix of it or of its hash or fingerprint), or a frame number"),
     report_path: Path = typer.Option(
         None, "--report", "-r", exists=True, dir_okay=False, help="report.json (default: the one *.pf-report here)"
     ),

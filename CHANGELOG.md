@@ -6,6 +6,33 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.8.0] — 2026-10-09
+
+Machine output now follows the shared **doctor/1** contract (`docs/doctor-contract.md`). This is a
+breaking change to `--json`, `--json-out`, `--sarif`, `--baseline` and the exit codes; there is no
+legacy flag. `report.json` on disk and its `schema_version` (1.6.0) are unchanged.
+
+### Changed (breaking)
+
+- **`--json` / `--json-out`** print `{schema: "doctor/1", tool, version, exit_code, score: {value, label,
+  model, coverage_gaps}, findings, data}`. The old `{tool, version, score, label, categories, report}` is gone:
+  the old `report` (without its findings) and `categories` are under `data`, and `new_findings` became
+  `baseline_state` on each finding plus a top-level `baseline: {new, unchanged, fixed}`.
+- **Findings** in the envelope use the contract keys: `id` is the rule code, `fingerprint` a 16-hex
+  identity (client ephemeral port masked), `message` the title, `remedy` the remediation, `location`
+  `{kind, ref}`, `evidence` `[{ref, value}]`. The old per-run id is kept as `finding_id`.
+- **Exit codes:** with `--baseline`, a new finding at or above `--fail-on` exits **3** (was 1);
+  `analyze` exits 130 on SIGINT.
+- **Score labels** are `good` (>= 90), `needs work` (>= 60), `critical`; the formula is unchanged and named `pcap/1`.
+- **`--baseline`** matches by `fingerprint` only and reads a doctor/1 envelope (a `report.json` still works).
+- **SARIF:** the fingerprint key is `doctorFinding/v1` (was `pcapDoctorFindingId/v1`) and runs carry `properties.score`.
+- `pcap-doctor schema` reports `doctor/1` next to the report schema version; `pcap-doctor why` also accepts a fingerprint.
+
+### Added
+
+- `docs/doctor-contract.md` and a conformance test (`tests/test_doctor_contract.py`), including an escape-sequence
+  test through the human renderers.
+
 ## [0.7.0] — 2026-10-05
 
 Every change in this release was found by stress-testing the tool against real firmware images and

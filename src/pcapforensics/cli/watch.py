@@ -15,7 +15,7 @@ from pathlib import Path
 import typer
 from rich.markup import escape
 
-from ..baseline import fingerprint
+from ..baseline import finding_fingerprint
 from ..models import Finding, Report
 from ..pipeline import analyze
 from ._console import console
@@ -54,7 +54,7 @@ def capture_rights_hint(platform: str) -> str:
 class Watcher:
     """Analyze each ring file once it is closed; emit every finding only the first time it appears.
 
-    "The same finding" ignores the client's ephemeral port (``baseline.fingerprint``): otherwise every new
+    "The same finding" ignores the client's ephemeral port (``baseline.finding_fingerprint``): otherwise every new
     connection to one service would print it again (#136).
     """
 
@@ -67,7 +67,7 @@ class Watcher:
     ) -> None:
         self.ring, self.analyze_fn, self.emit, self.on_error = ring, analyze_fn, emit, on_error
         self.done: set[str] = set()
-        self.seen: set[tuple[str, str, str, str]] = set()
+        self.seen: set[str] = set()
 
     def closed(self, *, final: bool = False) -> list[Path]:
         # dumpcap numbers ring files (ring_00001_<time>.pcapng) and writes only the newest one.
@@ -86,7 +86,7 @@ class Watcher:
                 self.on_error(path, exc)
                 continue
             for finding in report.findings:
-                key = fingerprint(finding)
+                key = finding_fingerprint(finding)
                 if key not in self.seen:
                     self.seen.add(key)
                     self.emit(finding, path)

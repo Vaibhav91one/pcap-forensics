@@ -122,10 +122,10 @@ def doctor() -> None:
 
 
 def schema() -> None:
-    """Print the JSON schema version of report.json."""
+    """Print the machine-output schema (`--json` envelope) and the report.json schema version."""
     from ..models import SCHEMA_VERSION
 
-    console.print(json.dumps({"schema_version": SCHEMA_VERSION}, indent=2))
+    console.print(json.dumps({"schema": "doctor/1", "schema_version": SCHEMA_VERSION}, indent=2))
 
 
 def register(app: typer.Typer) -> None:

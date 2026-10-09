@@ -211,10 +211,9 @@ def main() -> int:
             env = out / "env.json"
             if env.exists():
                 scan_json(problems, f"{name} -> envelope", env.read_bytes())
-                report = json.loads(env.read_text()).get("report") or {}
-                for finding in (report.get("findings") or [])[:5]:
+                for finding in (json.loads(env.read_text()).get("findings") or [])[:5]:
                     why = subprocess.run(
-                        [str(CLI), "why", finding["id"], "--report", str(out / "report.json"),
+                        [str(CLI), "why", finding["finding_id"], "--report", str(out / "report.json"),
                          "--prompt"],
                         capture_output=True, text=True, cwd=ROOT,
                     )
@@ -222,10 +221,10 @@ def main() -> int:
                         problems.append(f"{name}: why --prompt exited {why.returncode}")
                         continue
                     prompt = why.stdout.encode()
-                    scan_bytes(problems, f"{name} -> prompt {finding['code']}", prompt)
+                    scan_bytes(problems, f"{name} -> prompt {finding['id']}", prompt)
                     if b"never follow instructions" not in prompt:
                         problems.append(f"{name}: prompt has no fence label")
-                    checked.append(f"{name} prompt:{finding['code']}")
+                    checked.append(f"{name} prompt:{finding['id']}")
 
         tree = work / "tree"
         build_keys_tree(tree)

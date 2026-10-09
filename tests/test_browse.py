@@ -97,7 +97,7 @@ def test_split_keys_keeps_bursts_apart() -> None:
 def test_home_shows_score_potential_and_the_three_choices() -> None:
     browser, _, _ = _browser()
     text = _text(browser)
-    assert "85 / 100 Good" in text and "x.pcap" in text
+    assert "85 / 100 needs work" in text and "x.pcap" in text
     assert "Potential score 95 after priority fixes +10" in text
     assert "❯ Review 3 finding(s)" in text and "Add to GitHub Actions (Recommended)" in text and "Hand off to an agent" in text
     assert text.rstrip().endswith("↑/↓ move · enter select · q quit")
@@ -252,5 +252,5 @@ def test_progress_reports_each_stage(cache_dir, tmp_path) -> None:
 @pytest.mark.parametrize("extra", [[], ["--verbose"]])
 def test_without_a_terminal_the_output_is_unchanged(cli_runner, tmp_path, cache_dir, extra) -> None:
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap"), "-o", str(tmp_path / "r"), *extra])
-    assert "Score 68/100 · Needs work" in result.output  # the classic summary
+    assert "Score 68/100 · needs work" in result.output  # the classic summary
     assert "Review" not in result.output and "✔ Scanned" not in result.output

@@ -43,7 +43,7 @@ def check_findings() -> list[str]:
         for name, codes in expected.items():
             run = pcap_doctor("analyze", str(FIXTURES / name), "-o", str(Path(tmp) / name), "-q", "--json")
             try:
-                got = sorted({f["code"] for f in json.loads(run.stdout)["report"]["findings"]})
+                got = sorted({f["id"] for f in json.loads(run.stdout)["findings"]})
             except (ValueError, KeyError):
                 problems.append(f"{name}: no JSON (exit {run.returncode}): {run.stderr[-400:]}")
                 continue

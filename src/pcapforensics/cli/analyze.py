@@ -47,10 +47,10 @@ def analyze_cmd(
     quiet: bool = typer.Option(False, "--quiet", "-q", help="suppress the console summary"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="list every finding, not the top 3 per category"),
     show_score: bool = typer.Option(False, "--score", help="print only the 0-100 health score"),
-    as_json: bool = typer.Option(False, "--json", help="print only the JSON envelope (score, categories, report)"),
+    as_json: bool = typer.Option(False, "--json", help="print only the doctor/1 JSON envelope (docs/doctor-contract.md)"),
     json_out: Path = typer.Option(None, "--json-out", help="also write the JSON envelope to this file"),
     baseline_path: Path = typer.Option(
-        None, "--baseline", exists=True, dir_okay=False, help="earlier report.json or envelope: report only new findings"
+        None, "--baseline", exists=True, dir_okay=False, help="earlier --json envelope (or report.json): report and gate only new findings; a new one exits 3"
     ),
     sarif_out: Path = typer.Option(None, "--sarif", help="also write the shown findings as SARIF 2.1.0 to this file"),
     config_path: Path = typer.Option(
@@ -113,19 +113,22 @@ def analyze_cmd(
         and supported()
     )
     started = time.monotonic()
-    with tshark_errors(), (console.status("Scanning…") if interactive else nullcontext()) as status:
-        result = analyze(
-            pcap,
-            out,
-            only=tuple(only or ()),
-            min_severity=min_severity,
-            categories=tuple(category or ()),
-            use_cache=not no_cache,
-            config=config,
-            keys=keys,
-            firmware_keys=firmware_keys,
-            progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
-        )
+    try:
+        with tshark_errors(), (console.status("Scanning…") if interactive else nullcontext()) as status:
+            result = analyze(
+                pcap,
+                out,
+                only=tuple(only or ()),
+                min_severity=min_severity,
+                categories=tuple(category or ()),
+                use_cache=not no_cache,
+                config=config,
+                keys=keys,
+                firmware_keys=firmware_keys,
+                progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
+            )
+    except KeyboardInterrupt:
+        raise typer.Exit(code=130) from None
 
     # The artifacts on disk stay complete; with a baseline everything shown or gated is the new findings only.
     shown = result.report
@@ -133,15 +136,23 @@ def analyze_cmd(
         shown = shown.model_copy(update={"findings": new_since(baseline, shown.findings)})
         for name in version_drift(baseline, result.report):
             typer.echo(f"warning: detector {name} changed version since the baseline; its findings may all be new", err=True)
-    envelope = json_envelope(result.report) if (as_json or json_out) else None
-    if envelope is not None and baseline is not None:
-        envelope["new_findings"] = [f.id for f in shown.findings]
+    threshold = None if fail_on == "none" else SEVERITY_ORDER.get(fail_on)
+    tripped = (
+        []
+        if threshold is None
+        else [f for f in shown.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
+    )
+    exit_code = (3 if baseline is not None else 1) if tripped else 0  # 3: a new finding at the threshold (doctor/1)
+    envelope = json_envelope(result.report, exit_code, baseline) if (as_json or json_out) else None
     if json_out is not None:
         json_out.parent.mkdir(parents=True, exist_ok=True)  # like --out: never a traceback for a new folder
         json_out.write_text(json.dumps(envelope, indent=2) + "\n", encoding="utf-8")
     if sarif_out is not None:
         sarif_out.parent.mkdir(parents=True, exist_ok=True)
-        sarif_out.write_text(json.dumps(sarif(shown, artifact_uri=pcap.as_posix()), indent=2) + "\n", encoding="utf-8")
+        sarif_out.write_text(
+            json.dumps(sarif(shown, artifact_uri=pcap.as_posix(), score_of=result.report.findings), indent=2) + "\n",
+            encoding="utf-8",
+        )
     if as_json:
         typer.echo(json.dumps(envelope, indent=2))
     elif show_score:
@@ -173,17 +184,11 @@ def analyze_cmd(
         console.print()
         for artifact in result.artifacts:
             console.print(f"  wrote {artifact}")
-    threshold = None if fail_on == "none" else SEVERITY_ORDER.get(fail_on)
-    tripped = (
-        []
-        if threshold is None
-        else [f for f in shown.findings if SEVERITY_ORDER.get(f.severity, 99) <= threshold]
-    )
     if tripped and not (quiet or show_score or as_json):
         console.print(f"[red]{len(tripped)} finding(s) at or above {fail_on}; failing as requested[/red]")
     if not (interactive or quiet or show_score or as_json or no_handoff):
         offer(console, shown, safe=safe)  # agent guidance inside an agent; the plain menu where raw keys are missing
-    raise typer.Exit(code=1 if tripped else 0)
+    raise typer.Exit(code=exit_code)
 
 
 def register(app: typer.Typer) -> None:

@@ -51,7 +51,7 @@ pcap-doctor analyze traffic.pcap
 
 ```text
 capture traffic.pcap: 5 packets, 1 flows, 2 hosts
-Score 68/100 · Needs work
+Score 68/100 · needs work
 
 Crypto  4 finding(s) · worst high
   high     TLS_CIPHER_WEAK  TLS_RSA_WITH_AES_128_CBC_SHA negotiated on tcp:10.0.0.10:40000<->10.0.0.20:443
@@ -90,9 +90,9 @@ a **new** finding reaches `--fail-on` (default `high`). See [CI](#ci).
 In a terminal, a scan ends on an interactive screen, for security testers and developers alike:
 
 ```text
-  ┌─────┐  68 / 100 Needs work  ·  device-boot.pcap
+  ┌─────┐  68 / 100 needs work  ·  device-boot.pcap
   │ o o │  ██████████████████████████████████░░░░░░░░░░░░░░░░
-  │  ▭  │  pcap-doctor 0.7.0 · 1,204 packets, 18 flows, 6 hosts
+  │  ▭  │  pcap-doctor 0.8.0 · 1,204 packets, 18 flows, 6 hosts
   └─────┘
   Potential score 95 after priority fixes +27
 
@@ -187,10 +187,12 @@ The score is a local, deterministic function of the findings: `100 - Σ penalty`
   the score on its own.
 - Penalty by severity: critical 20, high 10, medium 5, low 2, info 0.
 - Multiplied by confidence: high 1.0, medium 0.75, low 0.5.
-- Labels: **Great** ≥ 90, **Good** ≥ 75, **Needs work** ≥ 50, **Critical** below.
+- Labels (doctor/1): **good** ≥ 90, **needs work** ≥ 60, **critical** below. pcap-doctor has no coverage
+  gaps, so `incomplete` never applies.
+- This formula is model `pcap/1` (`score.model` in the JSON); it becomes `pcap/2` when the formula changes.
 
 `--score` prints only the number, for scripts. With `--baseline`, `--score` and the console summary
-cover the new findings only; the JSON envelope keeps the full report's score and lists `new_findings`.
+cover the new findings only; the JSON envelope keeps the full report's score and marks every finding `new` or `unchanged`.
 
 ---
 
@@ -234,10 +236,13 @@ Machine-readable output, on top of the six files:
 
 | Flag | Output |
 |---|---|
-| `--json` | only the JSON envelope on stdout: `{tool, version, score, label, categories, report}` (plus `new_findings` with `--baseline`) |
+| `--json` | only the [doctor/1](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/doctor-contract.md) envelope on stdout: `{schema, tool, version, exit_code, score, findings, data}`; `data` holds the old report (stats, flows, TLS sessions, notes, ...) without its findings, plus per-category counts. With `--baseline`: a top-level `baseline: {new, unchanged, fixed}` and `baseline_state` on every finding |
 | `--json-out FILE` | the same envelope written to a file, with the normal console summary |
-| `--sarif FILE` | SARIF 2.1.0 for code scanning: `ruleId` is the finding code, the fingerprint is the stable finding id |
-| `--baseline OLD.json` | show and gate only findings whose id is not in an earlier `report.json` or envelope; the files on disk stay complete |
+| `--sarif FILE` | SARIF 2.1.0 for code scanning: `ruleId` is the finding code, `partialFingerprints["doctorFinding/v1"]` is the finding's `fingerprint`, the run carries `properties.score` |
+| `--baseline OLD.json` | show and gate only findings whose `fingerprint` is not in an earlier `--json` envelope (or `report.json`); the files on disk stay complete. A fingerprint hashes detector, code, title and flow with the client's ephemeral port masked |
+
+In the envelope a finding's `id` is the rule code (`TLS_CIPHER_WEAK`), `message` its title and `remedy` its
+remediation; `finding_id` is the per-run id that `pcap-doctor why` accepts (as is the `fingerprint`).
 
 <details>
 <summary><b>Sample finding</b></summary>
@@ -305,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Vaibhav91one/pcap-forensics@v0.7.0
+      - uses: Vaibhav91one/pcap-forensics@v0.8.0
         with:
           captures: "**/*.pcap **/*.pcapng"
           fail-on: high
@@ -661,8 +666,10 @@ pcap-doctor --version
 | Exit code | Meaning |
 |---|---|
 | `0` | finished; nothing tripped the `--fail-on` gate |
-| `1` | a shown finding (new, with `--baseline`) is at or above the `--fail-on` severity; `install` / `ci install` kept a file you edited |
+| `1` | a finding is at or above the `--fail-on` severity (no `--baseline`); `install` / `ci install` kept a file you edited |
 | `2` | bad input or environment: an unknown option value, config key or code, an unreadable baseline, tshark missing, or `watch` could not capture |
+| `3` | `--baseline` given and a **new** finding is at or above `--fail-on` (takes precedence over 1) |
+| `130` | `analyze` interrupted (SIGINT) |
 
 `--fail-on {none,critical,high,medium,low,info}` defaults to the config's `fail_on`, else `none`:
 report, do not fail. The tshark pass cache lives in `PCAP_DOCTOR_CACHE` (default `~/.cache/pcap-doctor`;

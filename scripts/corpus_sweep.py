@@ -127,18 +127,18 @@ def run_one(path: Path, timeout: int) -> dict[str, Any]:
             except json.JSONDecodeError as exc:
                 record["defects"].append(f"no-report: report.json unreadable ({exc})")
                 envelope = {}
-            report = envelope.get("report") or {}
+            report = envelope.get("data") or {}
             record["report"] = report
-            record["score"] = envelope.get("score")
+            record["score"] = (envelope.get("score") or {}).get("value")
             record["findings"] = [
                 {
-                    "code": f.get("code"),
+                    "code": f.get("id"),
                     "severity": f.get("severity"),
                     "confidence": f.get("confidence"),
-                    "id": f.get("id"),
+                    "id": f.get("finding_id"),
                     "scope": f.get("scope"),
                 }
-                for f in (report.get("findings") or [])
+                for f in (envelope.get("findings") or [])
             ]
             record["notes"] = list(report.get("notes") or [])
         else:

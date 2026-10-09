@@ -5,24 +5,78 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any
 
+from .baseline import Baseline, finding_fingerprint
 from .models import SEVERITY_ORDER, Finding, Report
 from .prompts import clean
 from .rules import CATEGORIES, CATEGORY_IMPACT, RULES, category_of
-from .scoring import score
+from .scoring import MODEL, score
 
 
-def json_envelope(report: Report) -> dict[str, Any]:
-    """Score, per-category counts and the full report; the report keeps its own schema_version."""
+def _location(f: Finding) -> dict[str, str]:
+    if f.flow_key:
+        return {"kind": "flow", "ref": f.flow_key}
+    if f.evidence:
+        return {"kind": "frame", "ref": f"frame {f.evidence[0].frame}"}
+    return {"kind": "none", "ref": ""}
+
+
+def contract_finding(f: Finding, state: str | None = None) -> dict[str, Any]:
+    """A finding in the doctor/1 shape; the old fields that have no contract key stay as extra keys."""
+    out: dict[str, Any] = {
+        "id": f.code,
+        "fingerprint": finding_fingerprint(f),
+        "severity": f.severity,
+        "confidence": f.confidence,
+        "category": category_of(f.code),
+        "message": f.title,
+        "location": _location(f),
+        "evidence": [{"ref": f"frame {e.frame}", "value": f"{e.field} = {e.value}"} for e in f.evidence],
+        "remedy": f.remediation,
+        "detector": f.detector,
+        "finding_id": f.id,  # the per-run id `why` takes
+        "summary": f.summary,
+        "flow_key": f.flow_key,
+        "subjects": f.subjects,
+        "references": f.references,
+        "tags": f.tags,
+    }
+    if state is not None:
+        out["baseline_state"] = state
+    return out
+
+
+def json_envelope(report: Report, exit_code: int = 0, baseline: Baseline | None = None) -> dict[str, Any]:
+    """The doctor/1 envelope (docs/doctor-contract.md). The old report, minus its findings, is under ``data``.
+
+    With a baseline, ``findings`` is every finding marked new or unchanged; the score stays the full report's.
+    """
     value, label = score(report.findings)
     counts = Counter(category_of(f.code) for f in report.findings)
-    return {
+    known = baseline.fingerprints if baseline is not None else None
+    items = [
+        contract_finding(f, None if known is None else ("unchanged" if finding_fingerprint(f) in known else "new"))
+        for f in report.findings
+    ]
+    items.sort(key=lambda i: (SEVERITY_ORDER[i["severity"]], i["id"], i["fingerprint"]))
+    data = report.model_dump(mode="json", exclude={"findings"})
+    data["categories"] = {name: counts[name] for name in CATEGORIES if counts[name]}
+    envelope: dict[str, Any] = {
+        "schema": "doctor/1",
         "tool": "pcap-doctor",
         "version": report.tool_version,
-        "score": value,
-        "label": label,
-        "categories": {name: counts[name] for name in CATEGORIES if counts[name]},
-        "report": report.model_dump(mode="json"),
+        "exit_code": exit_code,
+        "score": {"value": value, "label": label, "model": MODEL, "coverage_gaps": 0},
+        "findings": items,
+        "data": data,
     }
+    if known is not None:
+        current = {i["fingerprint"] for i in items}
+        envelope["baseline"] = {
+            "new": sum(i["baseline_state"] == "new" for i in items),
+            "unchanged": sum(i["baseline_state"] == "unchanged" for i in items),
+            "fixed": len(known - current),
+        }
+    return envelope
 
 
 SARIF_SCHEMA = "https://json.schemastore.org/sarif-2.1.0.json"
@@ -31,13 +85,14 @@ _LEVEL = {"critical": "error", "high": "error", "medium": "warning", "low": "not
 _SECURITY_SEVERITY = {"critical": "9.5", "high": "8.0", "medium": "5.5", "low": "3.0", "info": "0.0"}
 
 
-def sarif(report: Report, artifact_uri: str | None = None) -> dict[str, Any]:
+def sarif(report: Report, artifact_uri: str | None = None, score_of: list[Finding] | None = None) -> dict[str, Any]:
     """One SARIF run: ruleId is the finding code, the fingerprint is the stable finding id.
 
     ``artifact_uri`` is the capture path as the user gave it (repo-relative in CI); the report's absolute
     path is the fallback. A capture is binary, so results carry no line region; frames go in properties.
     """
     uri = artifact_uri or report.capture.path
+    value, label = score(report.findings if score_of is None else score_of)
     codes = sorted({f.code for f in report.findings})
     index = {code: i for i, code in enumerate(codes)}
     worst: dict[str, str] = {}
@@ -68,7 +123,7 @@ def sarif(report: Report, artifact_uri: str | None = None) -> dict[str, Any]:
             "level": _LEVEL[f.severity],
             "message": {"text": f"{f.title}. {f.summary}" if f.summary else f.title},
             "locations": [{"physicalLocation": {"artifactLocation": {"uri": uri}}}],
-            "partialFingerprints": {"pcapDoctorFindingId/v1": f.id},
+            "partialFingerprints": {"doctorFinding/v1": finding_fingerprint(f)},
             "properties": {
                 "severity": f.severity,
                 "confidence": f.confidence,
@@ -92,6 +147,7 @@ def sarif(report: Report, artifact_uri: str | None = None) -> dict[str, Any]:
                     }
                 },
                 "results": results,
+                "properties": {"score": {"value": value, "label": label, "model": MODEL, "coverage_gaps": 0}},
             }
         ],
     }

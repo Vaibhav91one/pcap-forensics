@@ -37,8 +37,8 @@ PGUP, PGDN, HOME, END = "pgup", "pgdn", "home", "end"
 LIST_ROWS = 12
 EVIDENCE_ROWS = 5
 ICON = {"critical": ("✖", "bold red"), "high": ("✖", "red"), "medium": ("⚠", "yellow"), "low": ("•", "cyan"), "info": ("ℹ", "dim")}
-FACE = {"Great": "^ ^", "Good": "• •", "Needs work": "o o", "Critical": "x x"}
-BAR_STYLE = {"Great": "green", "Good": "green", "Needs work": "yellow", "Critical": "red"}
+FACE = {"good": "^ ^", "needs work": "o o", "critical": "x x"}
+BAR_STYLE = {"good": "green", "needs work": "yellow", "critical": "red"}
 
 
 @dataclass

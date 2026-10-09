@@ -25,9 +25,10 @@ def _report() -> Report:
 def test_envelope_shape() -> None:
     envelope = json_envelope(_report())
     assert envelope["tool"] == "pcap-doctor"
-    assert (envelope["score"], envelope["label"]) == (95, "Great")
-    assert envelope["categories"] == {"DNS": 1}
-    assert envelope["report"]["schema_version"] == SCHEMA_VERSION
+    assert envelope["score"] == {"value": 95, "label": "good", "model": "pcap/1", "coverage_gaps": 0}
+    assert envelope["data"]["categories"] == {"DNS": 1}
+    assert envelope["data"]["schema_version"] == SCHEMA_VERSION
+    assert "findings" not in envelope["data"]
     json.dumps(envelope)
 
 
@@ -38,8 +39,8 @@ def test_json_flag_prints_only_json(cli_runner, tmp_path, cache_dir) -> None:
     )
     assert result.exit_code == 1
     envelope = json.loads(result.output)
-    assert envelope["report"]["schema_version"] == SCHEMA_VERSION
-    assert envelope["score"] < 100
+    assert envelope["data"]["schema_version"] == SCHEMA_VERSION
+    assert envelope["score"]["value"] < 100
 
 
 @requires_tshark

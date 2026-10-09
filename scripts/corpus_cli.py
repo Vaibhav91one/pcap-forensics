@@ -127,14 +127,14 @@ def check_baseline_self(capture: Path, workdir: Path) -> list[str]:
                 "--baseline", str(workdir / "a.json"),
                 "--json-out", str(workdir / "b.json")])
     defects: list[str] = []
-    if proc.returncode not in (0, 1):
+    if proc.returncode not in (0, 1, 3):
         defects.append(f"baseline-self: exit {proc.returncode}")
         return defects
     envelope = json.loads((workdir / "b.json").read_text())
-    new = envelope.get("new_findings")
-    if new is None:
-        defects.append("baseline-self: the envelope has no new_findings key")
-    elif new:
+    if "baseline" not in envelope:
+        defects.append("baseline-self: the envelope has no baseline key")
+    new = [f for f in envelope.get("findings") or [] if f.get("baseline_state") == "new"]
+    if new:
         ids = sorted({f.get("id", "?") for f in new})
         defects.append(
             f"baseline-self: {len(new)} finding(s) reported as new against the same capture "
@@ -148,8 +148,7 @@ def check_why_resolves(capture: Path, workdir: Path) -> list[str]:
     report_path = workdir / "r" / "report.json"
     run(["analyze", str(capture), "-o", str(workdir / "r"), "-q", "--no-handoff",
          "--json-out", str(workdir / "r.json")])
-    report = json.loads((workdir / "r.json").read_text()).get("report") or {}
-    findings = report.get("findings") or []
+    findings = json.loads((workdir / "r.json").read_text()).get("findings") or []
     defects: list[str] = []
     if not findings:
         return defects
@@ -157,7 +156,7 @@ def check_why_resolves(capture: Path, workdir: Path) -> list[str]:
         defects.append("why-resolves: no report.json was written next to the artifacts")
         return defects
     for finding in findings[:12]:
-        identifier = finding.get("id")
+        identifier = finding.get("finding_id")
         if not identifier:
             defects.append(f"why-resolves: a {finding.get('code')} finding has no id")
             continue
@@ -172,9 +171,9 @@ def check_why_resolves(capture: Path, workdir: Path) -> list[str]:
             continue
         if not finding.get("evidence"):
             defects.append(f"why-resolves: '{identifier}' resolves but carries no evidence")
-        if "remediation" not in json.dumps(finding):
+        if not finding.get("remedy"):
             defects.append(f"why-resolves: '{identifier}' has no remediation")
-        if _squash(finding.get("remediation", "")) not in _squash(proc.stdout + proc.stderr):
+        if _squash(finding.get("remedy") or "") not in _squash(proc.stdout + proc.stderr):
             defects.append(
                 f"why-resolves: '{identifier}' resolves but does not show its remediation"
             )
@@ -188,23 +187,26 @@ def check_sarif_and_json(capture: Path, workdir: Path) -> list[str]:
     defects: list[str] = []
 
     envelope = json.loads((workdir / "c.json").read_text())
-    report = envelope.get("report") or {}
-    if not str(report.get("schema_version", "")).strip():
-        defects.append("json-envelope: no schema_version")
-    score = envelope.get("score")
+    if envelope.get("schema") != "doctor/1":
+        defects.append("json-envelope: schema is not doctor/1")
+    if not str((envelope.get("data") or {}).get("schema_version", "")).strip():
+        defects.append("json-envelope: no data.schema_version")
+    score = (envelope.get("score") or {}).get("value")
     if not isinstance(score, int) or not 0 <= score <= 100:
         defects.append(f"json-envelope: score is {score!r}, expected an int in 0..100")
-    for finding in report.get("findings") or []:
+    for finding in envelope.get("findings") or []:
         if finding.get("severity") not in SARIF_LEVELS:
             defects.append(
-                f"json-envelope: {finding.get('code')} has severity {finding.get('severity')!r}"
+                f"json-envelope: {finding.get('id')} has severity {finding.get('severity')!r}"
             )
         # The documented shape is detector.CODE.sha256(scope)[:16]. The detector segment is
         # "d1.tls_cipher", which itself contains a dot, so the pattern has to allow dots in the
         # prefix and anchor on the uppercase code plus the 16-hex digest.
-        identifier = str(finding.get("id", ""))
+        identifier = str(finding.get("finding_id", ""))
         if not re.fullmatch(r"[a-z0-9_.]+\.[A-Z][A-Z0-9_]*\.[0-9a-f]{16}", identifier):
-            defects.append(f"json-envelope: id {identifier!r} is not detector.CODE.16-hex")
+            defects.append(f"json-envelope: finding_id {identifier!r} is not detector.CODE.16-hex")
+        if not re.fullmatch(r"[0-9a-f]{16}", str(finding.get("fingerprint", ""))):
+            defects.append(f"json-envelope: fingerprint {finding.get('fingerprint')!r} is not 16 hex")
 
     if not out.exists():
         defects.append("sarif-valid: no SARIF file written")
@@ -215,9 +217,9 @@ def check_sarif_and_json(capture: Path, workdir: Path) -> list[str]:
     driver = ((sarif.get("runs") or [{}])[0].get("tool") or {}).get("driver") or {}
     if not driver.get("name"):
         defects.append("sarif-valid: no tool.driver.name")
-    for finding in report.get("findings") or []:
+    for finding in envelope.get("findings") or []:
         rule_ids = {r.get("id") for r in (driver.get("rules") or [])}
-        if finding.get("code") not in rule_ids:
+        if finding.get("id") not in rule_ids:
             defects.append(f"sarif-valid: {finding.get('code')} has no driver rule")
     return defects
 
