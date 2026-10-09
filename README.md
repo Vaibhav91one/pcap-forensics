@@ -392,6 +392,31 @@ picks one, `--force` overwrites a file you edited.
 
 ---
 
+## MCP server
+
+`pcap-doctor mcp` serves the CLI as [MCP](https://modelcontextprotocol.io) tools over stdio (stdlib only, no
+extra dependency). Register it with any MCP client, for example `claude mcp add pcap-doctor -- pcap-doctor mcp`
+(or `npx pcap-doctor mcp`; Cursor and Codex take the same command in their MCP config).
+
+Each tool runs the real CLI and returns its output unchanged, so `analyze` returns the doctor/1 envelope exactly
+as `pcap-doctor analyze --json` prints it (`exit_code` is in the envelope; exit codes 0, 1 and 3 are results,
+anything else is an MCP error).
+
+| Tool | CLI equivalent | Arguments |
+|---|---|---|
+| `analyze` | `analyze --json` | `path`, `out`, `only`, `category`, `min_severity`, `fail_on`, `baseline`, `sarif`, `config`, `profile`, `no_cache`, `tls_key`, `tls_key_password`, `keys_from`, `firmware`, `keylog`, `psk` |
+| `why` | `why` | `query`, `report`, `prompt` |
+| `rules_list`, `rules_explain` | `rules list`, `rules explain` | `category` / `code` |
+| `keys_scan` | `keys scan --json` | `directory`, `out` |
+| `flows`, `ciphers` | `flows`, `ciphers` | `pcap` (and `top` for `flows`) |
+| `detectors`, `suites`, `doctor`, `schema` | same names | none |
+
+Not exposed: `watch` (a live capture that never finishes), `install` and `ci install` (they write files into your
+project), `mcp` itself, and the interactive or presentation flags of `analyze` (`--json-out`, `--score`, `-v`, `-q`,
+`--safe`, `--no-handoff`; handoff is always off). `--json` is always on.
+
+---
+
 ## White-box firmware testing
 
 When you have a device's **firmware** and a capture of its own OTA / management traffic — your own
@@ -655,6 +680,7 @@ pcap-doctor rules list [--category NAME]
 pcap-doctor rules explain CODE
 pcap-doctor install [--agent claude|cursor|codex]... [--force] [--dir DIR]
 pcap-doctor ci install [--captures GLOBS] [--fail-on LEVEL] [--ref REF] [--force] [--dir DIR]
+pcap-doctor mcp                                          # MCP server on stdio: analyze, why, rules_*, keys_scan, flows, ...
 pcap-doctor watch -i IFACE [--seconds N] [--files K] [--dir DIR]
 pcap-doctor keys scan DIR [--json] [--out KEYS_DIR]   # inventory key material in an extracted firmware tree
 pcap-doctor flows CAPTURE [--top N]
