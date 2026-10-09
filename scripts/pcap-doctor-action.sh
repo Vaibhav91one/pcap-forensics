@@ -45,19 +45,19 @@ for cap in $CAPTURES; do
   "${pd[@]}" analyze "$cap" -o "$run/head" -q --no-handoff --fail-on "$fail_on" \
     --json-out "$run/head.json" --sarif "$out/sarif/$slug.sarif" ${baseline[@]+"${baseline[@]}"}
   rc=$?
-  if [ "$rc" -ge 2 ]; then
+  if [ "$rc" -ge 2 ] && [ "$rc" -ne 3 ]; then
     status=2
     echo "| \`$cap\` | error (exit $rc) | | |" >> "$summary"
     continue
   fi
-  [ "$rc" -eq 1 ] && [ "$status" -eq 0 ] && status=1
+  { [ "$rc" -eq 1 ] || [ "$rc" -eq 3 ]; } && [ "$status" -eq 0 ] && status=1
   python3 - "$run/head.json" "$cap" "$rc" >> "$summary" <<'PY'
 import json, sys
 env = json.load(open(sys.argv[1]))
-total = len(env["report"]["findings"])
-new = len(env["new_findings"]) if "new_findings" in env else total
-flag = " :x:" if sys.argv[3] == "1" else ""
-print(f"| `{sys.argv[2]}` | {new}{flag} | {total} | {env['score']} {env['label']} |")
+total = len(env["findings"])
+new = env["baseline"]["new"] if "baseline" in env else total
+flag = " :x:" if sys.argv[3] in ("1", "3") else ""
+print(f"| `{sys.argv[2]}` | {new}{flag} | {total} | {env['score']['value']} {env['score']['label']} |")
 PY
 done
 

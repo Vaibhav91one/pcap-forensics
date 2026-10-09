@@ -35,7 +35,7 @@ def _text(report: Report, verbose: bool = False) -> str:
 
 def test_score_line_comes_first_after_the_capture_line() -> None:
     lines = _text(_report([_finding("TLS_VERSION_DEPRECATED", "critical")])).splitlines()
-    assert lines[1] == "Score 80/100 · Good"
+    assert lines[1] == "Score 80/100 · needs work"
 
 
 def test_categories_follow_the_catalog_order_with_count_and_worst() -> None:
@@ -56,7 +56,7 @@ def test_capture_text_cannot_inject_markup() -> None:
 
 
 def test_no_findings_scores_100() -> None:
-    assert "Score 100/100 · Great" in _text(_report([]))
+    assert "Score 100/100 · good" in _text(_report([]))
     assert "no findings" in _text(_report([]))
 
 

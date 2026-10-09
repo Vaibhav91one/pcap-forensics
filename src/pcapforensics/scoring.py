@@ -10,10 +10,11 @@ from collections.abc import Iterable
 
 from .models import SEVERITY_ORDER, Finding
 
+MODEL = "pcap/1"  # names the formula below; bump to pcap/2 when PENALTY, CONFIDENCE_WEIGHT or the rounding change
 PENALTY: dict[str, int] = {"critical": 20, "high": 10, "medium": 5, "low": 2, "info": 0}
 CONFIDENCE_WEIGHT: dict[str, float] = {"high": 1.0, "medium": 0.75, "low": 0.5}
 #: (lowest score for the label, label), checked in order.
-LABELS: tuple[tuple[int, str], ...] = ((90, "Great"), (75, "Good"), (50, "Needs work"), (0, "Critical"))
+LABELS: tuple[tuple[int, str], ...] = ((90, "good"), (60, "needs work"), (0, "critical"))
 
 
 def _weight(finding: Finding) -> float:

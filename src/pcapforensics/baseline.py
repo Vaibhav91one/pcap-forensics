@@ -1,24 +1,37 @@
 """Baseline diff: which findings are new compared with an earlier report.
 
-A finding is known when the baseline has the same id, or the same detector, code, title and flow key once every flow key's
-client port is masked: a re-capture of the same device picks new ephemeral ports, and those are in the ids (#126).
+A finding is known when the baseline has the same fingerprint: detector, code, title and flow key once every flow key's
+client port is masked, because a re-capture of the same device picks new ephemeral ports (#126). Matching is by
+fingerprint only (doctor-contract section 6).
 """
 
 from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 from pathlib import Path
 
-from .models import Finding, Report
+from .models import Finding, Report, stable_id
 
 
-def load_baseline(path: Path) -> Report:
-    """Read a report.json, or a `--json`/`--json-out` envelope that wraps one. Raises ValueError/OSError."""
+@dataclass(frozen=True)
+class Baseline:
+    fingerprints: frozenset[str]
+    detector_versions: dict[str, str]
+
+
+def load_baseline(path: Path) -> Baseline:
+    """Read a doctor/1 `--json`/`--json-out` envelope, or a report.json. Raises ValueError/OSError."""
     data = json.loads(path.read_text(encoding="utf-8"))
-    if isinstance(data, dict) and isinstance(data.get("report"), dict):
-        data = data["report"]
-    return Report.model_validate(data)
+    if not isinstance(data, dict):
+        raise ValueError("not an object")
+    if data.get("schema") == "doctor/1":
+        found = {f["fingerprint"] for f in data["findings"]}
+        versions = (data.get("data") or {}).get("detector_versions") or {}
+        return Baseline(frozenset(found), versions)
+    report = Report.model_validate(data)
+    return Baseline(frozenset(map(finding_fingerprint, report.findings)), report.detector_versions)
 
 
 #: ``proto:host:port<->host:port`` as built by ``models.flow_key`` (hosts may be IPv6, so split on the last colon)
@@ -40,18 +53,19 @@ def _masked(text: str) -> str:
     return _FLOW_KEY.sub(_mask_client_port, text)
 
 
-def fingerprint(finding: Finding) -> tuple[str, str, str, str]:
+def finding_fingerprint(finding: Finding) -> str:
+    """16 hex chars of detector, code, title (digits as #) and flow (client ephemeral port masked), per doctor/1."""
     # the flow key too: many titles name no host ("Client offers 4 prohibited suites")
-    return finding.detector, finding.code, _masked(finding.title), _masked(finding.flow_key or "")
+    # digit runs in the title are counts and other volatile numbers; the flow key keeps its IPs and server port
+    title = re.sub(r"\d+", "#", _masked(finding.title))
+    return stable_id(finding.detector, finding.code, title, _masked(finding.flow_key or ""))
 
 
-def new_since(baseline: Report, findings: list[Finding]) -> list[Finding]:
-    known_ids = {f.id for f in baseline.findings}
-    known = {fingerprint(f) for f in baseline.findings}
-    return [f for f in findings if f.id not in known_ids and fingerprint(f) not in known]
+def new_since(baseline: Baseline, findings: list[Finding]) -> list[Finding]:
+    return [f for f in findings if finding_fingerprint(f) not in baseline.fingerprints]
 
 
-def version_drift(baseline: Report, report: Report) -> list[str]:
-    """Detectors whose version changed: their ids may differ, so their findings can all look new."""
+def version_drift(baseline: Baseline, report: Report) -> list[str]:
+    """Detectors whose version changed: their fingerprints may differ, so their findings can all look new."""
     old = baseline.detector_versions
     return sorted(name for name, ver in report.detector_versions.items() if name in old and old[name] != ver)

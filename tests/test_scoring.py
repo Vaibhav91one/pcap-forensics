@@ -14,11 +14,11 @@ def _finding(code: str, severity: str = "high", confidence: str = "high", scope:
 
 
 def test_no_findings_scores_100() -> None:
-    assert score([]) == (100, "Great")
+    assert score([]) == (100, "good")
 
 
 def test_one_certain_critical_costs_20() -> None:
-    assert score([_finding("A", "critical")]) == (80, "Good")
+    assert score([_finding("A", "critical")]) == (80, "needs work")
 
 
 def test_a_code_counts_once_at_its_worst_severity() -> None:
@@ -35,4 +35,4 @@ def test_info_findings_are_free() -> None:
 
 
 def test_score_never_goes_below_zero() -> None:
-    assert score([_finding(f"C{i}", "critical") for i in range(10)]) == (0, "Critical")
+    assert score([_finding(f"C{i}", "critical") for i in range(10)]) == (0, "critical")

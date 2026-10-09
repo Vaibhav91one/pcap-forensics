@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from conftest import FIXTURES, requires_tshark
+from pcapforensics.baseline import finding_fingerprint
 from pcapforensics.cli import app
 from pcapforensics.models import CaptureInfo, Evidence, Finding, Report, Stats
 from pcapforensics.output import sarif
@@ -36,7 +37,8 @@ def test_levels_rule_ids_and_fingerprints() -> None:
     results = run["results"]
     assert [r["ruleId"] for r in results] == ["TLS_CIPHER_WEAK", "DNS_CLEARTEXT", "TLS_CERT_EXPIRING"]
     assert [r["level"] for r in results] == ["error", "warning", "note"]
-    assert [r["partialFingerprints"]["pcapDoctorFindingId/v1"] for r in results] == [f.id for f in findings]
+    assert [r["partialFingerprints"]["doctorFinding/v1"] for r in results] == [finding_fingerprint(f) for f in findings]
+    assert run["properties"]["score"] == {"value": 75, "label": "needs work", "model": "pcap/1", "coverage_gaps": 0}
     assert results[0]["properties"]["frames"] == [3, 4]
     assert results[0]["message"]["text"] == "TLS_CIPHER_WEAK title. why"
     rules = run["tool"]["driver"]["rules"]
