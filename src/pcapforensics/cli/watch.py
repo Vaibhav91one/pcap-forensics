@@ -125,14 +125,23 @@ def watch(
     watcher = Watcher(ring, analyze_file, _emit, skip)
     console.print(f"watching {escape(interface)}: a ring file every {seconds}s in {ring} (Ctrl-C to stop)")
     proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    stop = threading.Event()
+    stop, aborted = threading.Event(), False
+
+    def on_signal(_signum: int, _frame: object) -> None:
+        if stop.is_set():  # second signal: hard stop, even in the middle of a hung analyze
+            raise KeyboardInterrupt
+        stop.set()
+        console.print("stopping after the current file; press Ctrl-C again to abort")
+
     # Ctrl-C and SIGTERM (service managers, `kill`) both stop cleanly, even when started as `watch &`, which
     # inherits SIGINT ignored, so Python never raises KeyboardInterrupt on its own (#128). The handler only sets a
-    # flag: raising from it unwound watcher.step() mid-glob and leaked its open scandir iterator (#190).
-    previous = {sig: signal.signal(sig, lambda *_: stop.set()) for sig in (signal.SIGINT, signal.SIGTERM)}
+    # flag the first time: raising from it unwound watcher.step() mid-glob and leaked its open scandir iterator (#190).
+    previous = {sig: signal.signal(sig, on_signal) for sig in (signal.SIGINT, signal.SIGTERM)}
     try:
         while proc.poll() is None and not stop.wait(POLL_SECONDS):
             watcher.step()
+    except KeyboardInterrupt:
+        aborted = True
     finally:  # whatever happens here, never leave the capture running behind us
         if proc.poll() is None:
             proc.terminate()
@@ -143,7 +152,8 @@ def watch(
         console.print(f"[red]{argv[0]} exited with {proc.returncode}: {escape(error) or 'no error text'}[/red]")
         console.print(f"[red]{escape(capture_rights_hint(sys.platform))}[/red]", soft_wrap=True)  # one line: copyable
         raise typer.Exit(code=2) from None
-    watcher.step(final=True)
+    if not aborted:
+        watcher.step(final=True)
     console.print(f"stopped: {len(watcher.seen)} distinct finding(s) in {len(watcher.done)} file(s); captures kept in {ring}")
 
 
