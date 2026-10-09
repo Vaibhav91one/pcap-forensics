@@ -111,9 +111,18 @@ def _await_exit(pid: int, deadline_s: float = 5.0) -> int | None:
         time.sleep(0.02)
     return pid
 
+def _signal_when_started(pidfile, sig: int) -> None:
+    import os
+    import time
+
+    deadline = time.monotonic() + 30
+    while not (pidfile.exists() and pidfile.read_text().strip()) and time.monotonic() < deadline:
+        time.sleep(0.02)
+    os.kill(os.getpid(), sig)
+
+
 def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_path, monkeypatch) -> None:
     # #128: `watch &` starts with SIGINT ignored, and service managers send SIGTERM; either must stop the capture
-    import os
     import signal
     import threading
 
@@ -127,7 +136,8 @@ def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_
     try:
         for sig in (signal.SIGTERM, signal.SIGINT):
             pidfile.unlink(missing_ok=True)
-            threading.Timer(1.0, os.kill, (os.getpid(), sig)).start()
+            # signal once the fake capture has started; a fixed delay raced its startup under load (#190)
+            threading.Thread(target=_signal_when_started, args=(pidfile, sig), daemon=True).start()
             result = cli_runner.invoke(app, ["watch", "-i", "lo", "--dir", str(tmp_path / f"ring{sig}")])
             assert result.exit_code == 0, result.output
             assert "stopped:" in result.output
