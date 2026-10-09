@@ -239,7 +239,7 @@ Machine-readable output, on top of the six files:
 | `--json` | only the [doctor/1](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/doctor-contract.md) envelope on stdout: `{schema, tool, version, exit_code, score, findings, data}`; `data` holds the old report (stats, flows, TLS sessions, notes, ...) without its findings, plus per-category counts. With `--baseline`: a top-level `baseline: {new, unchanged, fixed}` and `baseline_state` on every finding |
 | `--json-out FILE` | the same envelope written to a file, with the normal console summary |
 | `--sarif FILE` | SARIF 2.1.0 for code scanning: `ruleId` is the finding code, `partialFingerprints["doctorFinding/v1"]` is the finding's `fingerprint`, the run carries `properties.score` |
-| `--baseline OLD.json` | show and gate only findings whose `fingerprint` is not in an earlier `--json` envelope (or `report.json`); the files on disk stay complete. A fingerprint hashes detector, code, title and flow with the client's ephemeral port masked |
+| `--baseline OLD.json` | show and gate only findings whose `fingerprint` is not in an earlier `--json` envelope (or `report.json`); the files on disk stay complete. A fingerprint hashes detector, code, title (digits masked, so counts do not matter) and flow with the client's ephemeral port masked |
 
 In the envelope a finding's `id` is the rule code (`TLS_CIPHER_WEAK`), `message` its title and `remedy` its
 remediation; `finding_id` is the per-run id that `pcap-doctor why` accepts (as is the `fingerprint`).

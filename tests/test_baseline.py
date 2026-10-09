@@ -130,3 +130,15 @@ def test_same_title_from_another_host_is_new() -> None:
     old.findings[:] = [offers("tcp:10.9.0.1:38288<->10.9.0.2:443")]
     same_device, other_host = offers("tcp:10.9.0.1:51122<->10.9.0.2:443"), offers("tcp:10.9.0.7:51122<->10.9.0.2:443")
     assert new_since(_base(old), [same_device, other_host]) == [other_host]
+
+
+def test_fingerprint_ignores_counts_but_not_the_server() -> None:
+    def offers(n: int, key: str) -> Finding:
+        return Finding.make(
+            detector="d1.tls_cipher", code="TLS_OFFERS_WEAK_CIPHERS", title=f"Client offers {n} prohibited suites",
+            severity="medium", confidence="high", category="crypto", summary="", scope=key, flow_key=key,
+        )
+
+    key = "tcp:10.9.0.1:38288<->10.9.0.2:443"
+    assert finding_fingerprint(offers(4, key)) == finding_fingerprint(offers(7, key))
+    assert finding_fingerprint(offers(4, key)) != finding_fingerprint(offers(4, "tcp:10.9.0.1:38288<->10.9.0.2:8443"))

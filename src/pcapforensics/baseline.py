@@ -54,9 +54,11 @@ def _masked(text: str) -> str:
 
 
 def finding_fingerprint(finding: Finding) -> str:
-    """16 hex chars of the rule, detector, title and flow with the client's ephemeral port masked (doctor/1)."""
+    """16 hex chars of detector, code, title (digits as #) and flow (client ephemeral port masked), per doctor/1."""
     # the flow key too: many titles name no host ("Client offers 4 prohibited suites")
-    return stable_id(finding.detector, finding.code, _masked(finding.title), _masked(finding.flow_key or ""))
+    # digit runs in the title are counts and other volatile numbers; the flow key keeps its IPs and server port
+    title = re.sub(r"\d+", "#", _masked(finding.title))
+    return stable_id(finding.detector, finding.code, title, _masked(finding.flow_key or ""))
 
 
 def new_since(baseline: Baseline, findings: list[Finding]) -> list[Finding]:
