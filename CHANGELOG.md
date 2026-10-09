@@ -30,6 +30,9 @@ legacy flag. `report.json` on disk and its `schema_version` (1.6.0) are unchange
 
 ### Added
 
+- `pcap-doctor mcp`: an MCP server over stdio (11 tools: analyze, why, rules_list, rules_explain, keys_scan, flows,
+  ciphers, detectors, suites, doctor, schema). `analyze` returns the doctor/1 envelope unchanged; `watch`,
+  `install` and `ci install` are not exposed (README, "MCP server").
 - `docs/doctor-contract.md` and a conformance test (`tests/test_doctor_contract.py`), including an escape-sequence
   test through the human renderers.
 
