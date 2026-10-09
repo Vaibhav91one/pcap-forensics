@@ -111,9 +111,18 @@ def _await_exit(pid: int, deadline_s: float = 5.0) -> int | None:
         time.sleep(0.02)
     return pid
 
+def _signal_when_started(pidfile, sig: int) -> None:
+    import os
+    import time
+
+    deadline = time.monotonic() + 30
+    while not (pidfile.exists() and pidfile.read_text().strip()) and time.monotonic() < deadline:
+        time.sleep(0.02)
+    os.kill(os.getpid(), sig)
+
+
 def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_path, monkeypatch) -> None:
     # #128: `watch &` starts with SIGINT ignored, and service managers send SIGTERM; either must stop the capture
-    import os
     import signal
     import threading
 
@@ -127,7 +136,8 @@ def test_sigterm_and_an_ignored_sigint_still_stop_watch_cleanly(cli_runner, tmp_
     try:
         for sig in (signal.SIGTERM, signal.SIGINT):
             pidfile.unlink(missing_ok=True)
-            threading.Timer(1.0, os.kill, (os.getpid(), sig)).start()
+            # signal once the fake capture has started; a fixed delay raced its startup under load (#190)
+            threading.Thread(target=_signal_when_started, args=(pidfile, sig), daemon=True).start()
             result = cli_runner.invoke(app, ["watch", "-i", "lo", "--dir", str(tmp_path / f"ring{sig}")])
             assert result.exit_code == 0, result.output
             assert "stopped:" in result.output
@@ -159,3 +169,41 @@ def test_a_new_client_port_does_not_print_the_same_finding_again(tmp_path) -> No
     watcher.step(final=True)
     assert first.id != again.id
     assert emitted == [first.flow_key, other_server.flow_key]
+
+
+def test_a_second_signal_aborts_a_hung_analyze(cli_runner, tmp_path, monkeypatch) -> None:
+    # #190: the first signal stops after the current file; a second one must interrupt an analyze that never returns
+    import os
+    import signal
+    import threading
+    import time
+
+    fake = tmp_path / "dumpcap"
+    fake.write_text("#!/bin/sh\nexec sleep 30\n")
+    fake.chmod(0o755)
+    ring = tmp_path / "ring"
+    ring.mkdir()
+    for name in ("ring_00001_a.pcapng", "ring_00002_b.pcapng"):
+        (ring / name).write_bytes(b"")
+    started = threading.Event()
+
+    def hang(*_a, **_k):
+        started.set()
+        threading.Event().wait(30)
+
+    monkeypatch.setattr("pcapforensics.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
+    monkeypatch.setattr("pcapforensics.cli.watch.POLL_SECONDS", 0.05)
+    monkeypatch.setattr("pcapforensics.cli.watch.analyze", hang)
+
+    def signals() -> None:
+        started.wait(30)
+        os.kill(os.getpid(), signal.SIGTERM)  # first: asks to stop after the file, which never finishes
+        time.sleep(0.3)
+        os.kill(os.getpid(), signal.SIGTERM)  # second: hard stop
+
+    threading.Thread(target=signals, daemon=True).start()
+    start = time.monotonic()
+    result = cli_runner.invoke(app, ["watch", "-i", "lo", "--dir", str(ring)])
+    assert time.monotonic() - start < 10
+    assert result.exit_code == 0, result.output
+    assert "press Ctrl-C again to abort" in result.output and "stopped:" in result.output

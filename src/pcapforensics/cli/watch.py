@@ -7,7 +7,7 @@ import signal
 import subprocess
 import sys
 import tempfile
-import time
+import threading
 from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
@@ -102,10 +102,6 @@ def _emit(finding: Finding, path: Path) -> None:
     )
 
 
-def _stop(_signum: int, _frame: object) -> None:
-    raise KeyboardInterrupt
-
-
 def watch(
     interface: str = typer.Option(..., "--interface", "-i", help="capture interface (see `dumpcap -D`)"),
     seconds: int = typer.Option(60, "--seconds", min=5, help="close and analyze a ring file every N seconds"),
@@ -129,27 +125,35 @@ def watch(
     watcher = Watcher(ring, analyze_file, _emit, skip)
     console.print(f"watching {escape(interface)}: a ring file every {seconds}s in {ring} (Ctrl-C to stop)")
     proc = subprocess.Popen(argv, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
-    interrupted = False
+    stop, aborted = threading.Event(), False
+
+    def on_signal(_signum: int, _frame: object) -> None:
+        if stop.is_set():  # second signal: hard stop, even in the middle of a hung analyze
+            raise KeyboardInterrupt
+        stop.set()
+        console.print("stopping after the current file; press Ctrl-C again to abort")
+
     # Ctrl-C and SIGTERM (service managers, `kill`) both stop cleanly, even when started as `watch &`, which
-    # inherits SIGINT ignored, so Python never raises KeyboardInterrupt on its own (#128).
-    previous = {sig: signal.signal(sig, _stop) for sig in (signal.SIGINT, signal.SIGTERM)}
+    # inherits SIGINT ignored, so Python never raises KeyboardInterrupt on its own (#128). The handler only sets a
+    # flag the first time: raising from it unwound watcher.step() mid-glob and leaked its open scandir iterator (#190).
+    previous = {sig: signal.signal(sig, on_signal) for sig in (signal.SIGINT, signal.SIGTERM)}
     try:
-        while proc.poll() is None:
-            time.sleep(POLL_SECONDS)
+        while proc.poll() is None and not stop.wait(POLL_SECONDS):
             watcher.step()
     except KeyboardInterrupt:
-        interrupted = True
+        aborted = True
     finally:  # whatever happens here, never leave the capture running behind us
         if proc.poll() is None:
             proc.terminate()
         error = proc.communicate()[1].strip()  # reaps the process and closes its pipes
         for sig, handler in previous.items():
             signal.signal(sig, handler)
-    if not interrupted:
+    if not stop.is_set():
         console.print(f"[red]{argv[0]} exited with {proc.returncode}: {escape(error) or 'no error text'}[/red]")
         console.print(f"[red]{escape(capture_rights_hint(sys.platform))}[/red]", soft_wrap=True)  # one line: copyable
         raise typer.Exit(code=2) from None
-    watcher.step(final=True)
+    if not aborted:
+        watcher.step(final=True)
     console.print(f"stopped: {len(watcher.seen)} distinct finding(s) in {len(watcher.done)} file(s); captures kept in {ring}")
 
 
