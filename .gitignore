@@ -29,3 +29,6 @@ out/
 corpus/blobs/
 corpus/reports/
 .corpus-venv/
+
+# macOS
+.DS_Store
