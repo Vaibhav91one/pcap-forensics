@@ -71,6 +71,7 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `follow` / `streams` | follow one TCP/UDP/TLS/HTTP stream (reassembled payload as text, hex or a file); list stream numbers |
 | `query CAPTURE EXPR` | filter flows, hosts, TLS/HTTP/DNS/SSH rows or findings with one expression (`flows -f` too); `packets -Y` for raw frames |
 | `logs CAPTURE` | Zeek-style per-protocol logs (conn, dns, http, ssl, x509, files, notice, weird, dhcp, ftp, smtp, ssh, smb) as TSV or JSON; see [docs/zeek-logs.md](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/zeek-logs.md) |
+| `eve CAPTURE` | Suricata EVE-compatible JSON events (alert, flow, dns, http, tls, fileinfo), one per line, for SIEM ingest |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -704,6 +705,7 @@ pcap-doctor follow CAPTURE PROTO STREAM [--as ascii|hex] [--direction both|clien
 pcap-doctor query CAPTURE EXPR [-s flows|hosts|tls|http|dns|sip|rtp|ssh|quic|services|findings] [-n N] [--json]
 pcap-doctor flows CAPTURE [--top N] [-f EXPR]
 pcap-doctor logs CAPTURE [-o DIR] [--format tsv|json|both] [--only conn,dns,...]   # Zeek-style logs
+pcap-doctor eve CAPTURE [-o FILE] [--types alert,flow,dns,http,tls,fileinfo]   # Suricata EVE JSON
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```
