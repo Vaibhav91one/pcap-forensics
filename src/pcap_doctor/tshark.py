@@ -332,6 +332,146 @@ IPV6_ADDR_PASS = PassSpec(
     fields=("frame.number", "ipv6.src", "ipv6.dst", "ipv6.hop_limit", "ipv6.plen"),
 )
 
+#: The passes below feed the Zeek-style logs (``pcap-doctor logs``, issue #199). ``analyze`` does not run them.
+CONN_PASS = PassSpec(
+    name="conn",
+    display_filter="tcp || udp",
+    fields=with_addr((
+        "frame.time_epoch",
+        "frame.len",
+        "tcp.srcport",
+        "tcp.dstport",
+        "udp.srcport",
+        "udp.dstport",
+        "tcp.flags.syn",
+        "tcp.flags.ack",
+        "tcp.flags.fin",
+        "tcp.flags.reset",
+        "tcp.len",
+        "udp.length",
+        "ip.len",
+        "ipv6.plen",
+    )),
+)
+
+DHCP_PASS = PassSpec(
+    name="dhcp",
+    display_filter="dhcp",
+    fields=with_addr((
+        "frame.time_epoch",
+        "udp.srcport",
+        "udp.dstport",
+        "dhcp.id",
+        "dhcp.option.dhcp",
+        "dhcp.hw.mac_addr",
+        "dhcp.ip.client",
+        "dhcp.ip.your",
+        "dhcp.option.requested_ip_address",
+        "dhcp.option.hostname",
+        "dhcp.option.domain_name",
+        "dhcp.option.vendor_class_id",
+        "dhcp.option.dhcp_server_id",
+        "dhcp.option.ip_address_lease_time",
+    )),
+)
+
+FTP_PASS = PassSpec(
+    name="ftp",
+    display_filter="ftp",
+    fields=with_addr((
+        "frame.time_epoch",
+        "tcp.srcport",
+        "tcp.dstport",
+        "tcp.stream",
+        "ftp.request.command",
+        "ftp.request.arg",
+        "ftp.response.code",
+        "ftp.response.arg",
+    )),
+)
+
+SMTP_PASS = PassSpec(
+    name="smtp",
+    display_filter="smtp || imf",
+    fields=with_addr((
+        "frame.time_epoch",
+        "tcp.srcport",
+        "tcp.dstport",
+        "tcp.stream",
+        "smtp.req.command",
+        "smtp.req.parameter",
+        "smtp.response.code",
+        "smtp.rsp.parameter",
+        "imf.from",
+        "imf.to",
+        "imf.subject",
+        "imf.date",
+        "imf.message_id",
+    )),
+)
+
+SMB_PASS = PassSpec(
+    name="smb",
+    display_filter="smb || smb2",
+    fields=with_addr((
+        "frame.time_epoch",
+        "tcp.srcport",
+        "tcp.dstport",
+        "tcp.stream",
+        "smb2.cmd",
+        "smb2.flags.response",
+        "smb2.nt_status",
+        "smb2.filename",
+        "smb2.tree",
+        "smb2.sesid",
+        "smb2.tid",
+        "smb2.dialect",
+        "smb2.sec_mode.sign_required",
+        "smb2.sec_mode.sign_enabled",
+        "smb.cmd",
+        "smb.dialect.name",
+        "smb.sm.sig_required",
+        "smb.nt_status",
+        "smb.file",
+        "smb.path",
+        "ntlmssp.auth.username",
+        "ntlmssp.auth.domain",
+        "ntlmssp.auth.hostname",
+    )),
+)
+
+#: tshark expert info at warning and error level: malformed packets, bad lengths, broken checksums...
+WEIRD_PASS = PassSpec(
+    name="weird",
+    display_filter="_ws.expert && frame",
+    fields=with_addr((
+        "frame.time_epoch",
+        "tcp.srcport",
+        "tcp.dstport",
+        "udp.srcport",
+        "udp.dstport",
+        "_ws.expert.message",
+        "_ws.expert.severity",
+        "_ws.expert.group",
+    )),
+)
+
+#: Every TCP/UDP payload, for the user-supplied signature engine (#201). Only run when signatures are given.
+PAYLOAD_PASS = PassSpec(
+    name="payload",
+    display_filter="tcp.len > 0 || udp.length > 8",
+    fields=with_addr((
+        "tcp.srcport",
+        "tcp.dstport",
+        "udp.srcport",
+        "udp.dstport",
+        "tcp.stream",
+        "tcp.flags",
+        "tcp.payload",
+        "udp.payload",
+    )),
+)
+
 PASSES: dict[str, PassSpec] = {
     p.name: p
     for p in (
@@ -347,6 +487,13 @@ PASSES: dict[str, PassSpec] = {
         SERVICE_PASS,
         TELNET_PASS,
         IPV6_ADDR_PASS,
+        CONN_PASS,
+        DHCP_PASS,
+        FTP_PASS,
+        SMTP_PASS,
+        SMB_PASS,
+        WEIRD_PASS,
+        PAYLOAD_PASS,
     )
 }
 

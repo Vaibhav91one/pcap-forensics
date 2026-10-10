@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .certificates import CertFacts, apply_openssl_facts, enrich_all
 from .models import (
@@ -52,6 +52,10 @@ from .tshark import (
     to_int_list,
     tshark_version,
 )
+
+if TYPE_CHECKING:
+    from .signatures import SignatureHit
+    from .smb import SmbOp
 
 VERSION_HEX_RE = re.compile(r"0x([0-9a-fA-F]{4})")
 
@@ -257,12 +261,19 @@ class CaptureIndex:
         self.services: list[ServiceHit] = []
         self.telnet_logins: list[TelnetLogin] = []
         self.notes: list[str] = []
+        self.smb: list[SmbOp] = []
+        self.signature_hits: list[SignatureHit] = []  # filled by the pipeline when --signatures is given (#201)
         self.firmware_keys: dict[str, str] = {}  # {cert SPKI fingerprint: firmware path} supplied via --firmware
         self.dropped_fields: list[str] = []
         self.pass_stats: dict[str, dict[str, int | float | str]] = {}
         self._flow_by_pair: dict[tuple[str, int], str] = {}
+        self.runner: TsharkRunner | None = None  # set by IndexBuilder; the on-demand log tables read more passes through it
 
     # -- lookups -----------------------------------------------------------
+    @property
+    def capture_path(self) -> Path:
+        return Path(self.capture.path)
+
     def flow(self, key: str) -> Flow | None:
         return self.flows.get(key)
 
@@ -336,7 +347,7 @@ class IndexBuilder:
         # Every pass but RTP is independent (RTP needs the SIP pass's SDP ports), so run them concurrently (#127).
         runner.prefetch({
             "base": (), "tls": (), "dtls": (), "http": self.decrypt_args, "dns": (), "sip": (),
-            "ssh": (), "quic": (), "services": (), "telnet": (),
+            "ssh": (), "quic": (), "services": (), "telnet": (), "smb": (),
         })
         raw_stats = runner.capture_stats()
         capture = CaptureInfo(
@@ -352,6 +363,7 @@ class IndexBuilder:
             tshark_version=tshark_version(),
         )
         index = CaptureIndex(capture)
+        index.runner = runner
         self.index = index
 
         self._build_flows(index, runner.run("base"))
@@ -365,6 +377,7 @@ class IndexBuilder:
         self._build_quic(index, runner.run("quic"))
         self._build_services(index, runner.run("services"))
         self._build_telnet(index, runner.run("telnet"))
+        self._build_smb(index, runner.run("smb"))
 
         if self.decrypt_args:
             tls_keys = {s.key for s in index.tls.values()}
@@ -964,6 +977,11 @@ class IndexBuilder:
             index.services.append(hit)
             if hit.sensitive and not (flow and flow.encrypted):
                 index.mark_cleartext(key, f"{app} plaintext")
+
+    def _build_smb(self, index: CaptureIndex, rows: list[Row]) -> None:
+        from .smb import parse_smb
+
+        index.smb = parse_smb(rows, lambda row: self._stream_key(index, row))
 
     def _build_telnet(self, index: CaptureIndex, rows: list[Row]) -> None:
         scanners: dict[str, TelnetLoginScanner] = {}

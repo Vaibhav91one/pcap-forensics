@@ -10,6 +10,12 @@
     "DNS_CLEARTEXT",
     "DNS_TUNNEL_SHAPE"
   ],
+  "files_mix.pcap": [
+    "CLEARTEXT_CREDENTIAL",
+    "CLEARTEXT_SERVICE",
+    "HTTP_CLEARTEXT",
+    "SMB_SIGNING_NOT_REQUIRED"
+  ],
   "ftp_ldap_creds.pcap": [
     "CLEARTEXT_CREDENTIAL",
     "CLEARTEXT_SERVICE"
@@ -28,6 +34,12 @@
   ],
   "http_firmware_headers.pcap": [
     "HTTP_CLEARTEXT"
+  ],
+  "logs_mix.pcap": [
+    "CLEARTEXT_SERVICE",
+    "SMB_ADMIN_SHARE_ACCESS",
+    "SMB_EXECUTABLE_ON_SHARE",
+    "SMB_SIGNING_NOT_REQUIRED"
   ],
   "mixed_ciphers.pcap": [
     "TLS_OFFERS_WEAK_CIPHERS",
@@ -51,6 +63,14 @@
     "RTP_MEDIA_UNPROTECTED",
     "SDP_NO_CRYPTO_ATTR",
     "SIP_CLEARTEXT_SIGNALLING"
+  ],
+  "smb_attack.pcap": [
+    "SMB1_IN_USE",
+    "SMB_ADMIN_SHARE_ACCESS",
+    "SMB_EXECUTABLE_ON_SHARE",
+    "SMB_NULL_SESSION",
+    "SMB_REMOTE_EXEC_PIPE",
+    "SMB_SIGNING_NOT_REQUIRED"
   ],
   "snmp_creds.pcap": [
     "CLEARTEXT_CREDENTIAL",

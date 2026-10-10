@@ -418,7 +418,7 @@ def test_every_finding_cites_a_real_frame(analyze_capture, pcap) -> None:
             assert item.frame > 0, f"{finding.code} cites frame {item.frame}"
 
 
-REFERENCE_FORMAT = re.compile(r"^(RFC \d+|CWE-\d+|CVE-\d{4}-\d{4,}|NIST SP .+|OWASP .+|JA3|docs/[\w./-]+\.md)$")
+REFERENCE_FORMAT = re.compile(r"^(RFC \d+|CWE-\d+|CVE-\d{4}-\d{4,}|NIST SP .+|OWASP .+|JA3|MITRE ATT&CK T\d{4}(\.\d{3})?( .+)?|MS\d{2}-\d{3}|docs/[\w./-]+\.md)$")
 
 
 @pytest.mark.parametrize(
