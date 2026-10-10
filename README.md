@@ -67,6 +67,7 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `why QUERY` | explain one finding; `--prompt` prints a fix prompt for an AI agent |
 | `rules list` / `rules explain CODE` | browse and read detector rules |
 | `flows` / `ciphers` | conversation and negotiated-crypto views of one capture |
+| `packets` / `packet` | per-packet explorer: the packet list (`-Y` display filter) and one frame's dissection tree plus hex view |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -694,6 +695,8 @@ pcap-doctor watch -i IFACE [--seconds N] [--files K] [--dir DIR]
 pcap-doctor keys scan DIR [--json] [--out KEYS_DIR]   # inventory key material in an extracted firmware tree
 pcap-doctor flows CAPTURE [--top N]
 pcap-doctor ciphers CAPTURE
+pcap-doctor packets CAPTURE [-Y FILTER] [-n LIMIT] [--json]   # packet list (Wireshark display filter)
+pcap-doctor packet CAPTURE FRAME [--hex|--no-hex] [--json]   # dissection tree + hex view of one frame
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```
