@@ -29,6 +29,9 @@
   "http_firmware_headers.pcap": [
     "HTTP_CLEARTEXT"
   ],
+  "logs_mix.pcap": [
+    "CLEARTEXT_SERVICE"
+  ],
   "mixed_ciphers.pcap": [
     "TLS_OFFERS_WEAK_CIPHERS",
     "TLS_SELF_SIGNED_CHAIN"

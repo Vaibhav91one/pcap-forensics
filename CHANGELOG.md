@@ -13,6 +13,14 @@ All notable changes to this project are documented here. The format follows
   unchanged. All GitHub URLs, badges and the Action reference now point to `doctor-labs/pcap-doctor`
   (`uses: doctor-labs/pcap-doctor@v...`). `PCAP_FORENSICS_CACHE` is still honoured.
 
+### Added
+
+- `pcap-doctor packets` and `pcap-doctor packet`: a per-packet explorer over the capture. `packets` lists frames (number, time, source, destination, protocol, length, info) and takes a Wireshark display filter with `-Y`; `packet CAPTURE FRAME` prints the full dissection tree and the hex view of one frame (`--json` for the nested tree, `--no-hex` to drop the dump). Read-only: tshark is asked for exactly what was requested.
+- `pcap-doctor follow CAPTURE PROTO STREAM` (PROTO: tcp, udp, tls, dtls, http, http2, quic, sip): the reassembled payload of one stream, per direction, as text or hex, or written to a file with `-o` (`--direction client|server` writes one side). TLS and HTTP-over-TLS streams decrypt with `--tls-key` or `--keylog`. `pcap-doctor streams CAPTURE` lists the TCP/UDP stream numbers with their endpoints.
+- `pcap-doctor query CAPTURE EXPR`: a query language for the analysed data, the zeek-cut / Brim counterpart of Wireshark's display filter (which stays on `packets -Y` for raw frames). `app_proto == "tls" and bytes > 10000`, `port_b in {80 8080}`, `endpoint_a == 10.0.0.0/8`, `host contains "example"`, `not encrypted`; operators `== != < <= > >= contains matches in`, `and`/`or`/`not` (or `&&` `||` `!`), parentheses; list fields match on any element; an unknown field is an error that lists the known ones. `--source` picks flows, hosts, tls, http, dns, sip, rtp, ssh, quic, services or findings; `flows -f EXPR` filters the flow table. The expression is parsed, never evaluated.
+- `pcap-doctor logs CAPTURE`: Zeek-style per-protocol logs, `conn dns http ssl x509 files notice weird dhcp ftp smtp ssh smb`, in Zeek's TSV format (`--format tsv`) or as one JSON object per line (`json`, `both`), with Zeek's column names and types. Each table is also a `query` source (`-s log:conn`). Differences from Zeek (approximated `history`, payload-only byte counts, no secrets) are listed in [docs/zeek-logs.md](docs/zeek-logs.md). New on-demand tshark passes `conn`, `dhcp`, `ftp`, `smtp`, `smb`, `weird`; `analyze` does not run them.
+- `pcap-doctor eve CAPTURE`: Suricata EVE-compatible JSON events for SIEM ingest, one object per line and time-ordered: `alert` (one per finding; `signature_id` is derived from the finding code, 9000000-9999999; `severity` 1 for critical/high, 2 medium, 3 low/info), `flow`, `dns`, `http`, `tls` (SNI, subject/issuer, JA3/JA3S) and `fileinfo`. Built from the Zeek-style log tables so both outputs agree. `--types` selects events, `-o` writes a file.
+
 ## [0.8.0] — 2026-10-09
 
 Machine output now follows the shared **doctor/1** contract (`docs/doctor-contract.md`). This is a
