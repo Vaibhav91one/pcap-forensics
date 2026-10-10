@@ -47,6 +47,8 @@ def analyze(
     progress: Callable[[str], None] | None = None,
     keys: KeyMaterial | None = None,
     firmware_keys: dict[str, str] | None = None,
+    signatures: tuple[Path, ...] = (),
+    signature_vars: dict[str, str] | None = None,
 ) -> RunResult:
     policy.validate(only=only, categories=categories, min_severity=min_severity)
     pcap = Path(pcap)
@@ -61,6 +63,15 @@ def analyze(
     index = builder.build()
     if firmware_keys:
         index.firmware_keys = firmware_keys
+
+    if signatures:
+        from .signatures import load_rules, match
+
+        rules, rule_warnings = load_rules(list(signatures), signature_vars)
+        for warning in rule_warnings:
+            index.add_note(f"[signatures] {warning}")
+        index.signature_hits = match(index, rules)
+        index.add_note(f"[signatures] {len(rules)} rule(s) loaded, {len(index.signature_hits)} match(es)")
 
     detectors = enabled_detectors(include=only)
     findings: list[Finding] = []

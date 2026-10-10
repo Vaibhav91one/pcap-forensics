@@ -12,7 +12,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from .certificates import CertFacts, apply_openssl_facts, enrich_all
 from .models import (
@@ -52,6 +52,9 @@ from .tshark import (
     to_int_list,
     tshark_version,
 )
+
+if TYPE_CHECKING:
+    from .signatures import SignatureHit
 
 VERSION_HEX_RE = re.compile(r"0x([0-9a-fA-F]{4})")
 
@@ -257,10 +260,12 @@ class CaptureIndex:
         self.services: list[ServiceHit] = []
         self.telnet_logins: list[TelnetLogin] = []
         self.notes: list[str] = []
+        self.signature_hits: list[SignatureHit] = []  # filled by the pipeline when --signatures is given (#201)
         self.firmware_keys: dict[str, str] = {}  # {cert SPKI fingerprint: firmware path} supplied via --firmware
         self.dropped_fields: list[str] = []
         self.pass_stats: dict[str, dict[str, int | float | str]] = {}
         self._flow_by_pair: dict[tuple[str, int], str] = {}
+        self.runner: TsharkRunner | None = None  # set by IndexBuilder; the on-demand log tables read more passes through it
 
     # -- lookups -----------------------------------------------------------
     def flow(self, key: str) -> Flow | None:
@@ -352,6 +357,7 @@ class IndexBuilder:
             tshark_version=tshark_version(),
         )
         index = CaptureIndex(capture)
+        index.runner = runner
         self.index = index
 
         self._build_flows(index, runner.run("base"))
