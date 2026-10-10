@@ -1,13 +1,13 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-light.svg">
-  <img alt="pcap-doctor" src="https://raw.githubusercontent.com/Vaibhav91one/pcap-forensics/main/docs/assets/logo-light.svg" width="360" height="56">
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-light.svg">
+  <img alt="pcap-doctor" src="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-light.svg" width="360" height="56">
 </picture>
 
-[![CI](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml/badge.svg)](https://github.com/Vaibhav91one/pcap-forensics/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-000000?style=flat&logo=python&logoColor=white)](https://github.com/Vaibhav91one/pcap-forensics/blob/main/pyproject.toml)
+[![CI](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-000000?style=flat&logo=python&logoColor=white)](https://github.com/doctor-labs/pcap-doctor/blob/main/pyproject.toml)
 [![tshark](https://img.shields.io/badge/tshark-4.2%20%E2%80%93%204.6-000000?style=flat&logo=wireshark&logoColor=white)](https://www.wireshark.org/docs/man-pages/tshark.html)
-[![License: MIT](https://img.shields.io/badge/license-MIT-000000?style=flat)](https://github.com/Vaibhav91one/pcap-forensics/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-000000?style=flat)](https://github.com/doctor-labs/pcap-doctor/blob/main/LICENSE)
 [![Telemetry: none](https://img.shields.io/badge/telemetry-none-000000?style=flat)](#privacy-and-telemetry)
 
 **Hand it a capture. It scores it, tells you who talked to whom, what crypto they negotiated, what is weak or leaking, and how to fix it.**
@@ -236,7 +236,7 @@ Machine-readable output, on top of the six files:
 
 | Flag | Output |
 |---|---|
-| `--json` | only the [doctor/1](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/doctor-contract.md) envelope on stdout: `{schema, tool, version, exit_code, score, findings, data}`; `data` holds the old report (stats, flows, TLS sessions, notes, ...) without its findings, plus per-category counts. With `--baseline`: a top-level `baseline: {new, unchanged, fixed}` and `baseline_state` on every finding |
+| `--json` | only the [doctor/1](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/doctor-contract.md) envelope on stdout: `{schema, tool, version, exit_code, score, findings, data}`; `data` holds the old report (stats, flows, TLS sessions, notes, ...) without its findings, plus per-category counts. With `--baseline`: a top-level `baseline: {new, unchanged, fixed}` and `baseline_state` on every finding |
 | `--json-out FILE` | the same envelope written to a file, with the normal console summary |
 | `--sarif FILE` | SARIF 2.1.0 for code scanning: `ruleId` is the finding code, `partialFingerprints["doctorFinding/v1"]` is the finding's `fingerprint`, the run carries `properties.score` |
 | `--baseline OLD.json` | show and gate only findings whose `fingerprint` is not in an earlier `--json` envelope (or `report.json`); the files on disk stay complete. A fingerprint hashes detector, code, title (digits masked, so counts do not matter) and flow with the client's ephemeral port masked |
@@ -310,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Vaibhav91one/pcap-forensics@v0.8.0
+      - uses: doctor-labs/pcap-doctor@v0.8.0
         with:
           captures: "**/*.pcap **/*.pcapng"
           fail-on: high
@@ -641,7 +641,7 @@ entries.
 | `recommended` | TLS 1.3 suites | info |
 | `signalling` | SCSV and other non-cipher values | never reported |
 
-The reasoning lives in [`docs/cipher-policy.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/cipher-policy.md). Regenerate with
+The reasoning lives in [`docs/cipher-policy.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/cipher-policy.md). Regenerate with
 `make regenerate` (add `--refresh` to re-extract the name table from tshark).
 
 ---
@@ -753,11 +753,11 @@ own GitHub Action against the fixtures whenever the action or the package change
 Issues and pull requests are welcome. Work is organised as **one issue, one branch, one pull
 request**, and every change ships with a fixture and a test that fails without it.
 
-- [`CONTRIBUTING.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/CONTRIBUTING.md): setup, ground rules and how to submit a pull request
-- [`AGENTS.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/AGENTS.md): the contract for automated agents working in isolation
-- [`docs/detector-authoring.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/detector-authoring.md): writing a detector
-- [`docs/subagent-playbook.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/docs/subagent-playbook.md): running a fleet of agents safely
-- [`CHANGELOG.md`](https://github.com/Vaibhav91one/pcap-forensics/blob/main/CHANGELOG.md): what changed and when
+- [`CONTRIBUTING.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/CONTRIBUTING.md): setup, ground rules and how to submit a pull request
+- [`AGENTS.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/AGENTS.md): the contract for automated agents working in isolation
+- [`docs/detector-authoring.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/detector-authoring.md): writing a detector
+- [`docs/subagent-playbook.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/subagent-playbook.md): running a fleet of agents safely
+- [`CHANGELOG.md`](https://github.com/doctor-labs/pcap-doctor/blob/main/CHANGELOG.md): what changed and when
 
 From a clone: `make setup` (uv venv and an editable install with dev extras), then `make verify`.
 The core (`models.py`, `index.py`, `data_ciphers.py`, `tshark.py`) is frozen: a detector that needs
@@ -795,5 +795,5 @@ Stated plainly, because a triage tool that hides its limits is worse than useles
 
 ## License
 
-[MIT](https://github.com/Vaibhav91one/pcap-forensics/blob/main/LICENSE). The captures under `captures/` belong to the Wireshark project (BSD-2-Clause) and
+[MIT](https://github.com/doctor-labs/pcap-doctor/blob/main/LICENSE). The captures under `captures/` belong to the Wireshark project (BSD-2-Clause) and
 are fetched, not authored.

@@ -19,7 +19,7 @@ everywhere is not usable during an incident.
 ## How to start
 
 1. Read [`AGENTS.md`](AGENTS.md) §1-§4: who owns which file, what "done" means, and the honesty rules.
-2. Pick an open [issue](https://github.com/Vaibhav91one/pcap-forensics/issues), or open one first.
+2. Pick an open [issue](https://github.com/doctor-labs/pcap-doctor/issues), or open one first.
    Say what you saw, the capture or input that reproduces it, and what you expected.
 3. Never attach a real capture to a public issue. Captures carry addresses, hostnames and sometimes
    credentials; describe the traffic, or build a synthetic fixture that reproduces it.

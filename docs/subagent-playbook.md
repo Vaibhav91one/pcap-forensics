@@ -84,7 +84,7 @@ Rules that make this safe:
 Copy this. It is the whole brief; anything not in it is out of scope.
 
 ```text
-You are agent R<role> for pcap-forensics, working on issue #<N>: <title>.
+You are agent R<role> for pcap-doctor, working on issue #<N>: <title>.
 
 Working directory: <worktree path>. Base commit: <sha>.
 

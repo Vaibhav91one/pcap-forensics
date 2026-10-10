@@ -225,7 +225,7 @@ def test_write_workflow_here_uses_the_repo_root(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path / "sub")
     assert "Wrote" in write_workflow_here("0.2.0")
     path = tmp_path / ".github" / "workflows" / "pcap-doctor.yml"
-    assert "Vaibhav91one/pcap-forensics@v0.2.0" in path.read_text()
+    assert "doctor-labs/pcap-doctor@v0.2.0" in path.read_text()
     assert "already set up" in write_workflow_here("0.2.0")
     path.write_text(path.read_text() + "# edited\n")
     assert "exists and differs" in write_workflow_here("0.2.0")

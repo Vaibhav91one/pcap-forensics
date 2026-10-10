@@ -32,7 +32,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parent.parent
 BLOBS = ROOT / "corpus" / "blobs"
 MANIFEST = ROOT / "corpus" / "manifest.json"
-USER_AGENT = "pcap-doctor-corpus/0.6 (+https://github.com/Vaibhav91one/pcap-forensics)"
+USER_AGENT = "pcap-doctor-corpus/0.6 (+https://github.com/doctor-labs/pcap-doctor)"
 CHUNK = 1 << 20
 
 

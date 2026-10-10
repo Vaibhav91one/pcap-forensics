@@ -73,13 +73,13 @@ def test_versions_agree() -> None:
     pyproject = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
     npm = json.loads((ROOT / "npm" / "package.json").read_text())["version"]
     assert pyproject == npm == version("pcap-doctor") == TOOL_VERSION
-    assert f"Vaibhav91one/pcap-forensics@v{pyproject}" in (ROOT / "README.md").read_text()
+    assert f"doctor-labs/pcap-doctor@v{pyproject}" in (ROOT / "README.md").read_text()
     assert f"## [{pyproject}]" in (ROOT / "CHANGELOG.md").read_text()
 
 
 REPO_LINK = re.compile(
-    r"https://(?:github\.com/Vaibhav91one/pcap-forensics/(?:blob|tree)/main|"
-    r"raw\.githubusercontent\.com/Vaibhav91one/pcap-forensics/main)/([^)\"#\s>]+)"
+    r"https://(?:github\.com/doctor-labs/pcap-doctor/(?:blob|tree)/main|"
+    r"raw\.githubusercontent\.com/doctor-labs/pcap-doctor/main)/([^)\"#\s>]+)"
 )
 
 
@@ -98,7 +98,7 @@ def test_package_metadata_links_the_project() -> None:
     urls = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["urls"]
     assert {"Homepage", "Repository", "Issues", "Changelog"} <= set(urls)
     package = json.loads((ROOT / "npm" / "package.json").read_text())
-    assert package["repository"]["url"].endswith("Vaibhav91one/pcap-forensics.git")
+    assert package["repository"]["url"].endswith("doctor-labs/pcap-doctor.git")
 
 
 def test_every_fixture_has_expected_codes_for_the_portability_check() -> None:

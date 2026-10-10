@@ -28,4 +28,4 @@ code. You need:
 Prefer Python directly? `uvx pcap-doctor …` or `pip install pcap-doctor`.
 
 No telemetry, no network calls during analysis. Documentation, rule reference and changelog:
-<https://github.com/Vaibhav91one/pcap-forensics>. MIT licensed.
+<https://github.com/doctor-labs/pcap-doctor>. MIT licensed.

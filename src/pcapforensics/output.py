@@ -142,7 +142,7 @@ def sarif(report: Report, artifact_uri: str | None = None, score_of: list[Findin
                     "driver": {
                         "name": "pcap-doctor",
                         "version": report.tool_version,
-                        "informationUri": "https://github.com/Vaibhav91one/pcap-forensics",
+                        "informationUri": "https://github.com/doctor-labs/pcap-doctor",
                         "rules": rules,
                     }
                 },

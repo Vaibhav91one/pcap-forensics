@@ -19,7 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: Vaibhav91one/pcap-forensics@__REF__
+      - uses: doctor-labs/pcap-doctor@__REF__
         with:
           captures: "__CAPTURES__"
           fail-on: __FAIL_ON__

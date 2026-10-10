@@ -24,7 +24,7 @@ def test_install_writes_the_workflow_and_keeps_edits_unless_forced(cli_runner, t
     path = tmp_path / ".github" / "workflows" / "pcap-doctor.yml"
     text = path.read_text()
     assert "pull-requests: write" in text and "security-events: write" in text
-    assert f"uses: Vaibhav91one/pcap-forensics@v{version('pcap-doctor')}" in text
+    assert f"uses: doctor-labs/pcap-doctor@v{version('pcap-doctor')}" in text
     assert 'captures: "**/*.pcap **/*.pcapng"' in text and "fail-on: high" in text
     assert "__" not in text  # every placeholder filled
 

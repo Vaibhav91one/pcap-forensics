@@ -21,11 +21,11 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Vaibhav91one/pcap-forensics"
-Repository = "https://github.com/Vaibhav91one/pcap-forensics"
-Issues = "https://github.com/Vaibhav91one/pcap-forensics/issues"
-Changelog = "https://github.com/Vaibhav91one/pcap-forensics/blob/main/CHANGELOG.md"
-Documentation = "https://github.com/Vaibhav91one/pcap-forensics#readme"
+Homepage = "https://github.com/doctor-labs/pcap-doctor"
+Repository = "https://github.com/doctor-labs/pcap-doctor"
+Issues = "https://github.com/doctor-labs/pcap-doctor/issues"
+Changelog = "https://github.com/doctor-labs/pcap-doctor/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/doctor-labs/pcap-doctor#readme"
 
 [project.scripts]
 pcap-doctor = "pcapforensics.cli:app"
