@@ -645,6 +645,11 @@ STATIC_FIXTURES = {
     "beaconing.pcap": fixture_beaconing,
 }
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import parity_fixtures  # noqa: E402
+
+STATIC_FIXTURES.update(parity_fixtures.FIXTURES)
+
 #: Fixtures captured from a real OpenSSL handshake. Cipher strings are passed to
 #: both ends; the point is that the ClientHello really does offer these suites.
 TLS_FIXTURES = {

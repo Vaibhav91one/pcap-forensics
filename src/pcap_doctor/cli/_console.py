@@ -29,10 +29,11 @@ def tshark_errors() -> Iterator[None]:
     except TsharkRunError as exc:
         lines = [line for line in str(exc).splitlines() if line.strip() and not line.startswith("cmd:")]
         console.print(f"[red]{escape(' '.join(lines[:2]))}[/red]", highlight=False)
-        console.print(
-            "[red]the capture may be truncated or corrupt; `editcap <in> <out>` rewrites the complete packets"
-            " of a truncated file[/red]"
-        )
+        if not any(word in str(exc) for word in ("filter", "no frame", "no stream")):  # a user mistake, not a bad capture
+            console.print(
+                "[red]the capture may be truncated or corrupt; `editcap <in> <out>` rewrites the complete packets"
+                " of a truncated file[/red]"
+            )
         raise typer.Exit(code=2) from exc
 
 SEVERITY_STYLE = {
