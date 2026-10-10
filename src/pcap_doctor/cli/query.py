@@ -9,9 +9,12 @@ import typer
 from rich.table import Table
 
 from ..index import IndexBuilder
+from ..logs import register_query_sources
 from ..query import SOURCES, QueryError, filter_rows, rows_of
 from ..tshark import TsharkRunner
 from ._console import capture_cell, console, tshark_errors
+
+register_query_sources()  # the Zeek-style log tables are query sources too: -s log:conn
 
 _COLUMNS = {
     "flows": ["endpoint_a", "port_a", "endpoint_b", "port_b", "app_proto", "packets", "bytes"],

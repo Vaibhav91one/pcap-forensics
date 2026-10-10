@@ -70,6 +70,7 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `packets` / `packet` | per-packet explorer: the packet list (`-Y` display filter) and one frame's dissection tree plus hex view |
 | `follow` / `streams` | follow one TCP/UDP/TLS/HTTP stream (reassembled payload as text, hex or a file); list stream numbers |
 | `query CAPTURE EXPR` | filter flows, hosts, TLS/HTTP/DNS/SSH rows or findings with one expression (`flows -f` too); `packets -Y` for raw frames |
+| `logs CAPTURE` | Zeek-style per-protocol logs (conn, dns, http, ssl, x509, files, notice, weird, dhcp, ftp, smtp, ssh, smb) as TSV or JSON; see [docs/zeek-logs.md](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/zeek-logs.md) |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -702,6 +703,7 @@ pcap-doctor streams CAPTURE [--proto tcp|udp]
 pcap-doctor follow CAPTURE PROTO STREAM [--as ascii|hex] [--direction both|client|server] [-o FILE] [--json] [--tls-key KEY | --keylog FILE]
 pcap-doctor query CAPTURE EXPR [-s flows|hosts|tls|http|dns|sip|rtp|ssh|quic|services|findings] [-n N] [--json]
 pcap-doctor flows CAPTURE [--top N] [-f EXPR]
+pcap-doctor logs CAPTURE [-o DIR] [--format tsv|json|both] [--only conn,dns,...]   # Zeek-style logs
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```
