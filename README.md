@@ -67,6 +67,9 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `why QUERY` | explain one finding; `--prompt` prints a fix prompt for an AI agent |
 | `rules list` / `rules explain CODE` | browse and read detector rules |
 | `flows` / `ciphers` | conversation and negotiated-crypto views of one capture |
+| `packets` / `packet` | per-packet explorer: the packet list (`-Y` display filter) and one frame's dissection tree plus hex view |
+| `follow` / `streams` | follow one TCP/UDP/TLS/HTTP stream (reassembled payload as text, hex or a file); list stream numbers |
+| `query CAPTURE EXPR` | filter flows, hosts, TLS/HTTP/DNS/SSH rows or findings with one expression (`flows -f` too); `packets -Y` for raw frames |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -692,8 +695,13 @@ pcap-doctor ci install [--captures GLOBS] [--fail-on LEVEL] [--ref REF] [--force
 pcap-doctor mcp                                          # MCP server on stdio: analyze, why, rules_*, keys_scan, flows, ...
 pcap-doctor watch -i IFACE [--seconds N] [--files K] [--dir DIR]
 pcap-doctor keys scan DIR [--json] [--out KEYS_DIR]   # inventory key material in an extracted firmware tree
-pcap-doctor flows CAPTURE [--top N]
 pcap-doctor ciphers CAPTURE
+pcap-doctor packets CAPTURE [-Y FILTER] [-n LIMIT] [--json]   # packet list (Wireshark display filter)
+pcap-doctor packet CAPTURE FRAME [--hex|--no-hex] [--json]   # dissection tree + hex view of one frame
+pcap-doctor streams CAPTURE [--proto tcp|udp]
+pcap-doctor follow CAPTURE PROTO STREAM [--as ascii|hex] [--direction both|client|server] [-o FILE] [--json] [--tls-key KEY | --keylog FILE]
+pcap-doctor query CAPTURE EXPR [-s flows|hosts|tls|http|dns|sip|rtp|ssh|quic|services|findings] [-n N] [--json]
+pcap-doctor flows CAPTURE [--top N] [-f EXPR]
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```

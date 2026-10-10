@@ -18,18 +18,29 @@ from ._console import console, tshark_errors
 def flows(
     pcap: Path = typer.Argument(..., exists=True, readable=True),
     top: int = typer.Option(30, "--top", help="how many flows to print"),
+    where: str = typer.Option(None, "--filter", "-f", help='query expression, e.g. \'app_proto == "tls" and bytes > 1000\''),
 ) -> None:
     """Print the top conversations by volume."""
     with tshark_errors():
         index = IndexBuilder(TsharkRunner(pcap)).build()
-    table = Table(title=f"{len(index.flows)} flows in {pcap.name}")
+    shown = sorted(index.flows.values(), key=lambda f: -f.bytes)
+    if where:
+        from ..query import QueryError, filter_rows, rows_of
+
+        try:
+            keep = {r["key"] for r in filter_rows(rows_of(index, "flows"), where)}
+        except QueryError as exc:
+            typer.echo(f"error: {exc}", err=True)
+            raise typer.Exit(code=2) from exc
+        shown = [f for f in shown if f.key in keep]
+    table = Table(title=f"{len(shown)} flows in {pcap.name}")
     table.add_column("conversation", no_wrap=True)
     table.add_column("app", no_wrap=True)
     table.add_column("packets", justify="right")
     table.add_column("bytes", justify="right")
     table.add_column("duration", justify="right")
     table.add_column("crypto")
-    for flow in sorted(index.flows.values(), key=lambda f: -f.bytes)[:top]:
+    for flow in shown[:top]:
         table.add_row(
             f"{flow.endpoint_a}:{flow.port_a} <-> {flow.endpoint_b}:{flow.port_b}",
             flow.app_proto,
