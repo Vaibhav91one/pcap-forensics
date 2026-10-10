@@ -9,12 +9,12 @@ import subprocess
 
 import pytest
 
-import pcapforensics.cli.keys as keys
-import pcapforensics.data_ciphers as data_ciphers
-from pcapforensics.certificates import openssl_path
-from pcapforensics.cli import app
-from pcapforensics.cli.keys import scan
-from pcapforensics.data_ciphers import MIN_EC_CURVE_BITS
+import pcap_doctor.cli.keys as keys
+import pcap_doctor.data_ciphers as data_ciphers
+from pcap_doctor.certificates import openssl_path
+from pcap_doctor.cli import app
+from pcap_doctor.cli.keys import scan
+from pcap_doctor.data_ciphers import MIN_EC_CURVE_BITS
 
 needs_openssl = pytest.mark.skipif(openssl_path() is None, reason="needs openssl")
 
@@ -962,7 +962,7 @@ def test_a_markup_shaped_file_name_is_displayed_verbatim(cli_runner, tmp_path) -
 
 def _markup_tree(tmp_path) -> None:
     """A tree whose only file name is rich markup, so KEY_EXT cannot skip it and hide the bug."""
-    from pcapforensics.certificates import openssl_path
+    from pcap_doctor.certificates import openssl_path
 
     openssl = openssl_path()
     if openssl is None:

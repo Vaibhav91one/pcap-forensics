@@ -41,7 +41,7 @@ ROOT = Path(__file__).resolve().parent.parent
 CLI = ROOT / ".venv" / "bin" / "pcap-doctor"
 BLOBS = ROOT / "corpus" / "blobs"
 REPORTS = ROOT / "corpus" / "reports"
-RULE_DOCS = ROOT / "src" / "pcapforensics" / "rule_docs"
+RULE_DOCS = ROOT / "src" / "pcap_doctor" / "rule_docs"
 
 def _squash(value: Any) -> str:
     """Collapse whitespace.
@@ -225,7 +225,7 @@ def check_sarif_and_json(capture: Path, workdir: Path) -> list[str]:
 
 
 def check_rules_catalog() -> list[str]:
-    from pcapforensics.rules import RULES
+    from pcap_doctor.rules import RULES
 
     defects: list[str] = []
     for code in sorted(RULES):

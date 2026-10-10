@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pcapforensics.cli import app
-from pcapforensics.cli.install import BEGIN, END, guide
+from pcap_doctor.cli import app
+from pcap_doctor.cli.install import BEGIN, END, guide
 
 SKILL = ".claude/skills/pcap-doctor/SKILL.md"
 RULE = ".cursor/rules/pcap-doctor.mdc"

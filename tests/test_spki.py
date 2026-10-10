@@ -8,7 +8,7 @@ import subprocess
 
 import pytest
 
-from pcapforensics.certificates import inspect_der, openssl_path, spki_sha256
+from pcap_doctor.certificates import inspect_der, openssl_path, spki_sha256
 
 needs_openssl = pytest.mark.skipif(openssl_path() is None, reason="needs openssl")
 

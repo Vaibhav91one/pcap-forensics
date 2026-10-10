@@ -10,9 +10,9 @@ import sys
 
 import pytest
 
-from pcapforensics.clipboard import OSC52, commands, copy, encode_for, osc52
-from pcapforensics.models import CaptureInfo, Evidence, Finding, Report, Stats
-from pcapforensics.output import findings_report
+from pcap_doctor.clipboard import OSC52, commands, copy, encode_for, osc52
+from pcap_doctor.models import CaptureInfo, Evidence, Finding, Report, Stats
+from pcap_doctor.output import findings_report
 
 ALL = lambda name: f"/usr/bin/{name}"  # noqa: E731 - every tool "installed"
 NONE = lambda name: None  # noqa: E731

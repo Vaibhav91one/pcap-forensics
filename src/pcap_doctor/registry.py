@@ -1,7 +1,7 @@
 """Detector discovery.
 
 New detectors are picked up automatically from
-``pcapforensics.detectors`` -- no import list to maintain, and therefore no
+``pcap_doctor.detectors`` -- no import list to maintain, and therefore no
 merge conflicts when several subagents add detectors in parallel.
 """
 
@@ -18,12 +18,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def all_detectors() -> list[Detector]:
-    package = importlib.import_module("pcapforensics.detectors")
+    package = importlib.import_module("pcap_doctor.detectors")
     found: list[Detector] = []
     for info in sorted(pkgutil.iter_modules(package.__path__), key=lambda m: m.name):
         if info.name.startswith("_"):
             continue
-        module = importlib.import_module(f"pcapforensics.detectors.{info.name}")
+        module = importlib.import_module(f"pcap_doctor.detectors.{info.name}")
         for attr in vars(module).values():
             if (
                 isinstance(attr, type)

@@ -6,10 +6,10 @@ import json
 from json import dumps as json_dumps
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.baseline import Baseline, finding_fingerprint, load_baseline, new_since, version_drift
-from pcapforensics.cli import app
-from pcapforensics.models import CaptureInfo, Finding, Report, Stats
-from pcapforensics.output import json_envelope
+from pcap_doctor.baseline import Baseline, finding_fingerprint, load_baseline, new_since, version_drift
+from pcap_doctor.cli import app
+from pcap_doctor.models import CaptureInfo, Finding, Report, Stats
+from pcap_doctor.output import json_envelope
 
 
 def _finding(code: str) -> Finding:
@@ -57,7 +57,7 @@ def test_bad_baseline_exits_2_before_tshark(cli_runner, tmp_path, monkeypatch) -
     def boom(*_a, **_k):
         raise AssertionError("analyze must not run")
 
-    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    monkeypatch.setattr("pcap_doctor.cli.analyze.analyze", boom)
     bad = tmp_path / "bad.json"
     bad.write_text("{not json")
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap"), "--baseline", str(bad)])

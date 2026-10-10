@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pcapforensics.keymaterial import KeyMaterial, collect, private_keys_under
+from pcap_doctor.keymaterial import KeyMaterial, collect, private_keys_under
 
 
 def test_empty_material() -> None:

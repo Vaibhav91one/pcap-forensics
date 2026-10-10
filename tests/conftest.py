@@ -35,7 +35,7 @@ def cache_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
 @pytest.fixture(scope="session")
 def analyze_capture(cache_dir: Path):
     """Run the full pipeline once per capture and memoise the result."""
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     memo: dict[str, object] = {}
 

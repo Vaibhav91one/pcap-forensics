@@ -7,12 +7,12 @@ import subprocess
 import sys
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli.mcp import BY_NAME, TOOLS, argv_of
+from pcap_doctor.cli.mcp import BY_NAME, TOOLS, argv_of
 
 
 def _session(*messages: dict) -> list[dict]:
     proc = subprocess.run(
-        [sys.executable, "-m", "pcapforensics.cli", "mcp"], input="\n".join(map(json.dumps, messages)) + "\n",
+        [sys.executable, "-m", "pcap_doctor.cli", "mcp"], input="\n".join(map(json.dumps, messages)) + "\n",
         capture_output=True, text=True, timeout=300, check=False,
     )
     assert proc.returncode == 0, proc.stderr
@@ -49,7 +49,7 @@ def test_argv_passthrough_and_validation() -> None:
 def test_analyze_is_byte_identical_to_the_cli(tmp_path, cache_dir) -> None:
     pcap = str(FIXTURES / "weak_tls.pcap")
     cli = subprocess.run(
-        [sys.executable, "-m", "pcapforensics.cli", "analyze", pcap, "--json", "--no-handoff", "--fail-on", "high",
+        [sys.executable, "-m", "pcap_doctor.cli", "analyze", pcap, "--json", "--no-handoff", "--fail-on", "high",
          "-o", str(tmp_path / "r")],
         capture_output=True, text=True, timeout=300, check=False,
     )

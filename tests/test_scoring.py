@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pcapforensics.models import Finding
-from pcapforensics.scoring import score
+from pcap_doctor.models import Finding
+from pcap_doctor.scoring import score
 
 
 def _finding(code: str, severity: str = "high", confidence: str = "high", scope: str = "s") -> Finding:

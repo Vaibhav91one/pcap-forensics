@@ -5,7 +5,7 @@ from __future__ import annotations
 import tomllib
 from pathlib import Path
 
-from pcapforensics.cli import app
+from pcap_doctor.cli import app
 
 PYPROJECT = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml").read_text())
 
@@ -13,7 +13,7 @@ PYPROJECT = tomllib.loads((Path(__file__).resolve().parents[1] / "pyproject.toml
 def test_distribution_is_pcap_doctor_with_both_commands() -> None:
     assert PYPROJECT["project"]["name"] == "pcap-doctor"
     scripts = PYPROJECT["project"]["scripts"]
-    assert scripts["pcap-doctor"] == scripts["pf"] == "pcapforensics.cli:app"
+    assert scripts["pcap-doctor"] == scripts["pf"] == "pcap_doctor.cli:app"
 
 
 def test_version_flag_prints_the_package_version(cli_runner) -> None:

@@ -73,7 +73,7 @@ in the corpus — and ``tshark`` puts every one of those values on a ClientHello
 It does not suppress, so the corpus count stays at 26. That is the honest number, not an oversight:
 the post-handshake rule in the rule doc is not implementable until ``TlsSession`` records a version per
 record rather than per session. That is a schema change, core-owned, filed as
-[#157](https://github.com/Vaibhav91one/pcap-forensics/issues/157).
+[#157](https://github.com/doctor-labs/pcap-doctor/issues/157).
 
 It also does not fire only when ``supported_versions`` is absent. That field is empty on every TLS 1.2
 ClientHello for protocol reasons, so the rule would keep most of the 26 while dropping nothing

@@ -8,10 +8,10 @@ from pathlib import Path
 import pytest
 
 from conftest import CAPTURES, FIXTURES, codes, requires_tshark
-from pcapforensics.registry import all_detectors
-from pcapforensics.rules import CATEGORIES, RULES, category_of
+from pcap_doctor.registry import all_detectors
+from pcap_doctor.rules import CATEGORIES, RULES, category_of
 
-DETECTORS = Path(__file__).resolve().parents[1] / "src" / "pcapforensics" / "detectors"
+DETECTORS = Path(__file__).resolve().parents[1] / "src" / "pcap_doctor" / "detectors"
 CODE_LITERAL = re.compile(r'"((?:TLS|HTTP|CLEARTEXT|DNS|QUIC|RTP|SDP|SERVICE|SIP|SSH|SYN|BEACONING)_[A-Z0-9_]+)"')
 #: Built with an f-string in dns_quic_ssh.py (``SSH_WEAK_{kind.upper()}``), so no literal exists.
 SSH_WEAK = {"SSH_WEAK_KEX", "SSH_WEAK_CIPHER", "SSH_WEAK_MAC", "SSH_WEAK_HOSTKEY"}

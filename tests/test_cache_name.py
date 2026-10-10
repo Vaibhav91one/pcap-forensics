@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pcapforensics.tshark import cache_dir
+from pcap_doctor.tshark import cache_dir
 
 
 def test_cache_dir_precedence(tmp_path, monkeypatch) -> None:

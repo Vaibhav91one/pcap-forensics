@@ -15,7 +15,7 @@ END = "<!-- pcap-doctor:end -->"
 
 
 def guide() -> str:
-    return (files("pcapforensics") / "templates" / "agent-guide.md").read_text(encoding="utf-8")
+    return (files("pcap_doctor") / "templates" / "agent-guide.md").read_text(encoding="utf-8")
 
 
 def _skill() -> str:

@@ -5,8 +5,8 @@ from __future__ import annotations
 from rich.console import Console
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.handoff import (
+from pcap_doctor.cli import app
+from pcap_doctor.handoff import (
     AGENT_ENV,
     AGENTS,
     detect_agents,
@@ -16,8 +16,8 @@ from pcapforensics.handoff import (
     offer,
     safe_mode,
 )
-from pcapforensics.models import CaptureInfo, Finding, Report, Stats
-from pcapforensics.prompts import FENCE_LABEL
+from pcap_doctor.models import CaptureInfo, Finding, Report, Stats
+from pcap_doctor.prompts import FENCE_LABEL
 
 CLAUDE, CODEX, CURSOR = AGENTS
 NO_AGENT_ENV: dict[str, str | None] = {name: None for name in AGENT_ENV}

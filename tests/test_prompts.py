@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from importlib.resources import files
 
-from pcapforensics.models import CaptureInfo, Evidence, Finding, Report, Stats
-from pcapforensics.prompts import FENCE_LABEL, HEADINGS, MAX_VALUE, build_prompt
-from pcapforensics.rules import RULES
+from pcap_doctor.models import CaptureInfo, Evidence, Finding, Report, Stats
+from pcap_doctor.prompts import FENCE_LABEL, HEADINGS, MAX_VALUE, build_prompt
+from pcap_doctor.rules import RULES
 
-DOCS = files("pcapforensics") / "rule_docs"
+DOCS = files("pcap_doctor") / "rule_docs"
 
 
 def _report() -> Report:

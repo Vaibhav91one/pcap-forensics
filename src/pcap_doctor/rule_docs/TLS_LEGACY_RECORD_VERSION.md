@@ -18,7 +18,7 @@ The detector cannot make that distinction. ``TlsSession.record_versions`` is a d
 version names — no frame number, no record content type — so a sentinel ClientHello and a
 downgraded application record leave an identical index. That is why the confidence is ``medium``
 rather than ``high``: the capture cannot say which record carried the value. Tracked as
-[#157](https://github.com/Vaibhav91one/pcap-forensics/issues/157).
+[#157](https://github.com/doctor-labs/pcap-doctor/issues/157).
 
 ## How to fix
 - Nothing, if the legacy version appears only on handshake records. That is the value the protocol

@@ -116,7 +116,7 @@ def test_chacha_capture_matches_tshark_suites(analyze_capture) -> None:
 
 
 def _suite_name(cipher: int | None) -> str:
-    from pcapforensics.data_ciphers import name_of
+    from pcap_doctor.data_ciphers import name_of
 
     return name_of(cipher)
 
@@ -284,7 +284,7 @@ def test_expiry_is_judged_against_the_capture_window(analyze_capture) -> None:
 
 
 def test_weak_key_policy_per_algorithm() -> None:
-    from pcapforensics.detectors.tls_cipher import weak_key_verdict
+    from pcap_doctor.detectors.tls_cipher import weak_key_verdict
 
     # RSA thresholds
     assert weak_key_verdict("rsaEncryption", 512) is not None

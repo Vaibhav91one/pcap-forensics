@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.baseline import finding_fingerprint
-from pcapforensics.cli import app
-from pcapforensics.models import CaptureInfo, Evidence, Finding, Report, Stats
-from pcapforensics.output import sarif
+from pcap_doctor.baseline import finding_fingerprint
+from pcap_doctor.cli import app
+from pcap_doctor.models import CaptureInfo, Evidence, Finding, Report, Stats
+from pcap_doctor.output import sarif
 
 
 def _finding(code: str, severity: str, frames: tuple[int, ...] = ()) -> Finding:

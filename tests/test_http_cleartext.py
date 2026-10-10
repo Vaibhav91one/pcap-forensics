@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 
 from conftest import codes, fixture, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.detectors.transport_exposure import _looks_like_firmware, _path_only
-from pcapforensics.index import download_name
+from pcap_doctor.cli import app
+from pcap_doctor.detectors.transport_exposure import _looks_like_firmware, _path_only
+from pcap_doctor.index import download_name
 
 
 @pytest.mark.parametrize(

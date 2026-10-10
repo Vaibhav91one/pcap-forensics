@@ -1,6 +1,6 @@
 """``mcp``: serve the CLI as MCP tools over stdio (newline-delimited JSON-RPC 2.0, stdlib only).
 
-Every tool runs the real CLI in a subprocess (``python -m pcapforensics.cli ...``) and returns its stdout
+Every tool runs the real CLI in a subprocess (``python -m pcap_doctor.cli ...``) and returns its stdout
 unchanged, so ``analyze`` is byte-identical to ``pcap-doctor analyze --json`` for the same arguments
 (doctor-contract section 7). A tool is one row of ``TOOLS``; a new CLI command needs one row, not a handler.
 """
@@ -165,7 +165,7 @@ def call(name: str, args: dict[str, Any]) -> dict[str, Any]:
     try:
         argv = argv_of(tool, args)
         proc = subprocess.run(
-            [sys.executable, "-m", "pcapforensics.cli", *argv], capture_output=True, text=True, timeout=TIMEOUT, check=False
+            [sys.executable, "-m", "pcap_doctor.cli", *argv], capture_output=True, text=True, timeout=TIMEOUT, check=False
         )
     except (ValueError, subprocess.TimeoutExpired) as exc:
         return {"content": [{"type": "text", "text": str(exc)}], "isError": True}

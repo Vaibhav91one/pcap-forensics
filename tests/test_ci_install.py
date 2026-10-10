@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
+from pcap_doctor.cli import app
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "pcap-doctor-action.sh"
@@ -24,7 +24,7 @@ def test_install_writes_the_workflow_and_keeps_edits_unless_forced(cli_runner, t
     path = tmp_path / ".github" / "workflows" / "pcap-doctor.yml"
     text = path.read_text()
     assert "pull-requests: write" in text and "security-events: write" in text
-    assert f"uses: Vaibhav91one/pcap-forensics@v{version('pcap-doctor')}" in text
+    assert f"uses: doctor-labs/pcap-doctor@v{version('pcap-doctor')}" in text
     assert 'captures: "**/*.pcap **/*.pcapng"' in text and "fail-on: high" in text
     assert "__" not in text  # every placeholder filled
 
@@ -64,7 +64,7 @@ def _git(repo: Path, *args: str) -> str:
 
 def _action(repo: Path, base: str) -> subprocess.CompletedProcess[str]:
     env = {**os.environ, "CAPTURES": "caps/*.pcap", "BASE_SHA": base, "OUT": str(repo / "out"),
-           "PCAP_DOCTOR": f"{sys.executable} -m pcapforensics.cli", "GITHUB_STEP_SUMMARY": "", "GITHUB_OUTPUT": ""}
+           "PCAP_DOCTOR": f"{sys.executable} -m pcap_doctor.cli", "GITHUB_STEP_SUMMARY": "", "GITHUB_OUTPUT": ""}
     return subprocess.run(["bash", str(SCRIPT)], cwd=repo, env=env, capture_output=True, text=True, check=False)
 
 

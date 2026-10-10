@@ -8,8 +8,8 @@ import re
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.config import ConfigError, load, parse
+from pcap_doctor.cli import app
+from pcap_doctor.config import ConfigError, load, parse
 
 OTA = ("Crypto", "Credentials", "Cleartext", "DNS")
 
@@ -44,7 +44,7 @@ def test_unknown_profile_exits_2_before_tshark(cli_runner, monkeypatch) -> None:
     def boom(*_a, **_k):
         raise AssertionError("analyze must not run")
 
-    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    monkeypatch.setattr("pcap_doctor.cli.analyze.analyze", boom)
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "sip_rtp.pcap"), "--profile", "nope"])
     assert result.exit_code == 2
 
