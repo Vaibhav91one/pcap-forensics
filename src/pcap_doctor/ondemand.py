@@ -15,15 +15,15 @@ from .tshark import TAB, TsharkRunError, _supported_prefs, tshark_path
 Rows = list[list[str]]
 
 
-def run_text(pcap: Path, args: list[str], *, timeout: int = 600, decode: bool = True) -> str:
-    """Run ``tshark -r pcap -n <args>`` and return stdout; a non-zero exit is a ``TsharkRunError``."""
+def run_text(pcap: Path, args: list[str], *, timeout: int = 600, decode: bool = True, check: bool = True) -> str:
+    """Run ``tshark -r pcap -n <args>`` and return stdout; a non-zero exit is a ``TsharkRunError`` unless ``check=False``."""
     cmd = [tshark_path(), "-r", str(pcap), "-n"]
     if decode:
         for pref in _supported_prefs():
             cmd += ["-o", f"{pref}:TRUE"]
     cmd += args
     proc = subprocess.run(cmd, capture_output=True, text=True, errors="replace", check=False, timeout=timeout)
-    if proc.returncode != 0:
+    if check and proc.returncode != 0:
         raise TsharkRunError(f"tshark failed (exit {proc.returncode}):\n{proc.stderr.strip()[:2000]}\ncmd: {' '.join(cmd)}")
     return proc.stdout
 

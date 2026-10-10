@@ -72,6 +72,7 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `query CAPTURE EXPR` | filter flows, hosts, TLS/HTTP/DNS/SSH rows or findings with one expression (`flows -f` too); `packets -Y` for raw frames |
 | `logs CAPTURE` | Zeek-style per-protocol logs (conn, dns, http, ssl, x509, files, notice, weird, dhcp, ftp, smtp, ssh, smb) as TSV or JSON; see [docs/zeek-logs.md](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/zeek-logs.md) |
 | `eve CAPTURE` | Suricata EVE-compatible JSON events (alert, flow, dns, http, tls, fileinfo), one per line, for SIEM ingest |
+| `extract CAPTURE` | write the files a capture carries (HTTP, FTP, SMB, TFTP, SMTP/IMAP/POP3 mail and attachments) to a directory with a manifest |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -708,6 +709,7 @@ pcap-doctor flows CAPTURE [--top N] [-f EXPR]
 pcap-doctor logs CAPTURE [-o DIR] [--format tsv|json|both] [--only conn,dns,...]   # Zeek-style logs
 pcap-doctor eve CAPTURE [-o FILE] [--types alert,flow,dns,http,tls,fileinfo]   # Suricata EVE JSON
 pcap-doctor analyze CAPTURE --signatures FILE.rules|FILE.sig [--sig-var HOME_NET=10.0.0.0/8]   # your own detections
+pcap-doctor extract CAPTURE [-o DIR] [--protocols http,ftp-data,smb,tftp,dicom,smtp,pop3,imap] [--tls-key KEY | --keylog FILE]
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```

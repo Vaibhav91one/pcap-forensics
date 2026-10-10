@@ -297,3 +297,132 @@ def fixture_logs_mix() -> bytes:
 def write_all(out: Path) -> None:  # pragma: no cover - used by make_fixtures
     for name, builder in FIXTURES.items():
         (out / name).write_bytes(builder())
+
+
+# -- files_mix.pcap: one file delivered over every protocol the extractor understands (#202, #203) ------------------
+FILE_PAYLOADS = {
+    "http": b"MZ\x90\x00" + b"PF-HTTP-PAYLOAD-" * 8,
+    "ftp": b"%PDF-1.4\n" + b"PF-FTP-PAYLOAD-" * 8,
+    "tftp": b"\x7fELF" + b"PF-TFTP-PAYLOAD-" * 4,
+    "smb": b"PK\x03\x04" + b"PF-SMB-PAYLOAD-" * 8,
+    "mail": b"\x89PNG\r\n\x1a\n" + b"PF-MAIL-PAYLOAD-" * 8,
+}
+
+
+def _mime_mail() -> bytes:
+    import base64
+
+    body = base64.encodebytes(FILE_PAYLOADS["mail"])
+    return (b"From: alice@example.com\r\nTo: bob@example.org\r\nSubject: logo\r\nMIME-Version: 1.0\r\n"
+            b'Content-Type: multipart/mixed; boundary="PFBOUND"\r\n\r\n--PFBOUND\r\nContent-Type: text/plain\r\n\r\n'
+            b"see logo\r\n--PFBOUND\r\nContent-Type: image/png; name=\"logo.png\"\r\n"
+            b'Content-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename="logo.png"\r\n\r\n'
+            + body.replace(b"\n", b"\r\n") + b"--PFBOUND--\r\n")
+
+
+@fixture("files_mix.pcap")
+def fixture_files_mix() -> bytes:
+    w = Wire(start=1_700_200_000.0)
+    c = "10.1.0.5"
+    # HTTP download
+    t = Tcp(w, c, "10.1.0.80", 45000, 80).open()
+    t.send(True, b"GET /dl/tool.exe HTTP/1.1\r\nHost: files.example\r\n\r\n")
+    body = FILE_PAYLOADS["http"]
+    t.send(False, b"HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: "
+           + str(len(body)).encode() + b"\r\n\r\n" + body)
+    t.close()
+    # FTP passive RETR: control on 21, data on 51210
+    t = Tcp(w, c, "10.1.0.21", 45100, 21).open()
+    t.send(False, b"220 ftp ready\r\n")
+    t.send(True, b"USER anon\r\n")
+    t.send(False, b"331 pw\r\n")
+    t.send(True, b"PASS x\r\n")
+    t.send(False, b"230 ok\r\n")
+    t.send(True, b"PASV\r\n")
+    t.send(False, b"227 Entering Passive Mode (10,1,0,21,200,10).\r\n")
+    t.send(True, b"RETR report.pdf\r\n")
+    d = Tcp(w, c, "10.1.0.21", 45101, 51210, isn_c=7000, isn_s=9000).open()
+    t.send(False, b"150 Opening data connection\r\n")
+    d.send(False, FILE_PAYLOADS["ftp"])
+    d.close()
+    t.send(False, b"226 done\r\n")
+    t.close()
+    # TFTP read
+    srv = "10.1.0.69"
+    w.add(udp_frame(c, srv, 50000, 69, b"\x00\x01fw.bin\x00octet\x00"))
+    data = FILE_PAYLOADS["tftp"]
+    w.add(udp_frame(srv, c, 40001, 50000, b"\x00\x03\x00\x01" + data))
+    w.add(udp_frame(c, srv, 50000, 40001, b"\x00\x04\x00\x01"))
+    # SMB2 write of a file
+    t = Tcp(w, c, "10.1.0.30", 45200, 445).open()
+    t.send(True, smb2_negotiate_request())
+    t.send(False, smb2_negotiate_response())
+    t.send(True, smb2_session_setup(ntlm_negotiate(), msg_id=1))
+    t.send(False, smb2_session_setup(ntlm_challenge(bytes(8)), response=True, msg_id=1, session=0x100, status=0xC0000016))
+    t.send(True, smb2_session_setup(ntlm_authenticate("bob", "CORP", "PF", bytes(range(16)) + b"\x01\x01" + bytes(30)), msg_id=2, session=0x100))
+    t.send(False, smb2_session_setup(b"", response=True, msg_id=2, session=0x100))
+    t.send(True, smb2_tree_connect("\\\\10.1.0.30\\share"))
+    t.send(False, smb2_tree_connect_response())
+    t.send(True, smb2_create("docs\\archive.zip"))
+    t.send(False, smb2_create_response())
+    t.send(True, smb2_write(FILE_PAYLOADS["smb"]))
+    t.send(False, smb2_write_response(len(FILE_PAYLOADS["smb"])))
+    t.send(True, smb2_close())
+    t.send(False, smb2_close_response())
+    t.close()
+    # SMTP with a MIME attachment
+    t = Tcp(w, c, "10.1.0.25", 45300, 25).open()
+    t.send(False, b"220 mx ESMTP\r\n")
+    t.send(True, b"EHLO pf\r\n")
+    t.send(False, b"250 mx\r\n")
+    t.send(True, b"MAIL FROM:<alice@example.com>\r\n")
+    t.send(False, b"250 OK\r\n")
+    t.send(True, b"RCPT TO:<bob@example.org>\r\n")
+    t.send(False, b"250 OK\r\n")
+    t.send(True, b"DATA\r\n")
+    t.send(False, b"354 go\r\n")
+    t.send(True, _mime_mail() + b".\r\n")
+    t.send(False, b"250 queued\r\n")
+    t.send(True, b"QUIT\r\n")
+    t.close()
+    # POP3 RETR of the same mail
+    t = Tcp(w, c, "10.1.0.110", 45400, 110).open()
+    t.send(False, b"+OK POP3 ready\r\n")
+    t.send(True, b"USER bob\r\n")
+    t.send(False, b"+OK\r\n")
+    t.send(True, b"PASS secret\r\n")
+    t.send(False, b"+OK logged in\r\n")
+    t.send(True, b"RETR 1\r\n")
+    t.send(False, b"+OK message follows\r\n" + _mime_mail().replace(b"logo.png", b"pop-logo.png") + b".\r\n")
+    t.send(True, b"QUIT\r\n")
+    t.close()
+    # IMAP FETCH of the mail with a literal
+    t = Tcp(w, c, "10.1.0.143", 45500, 143).open()
+    msg = _mime_mail().replace(b"logo.png", b"imap-logo.png")
+    t.send(False, b"* OK IMAP ready\r\n")
+    t.send(True, b"a1 LOGIN bob secret\r\n")
+    t.send(False, b"a1 OK logged in\r\n")
+    t.send(True, b"a2 FETCH 1 BODY[]\r\n")
+    t.send(False, b"* 1 FETCH (BODY[] {" + str(len(msg)).encode() + b"}\r\n" + msg + b")\r\na2 OK done\r\n")
+    t.send(True, b"a3 LOGOUT\r\n")
+    t.close()
+    return w.write()
+
+
+def smb2_write(data: bytes, *, tree: int = 1, msg_id: int = 5, session: int = 0x100, fid: bytes = b"\x01" * 16) -> bytes:
+    body = struct.pack("<HHIQ16sIIHHI", 49, 112, len(data), 0, fid, 0, 0, 0, 0, 0) + data
+    return smb2_message(9, body, msg_id=msg_id, tree=tree, session=session)
+
+
+def smb2_write_response(count: int, *, tree: int = 1, msg_id: int = 5, session: int = 0x100) -> bytes:
+    return smb2_message(9, struct.pack("<HHIIHH", 17, 0, count, 0, 0, 0) + b"\x00", response=True, msg_id=msg_id,
+                        tree=tree, session=session)
+
+
+def smb2_close(*, tree: int = 1, msg_id: int = 6, session: int = 0x100, fid: bytes = b"\x01" * 16) -> bytes:
+    return smb2_message(6, struct.pack("<HHI16s", 24, 0, 0, fid), msg_id=msg_id, tree=tree, session=session)
+
+
+def smb2_close_response(*, tree: int = 1, msg_id: int = 6, session: int = 0x100) -> bytes:
+    return smb2_message(6, struct.pack("<HHIQQQQQQI", 60, 0, 0, 0, 0, 0, 0, 0, 0, 0x80), response=True, msg_id=msg_id,
+                        tree=tree, session=session)
