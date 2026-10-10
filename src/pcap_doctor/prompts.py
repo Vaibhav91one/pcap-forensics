@@ -18,7 +18,7 @@ _CONTROL = re.compile(r"[\x00-\x1f\x7f-\x9f\u200b-\u200f\u2028-\u202e\u2060-\u20
 
 def rule_text(code: str) -> str:
     """The rule's markdown explanation; a one-line stub for a code with no file."""
-    doc = files("pcapforensics") / "rule_docs" / f"{code}.md"
+    doc = files("pcap_doctor") / "rule_docs" / f"{code}.md"
     return doc.read_text(encoding="utf-8").strip() if doc.is_file() else f"No rule text for {code}."
 
 

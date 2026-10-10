@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate ``src/pcapforensics/data/cipher_suites.json``.
+"""Generate ``src/pcap_doctor/data/cipher_suites.json``.
 
 Design decision: **no hand-typed suite table.** Names and ids come from
 ``data/cipher_names.tsv``, which is extracted from tshark's own value table
@@ -41,7 +41,7 @@ import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "src" / "pcapforensics" / "data"
+DATA_DIR = ROOT / "src" / "pcap_doctor" / "data"
 NAMES_TSV = DATA_DIR / "cipher_names.tsv"
 OUT = DATA_DIR / "cipher_suites.json"
 

@@ -5,7 +5,7 @@
    finding codes in tests/fixtures/expected_codes.json: the same findings on every OS.
 2. Every command a person runs works on this OS with its output piped, as in CI or ``> file``: no traceback,
    no encoding crash (Windows consoles and pipes are not UTF-8 by default).
-3. A real clipboard round trip through ``pcapforensics.clipboard.copy``, read back with the OS's own tool.
+3. A real clipboard round trip through ``pcap_doctor.clipboard.copy``, read back with the OS's own tool.
 
 Usage: python scripts/portability_check.py [--no-clipboard]
 """
@@ -85,7 +85,7 @@ def check_commands() -> list[str]:
 
 
 def check_clipboard() -> list[str]:
-    from pcapforensics.clipboard import OSC52, copy
+    from pcap_doctor.clipboard import OSC52, copy
 
     how = copy(TEXT, terminal=lambda _data: False)  # a real tool only: OSC 52 cannot be read back
     if not how or how == OSC52:

@@ -160,7 +160,7 @@ def test_telnet_login_password_is_reported_and_never_shown(analyze_capture) -> N
 
 def test_strip_telnet_iac() -> None:
     """IAC option and sub-negotiation sequences are removed; IAC IAC is a literal 0xFF (issue #37)."""
-    from pcapforensics.index import strip_telnet_iac
+    from pcap_doctor.index import strip_telnet_iac
 
     assert strip_telnet_iac(b"\xff\xfb\x01ab\xff\xffc\xff\xfa\x18\x01\xff\xf0d") == b"ab\xffcd"
 
@@ -176,9 +176,9 @@ def test_external_resolvers_are_found_over_ipv4_and_ipv6(analyze_capture) -> Non
 
 def test_dns_tunnel_is_attributed_to_the_querying_host() -> None:
     """The querier is the side not on port 53, whatever the address order; responses are not queries (issue #18)."""
-    from pcapforensics.detectors.dns_quic_ssh import DnsQuicSshDetector
-    from pcapforensics.index import CaptureIndex
-    from pcapforensics.models import CaptureInfo, DnsQuery, Flow, endpoints_of, flow_key
+    from pcap_doctor.detectors.dns_quic_ssh import DnsQuicSshDetector
+    from pcap_doctor.index import CaptureIndex
+    from pcap_doctor.models import CaptureInfo, DnsQuery, Flow, endpoints_of, flow_key
 
     info = CaptureInfo(
         path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
@@ -239,9 +239,9 @@ def test_syn_scan_shape(analyze_capture) -> None:
 
 def test_chacha20_is_not_a_weak_ssh_cipher() -> None:
     """ChaCha20-Poly1305 is a modern AEAD; only the CBC/RC4-era ciphers are weak (issue #2)."""
-    from pcapforensics.detectors.dns_quic_ssh import WEAK_SSH_CIPHERS, DnsQuicSshDetector
-    from pcapforensics.index import CaptureIndex
-    from pcapforensics.models import CaptureInfo, Flow, SshSession, endpoints_of, flow_key
+    from pcap_doctor.detectors.dns_quic_ssh import WEAK_SSH_CIPHERS, DnsQuicSshDetector
+    from pcap_doctor.index import CaptureIndex
+    from pcap_doctor.models import CaptureInfo, Flow, SshSession, endpoints_of, flow_key
 
     assert "chacha20-poly1305@openssh.com" not in WEAK_SSH_CIPHERS
     info = CaptureInfo(
@@ -307,7 +307,7 @@ def test_report_json_round_trips(analyze_capture) -> None:
 
 
 def test_finding_ids_are_stable_across_runs(analyze_capture) -> None:
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     pcap = fixture("weak_tls.pcap")
     first = {f.id for f in analyze(pcap, analyze_capture(pcap).outdir / "a").report.findings}
@@ -327,7 +327,7 @@ def test_mermaid_blocks_are_balanced(analyze_capture) -> None:
 
 def test_empty_media_timeline_is_valid_mermaid() -> None:
     """A gantt task needs a start and a duration; the empty case must not emit a dateless task (issue #43)."""
-    from pcapforensics.render.mermaid import media_timeline
+    from pcap_doctor.render.mermaid import media_timeline
 
     block = media_timeline([])
     assert "gantt" not in block
@@ -342,7 +342,7 @@ def test_index_artifact_is_the_navigation_page(analyze_capture) -> None:
 
 
 def test_min_severity_filter(analyze_capture) -> None:
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     pcap = fixture("weak_tls.pcap")
     everything = analyze(pcap, analyze_capture(pcap).outdir / "all")
@@ -355,8 +355,8 @@ def test_min_severity_filter(analyze_capture) -> None:
 
 def test_detector_failure_is_contained(analyze_capture, monkeypatch) -> None:
     """A broken detector must not take the whole run down."""
-    from pcapforensics.pipeline import analyze
-    from pcapforensics.registry import all_detectors
+    from pcap_doctor.pipeline import analyze
+    from pcap_doctor.registry import all_detectors
 
     original = all_detectors()
 
@@ -369,7 +369,7 @@ def test_detector_failure_is_contained(analyze_capture, monkeypatch) -> None:
         def detect(self, index):
             raise RuntimeError("boom")
 
-    monkeypatch.setattr("pcapforensics.pipeline.enabled_detectors", lambda include=(): [*original, Exploding()])
+    monkeypatch.setattr("pcap_doctor.pipeline.enabled_detectors", lambda include=(): [*original, Exploding()])
     pcap = fixture("weak_tls.pcap")
     result = analyze(pcap, analyze_capture(pcap).outdir / "boom")
     assert any("exploding" in note for note in result.report.notes)
@@ -394,7 +394,7 @@ def test_markdown_tables_are_well_formed(analyze_capture, artifact: str) -> None
 def test_empty_capture_does_not_crash(analyze_capture, tmp_path: Path) -> None:
     import struct
 
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     empty = tmp_path / "empty.pcap"
     empty.write_bytes(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1))
@@ -436,9 +436,9 @@ def test_every_reference_is_well_formed(analyze_capture, pcap) -> None:
 
 def test_odd_port_reports_only_the_likely_server_side() -> None:
     """Both ports high: only the lower one is reported, at low confidence (issue #16)."""
-    from pcapforensics.detectors.transport_exposure import TransportExposureDetector
-    from pcapforensics.index import CaptureIndex
-    from pcapforensics.models import CaptureInfo, Flow, endpoints_of, flow_key
+    from pcap_doctor.detectors.transport_exposure import TransportExposureDetector
+    from pcap_doctor.index import CaptureIndex
+    from pcap_doctor.models import CaptureInfo, Flow, endpoints_of, flow_key
 
     info = CaptureInfo(
         path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
@@ -469,9 +469,9 @@ def test_tftp_ephemeral_ports_are_not_an_odd_port_service(analyze_capture) -> No
 
 def test_odd_port_ignores_flows_whose_server_port_is_well_known() -> None:
     """A standard port on either side means the service is not on an odd port (issue #16)."""
-    from pcapforensics.detectors.transport_exposure import TransportExposureDetector
-    from pcapforensics.index import CaptureIndex
-    from pcapforensics.models import CaptureInfo, Flow, endpoints_of, flow_key
+    from pcap_doctor.detectors.transport_exposure import TransportExposureDetector
+    from pcap_doctor.index import CaptureIndex
+    from pcap_doctor.models import CaptureInfo, Flow, endpoints_of, flow_key
 
     info = CaptureInfo(
         path="synthetic", name="synthetic", sha256="0" * 64, size_bytes=0,
@@ -499,7 +499,7 @@ def test_beaconing_needs_regular_gaps_not_just_a_low_rate(analyze_capture) -> No
 
 def test_well_known_ports_match_iana() -> None:
     """Pinned against IANA; a wrong entry mislabels flows and skews odd-port suppression (issue #23)."""
-    from pcapforensics.index import WELL_KNOWN_PORTS
+    from pcap_doctor.index import WELL_KNOWN_PORTS
 
     assert WELL_KNOWN_PORTS[5060] == "sip"
     assert WELL_KNOWN_PORTS[5222] == "xmpp-client"

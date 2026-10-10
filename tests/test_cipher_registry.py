@@ -12,7 +12,7 @@ from pathlib import Path
 
 import pytest
 
-from pcapforensics.data_ciphers import (
+from pcap_doctor.data_ciphers import (
     classify,
     forward_secrecy_for,
     is_deprecated_version,
@@ -23,10 +23,10 @@ from pcapforensics.data_ciphers import (
     version_rank,
     weakness_reasons,
 )
-from pcapforensics.models import TlsSession, flow_key
+from pcap_doctor.models import TlsSession, flow_key
 
-NAMES_TSV = Path(__file__).resolve().parents[1] / "src" / "pcapforensics" / "data" / "cipher_names.tsv"
-JSON_PATH = Path(__file__).resolve().parents[1] / "src" / "pcapforensics" / "data" / "cipher_suites.json"
+NAMES_TSV = Path(__file__).resolve().parents[1] / "src" / "pcap_doctor" / "data" / "cipher_names.tsv"
+JSON_PATH = Path(__file__).resolve().parents[1] / "src" / "pcap_doctor" / "data" / "cipher_suites.json"
 
 
 def _names() -> dict[int, str]:

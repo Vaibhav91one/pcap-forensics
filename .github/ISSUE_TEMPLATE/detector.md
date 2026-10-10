@@ -8,7 +8,7 @@ assignees: ''
 
 **Which detector file**
 
-`src/pcapforensics/detectors/<name>.py` — new or existing.
+`src/pcap_doctor/detectors/<name>.py` — new or existing.
 
 **What it detects**
 

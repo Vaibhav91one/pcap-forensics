@@ -8,9 +8,9 @@ import re
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.config import Config, ConfigError, apply, load, parse
-from pcapforensics.models import Finding
+from pcap_doctor.cli import app
+from pcap_doctor.config import Config, ConfigError, apply, load, parse
+from pcap_doctor.models import Finding
 
 
 def _finding(code: str, subject: str = "10.0.0.1") -> Finding:
@@ -89,7 +89,7 @@ def test_unknown_code_in_config_exits_2_before_tshark(cli_runner, tmp_path, monk
     def boom(*_a, **_k):
         raise AssertionError("analyze must not run")
 
-    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    monkeypatch.setattr("pcap_doctor.cli.analyze.analyze", boom)
     cfg = tmp_path / "pcap-doctor.toml"
     cfg.write_text('disable = ["NOPE"]\n')
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap"), "--config", str(cfg)])
@@ -135,6 +135,6 @@ def test_cli_uses_the_repo_config_from_a_subfolder(cli_runner, tmp_path, monkeyp
     (repo / ".git").mkdir()
     (repo / "pcap-doctor.toml").write_text('disable = ["NOPE"]\n')  # invalid: proves the file was read
     monkeypatch.chdir(repo / "captures")
-    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    monkeypatch.setattr("pcap_doctor.cli.analyze.analyze", boom)
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap")])
     assert result.exit_code == 2 and "NOPE" in result.output

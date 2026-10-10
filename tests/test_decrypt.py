@@ -5,10 +5,10 @@ from __future__ import annotations
 import json
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.index import IndexBuilder
-from pcapforensics.keymaterial import KeyMaterial
-from pcapforensics.tshark import TsharkRunner
+from pcap_doctor.cli import app
+from pcap_doctor.index import IndexBuilder
+from pcap_doctor.keymaterial import KeyMaterial
+from pcap_doctor.tshark import TsharkRunner
 
 KEY = "rsa_kx.key"  # the server RSA key for rsa_kx.pcap (a static-RSA TLS session carrying HTTP)
 

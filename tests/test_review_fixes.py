@@ -10,11 +10,11 @@ from pathlib import Path
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.cli.watch import Watcher
-from pcapforensics.models import CaptureInfo, Finding, Report, Stats
-from pcapforensics.prompts import clean
-from pcapforensics.tshark import TsharkMissingError
+from pcap_doctor.cli import app
+from pcap_doctor.cli.watch import Watcher
+from pcap_doctor.models import CaptureInfo, Finding, Report, Stats
+from pcap_doctor.prompts import clean
+from pcap_doctor.tshark import TsharkMissingError
 
 
 def _truncated(tmp_path: Path) -> Path:
@@ -39,7 +39,7 @@ def test_missing_tshark_exits_2(cli_runner, command: str, monkeypatch) -> None:
         raise TsharkMissingError("tshark not found on PATH")
 
     # The runner is what raises when tshark is absent; the lookups behind it are lru_cached across tests.
-    monkeypatch.setattr("pcapforensics.cli.inspect.TsharkRunner", missing)
+    monkeypatch.setattr("pcap_doctor.cli.inspect.TsharkRunner", missing)
     result = cli_runner.invoke(app, [command, str(FIXTURES / "weak_tls.pcap")])
     assert result.exit_code == 2 and isinstance(result.exception, SystemExit)
 
@@ -100,8 +100,8 @@ def test_watch_never_leaves_the_capture_running(cli_runner, tmp_path, monkeypatc
     fake = tmp_path / "dumpcap"
     fake.write_text(f"#!/bin/sh\necho $$ > {pidfile}\nwhile :; do sleep 1; done\n")
     fake.chmod(0o755)
-    monkeypatch.setattr("pcapforensics.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
-    monkeypatch.setattr("pcapforensics.cli.watch.POLL_SECONDS", 0.05)
+    monkeypatch.setattr("pcap_doctor.cli.watch.shutil.which", lambda t: str(fake) if t == "dumpcap" else None)
+    monkeypatch.setattr("pcap_doctor.cli.watch.POLL_SECONDS", 0.05)
 
     def boom(self, *, final: bool = False) -> int:
         if pidfile.exists():

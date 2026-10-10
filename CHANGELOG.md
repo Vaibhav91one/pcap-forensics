@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Rename finished.** The internal import package is now `pcap_doctor` (was `pcapforensics`): `python -m pcap_doctor.cli`,
+  `from pcap_doctor import ...`. The pip distribution, the `pcap-doctor` command, the `pf` alias and the doctor/1 tool id are
+  unchanged. All GitHub URLs, badges and the Action reference now point to `doctor-labs/pcap-doctor`
+  (`uses: doctor-labs/pcap-doctor@v...`). `PCAP_FORENSICS_CACHE` is still honoured.
+
 ## [0.8.0] — 2026-10-09
 
 Machine output now follows the shared **doctor/1** contract (`docs/doctor-contract.md`). This is a

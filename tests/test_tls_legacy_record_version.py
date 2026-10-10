@@ -26,7 +26,7 @@ from pathlib import Path
 
 from conftest import codes, fixture, requires_tshark
 
-DOC = Path(__file__).parent.parent / "src/pcapforensics/rule_docs/TLS_LEGACY_RECORD_VERSION.md"
+DOC = Path(__file__).parent.parent / "src/pcap_doctor/rule_docs/TLS_LEGACY_RECORD_VERSION.md"
 
 
 def _index(*, negotiated: str, record_versions: list, frames: list[str],
@@ -38,7 +38,7 @@ def _index(*, negotiated: str, record_versions: list, frames: list[str],
     ``RecordVersion`` instances. #157 replaced the flat name list with per-record data; the
     shorthand keeps these cases readable.
     """
-    from pcapforensics.models import RecordVersion
+    from pcap_doctor.models import RecordVersion
 
     built = []
     for item in record_versions:
@@ -48,9 +48,9 @@ def _index(*, negotiated: str, record_versions: list, frames: list[str],
             built.append(RecordVersion(frame=1, version=item[0], content_type=item[1]))
         else:
             built.append(RecordVersion(frame=1, version=item, content_type=22))
-    from pcapforensics.detectors.tls_cipher import TlsCipherDetector
-    from pcapforensics.index import CaptureIndex
-    from pcapforensics.models import (
+    from pcap_doctor.detectors.tls_cipher import TlsCipherDetector
+    from pcap_doctor.index import CaptureIndex
+    from pcap_doctor.models import (
         CaptureInfo,
         Flow,
         Handshake,
@@ -147,7 +147,7 @@ def test_the_sentinel_alone_is_never_reported() -> None:
 
 def test_an_unreadable_content_type_is_reported_not_assumed_harmless() -> None:
     """No content type means unknown, and unknown is not an all-clear (AGENTS.md section 4)."""
-    from pcapforensics.models import RecordVersion
+    from pcap_doctor.models import RecordVersion
 
     findings = _index(
         negotiated="TLS 1.3",
@@ -208,7 +208,7 @@ def test_cited_rfcs_are_declared_as_references() -> None:
 
 def test_rule_is_catalogued_and_documented() -> None:
     """The catalog entry and the four rule-doc sections stay in step with the detector."""
-    from pcapforensics.rules import RULES
+    from pcap_doctor.rules import RULES
 
     assert "TLS_LEGACY_RECORD_VERSION" in RULES
     text = DOC.read_text()

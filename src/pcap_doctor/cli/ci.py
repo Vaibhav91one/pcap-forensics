@@ -17,7 +17,7 @@ WORKFLOW = Path(".github") / "workflows" / "pcap-doctor.yml"
 
 
 def workflow(captures: str, fail_on: str, ref: str) -> str:
-    template = (files("pcapforensics") / "templates" / "workflow.yml").read_text(encoding="utf-8")
+    template = (files("pcap_doctor") / "templates" / "workflow.yml").read_text(encoding="utf-8")
     return template.replace("__REF__", ref).replace("__CAPTURES__", captures).replace("__FAIL_ON__", fail_on)
 
 

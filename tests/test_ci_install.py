@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
+from pcap_doctor.cli import app
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "pcap-doctor-action.sh"
@@ -64,7 +64,7 @@ def _git(repo: Path, *args: str) -> str:
 
 def _action(repo: Path, base: str) -> subprocess.CompletedProcess[str]:
     env = {**os.environ, "CAPTURES": "caps/*.pcap", "BASE_SHA": base, "OUT": str(repo / "out"),
-           "PCAP_DOCTOR": f"{sys.executable} -m pcapforensics.cli", "GITHUB_STEP_SUMMARY": "", "GITHUB_OUTPUT": ""}
+           "PCAP_DOCTOR": f"{sys.executable} -m pcap_doctor.cli", "GITHUB_STEP_SUMMARY": "", "GITHUB_OUTPUT": ""}
     return subprocess.run(["bash", str(SCRIPT)], cwd=repo, env=env, capture_output=True, text=True, check=False)
 
 

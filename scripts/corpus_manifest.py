@@ -55,7 +55,7 @@ GITHUB_SOURCES: tuple[dict[str, Any], ...] = ()
 OPENSSL_CERTS = "https://raw.githubusercontent.com/openssl/openssl/master/test/certs/"
 
 # (filename, expected flags). The expectation is what "keys scan" must report; the flags are keys
-# scan's own vocabulary (see src/pcapforensics/cli/keys.py).
+# scan's own vocabulary (see src/pcap_doctor/cli/keys.py).
 KNOWN_WEAK: tuple[tuple[str, tuple[str, ...]], ...] = (
     ("ca-key-768.pem", ("weak-key-768bit",)),
     ("ca-cert-768.pem", ("weak-key-768bit",)),

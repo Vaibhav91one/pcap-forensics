@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from conftest import requires_tshark
-from pcapforensics.prompts import clean, clean_capture_text
+from pcap_doctor.prompts import clean, clean_capture_text
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -64,7 +64,7 @@ def _hostile_capture(tmp_path: Path) -> Path:
 def _analyze(tmp_path: Path, capture: Path | None = None) -> Path:
     out = tmp_path / "out"
     proc = subprocess.run(
-        [sys.executable, "-m", "pcapforensics.cli", "analyze",
+        [sys.executable, "-m", "pcap_doctor.cli", "analyze",
          str(capture or _hostile_capture(tmp_path)), "-o", str(out), "-q", "--no-handoff"],
         capture_output=True, text=True, cwd=ROOT, timeout=300,
     )

@@ -473,7 +473,7 @@ dumpcap's own error.
 
 ## Detectors
 
-One file, one detector, discovered automatically: `pcapforensics/registry.py` loads every
+One file, one detector, discovered automatically: `pcap_doctor/registry.py` loads every
 non-underscore module in `detectors/`, so adding one needs no registration.
 
 | Id | Module | Owns |

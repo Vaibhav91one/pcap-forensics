@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from conftest import fixture, requires_tshark
-from pcapforensics.tshark import (
+from pcap_doctor.tshark import (
     PASSES,
     SERVICE_FIELDS,
     TsharkRunner,
@@ -67,7 +67,7 @@ def test_required_fields_exist_in_this_tshark() -> None:
     missing = [f for f in REQUIRED_FIELDS if f not in known]
     assert not missing, (
         f"this tshark build ({TsharkRunner(Path('.')).version}) is missing {missing}; "
-        "update tshark or adapt the pass in src/pcapforensics/tshark.py"
+        "update tshark or adapt the pass in src/pcap_doctor/tshark.py"
     )
 
 
@@ -192,7 +192,7 @@ def test_extra_args_change_the_cache_key() -> None:
 
 
 def test_tshark_version_and_prefs_are_discoverable() -> None:
-    import pcapforensics.tshark as mod
+    import pcap_doctor.tshark as mod
 
     assert mod.tshark_version().split()[0][0].isdigit()
     assert "tcp.desegment_tcp_streams" in default_prefs()
@@ -200,7 +200,7 @@ def test_tshark_version_and_prefs_are_discoverable() -> None:
 
 
 def test_missing_binary_raises_a_clear_error(monkeypatch) -> None:
-    import pcapforensics.tshark as mod
+    import pcap_doctor.tshark as mod
 
     monkeypatch.setattr(mod.shutil, "which", lambda _name: None)
     mod.tshark_path.cache_clear()
@@ -211,7 +211,7 @@ def test_missing_binary_raises_a_clear_error(monkeypatch) -> None:
 
 
 def test_unreadable_capture_raises_a_useful_error(tmp_path: Path) -> None:
-    from pcapforensics.tshark import TsharkRunError
+    from pcap_doctor.tshark import TsharkRunError
 
     bogus = tmp_path / "bogus.pcap"
     bogus.write_bytes(b"not a pcap at all")

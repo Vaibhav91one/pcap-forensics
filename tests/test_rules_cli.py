@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from pcapforensics.cli import app
-from pcapforensics.rules import RULES
+from pcap_doctor.cli import app
+from pcap_doctor.rules import RULES
 
 
 def _run(cli_runner, *args: str):

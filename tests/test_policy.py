@@ -5,9 +5,9 @@ from __future__ import annotations
 import pytest
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.models import Finding
-from pcapforensics.policy import PolicyError, apply, validate
+from pcap_doctor.cli import app
+from pcap_doctor.models import Finding
+from pcap_doctor.policy import PolicyError, apply, validate
 
 
 def _finding(code: str, severity: str = "high") -> Finding:
@@ -30,7 +30,7 @@ def test_unknown_option_value_exits_2_before_tshark(cli_runner, monkeypatch, arg
     def boom(*_a, **_k):
         raise AssertionError("analyze must not run")
 
-    monkeypatch.setattr("pcapforensics.cli.analyze.analyze", boom)
+    monkeypatch.setattr("pcap_doctor.cli.analyze.analyze", boom)
     result = cli_runner.invoke(app, ["analyze", str(FIXTURES / "weak_tls.pcap"), *args])
     assert result.exit_code == 2
     assert "valid:" in result.output
@@ -41,7 +41,7 @@ def test_valid_values_pass_validation() -> None:
 
 
 def test_pipeline_rejects_unknown_values_too(tmp_path) -> None:
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     with pytest.raises(PolicyError):
         analyze(FIXTURES / "weak_tls.pcap", tmp_path, categories=("Nope",))
@@ -61,7 +61,7 @@ def test_min_severity_drops_lower_findings() -> None:
 
 @requires_tshark
 def test_dropped_findings_are_noted(tmp_path, cache_dir) -> None:
-    from pcapforensics.pipeline import analyze
+    from pcap_doctor.pipeline import analyze
 
     report = analyze(FIXTURES / "weak_tls.pcap", tmp_path, categories=("Voice",)).report
     assert report.findings == []

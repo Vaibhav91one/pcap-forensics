@@ -7,7 +7,7 @@ import re
 import pytest
 
 from conftest import FIXTURES, ROOT, requires_tshark
-from pcapforensics.detectors.tls_cipher import VERSION_FINDING, version_references
+from pcap_doctor.detectors.tls_cipher import VERSION_FINDING, version_references
 
 RFC = re.compile(r"RFC \d+")
 
@@ -20,9 +20,9 @@ def test_version_texts_cite_only_their_references() -> None:
 @pytest.mark.parametrize(
     "path",
     [
-        "src/pcapforensics/detectors/tls_cipher.py",
-        "src/pcapforensics/data_ciphers.py",
-        "src/pcapforensics/data/cipher_suites.json",
+        "src/pcap_doctor/detectors/tls_cipher.py",
+        "src/pcap_doctor/data_ciphers.py",
+        "src/pcap_doctor/data/cipher_suites.json",
         "scripts/gen_cipher_suites.py",
         "docs/cipher-policy.md",
     ],

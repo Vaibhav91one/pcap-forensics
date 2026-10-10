@@ -3,7 +3,7 @@ pcap-doctor
 
 Third-party material bundled or fetched by this project:
 
-* `src/pcapforensics/data/cipher_names.tsv` and `data/cipher_suites.json`
+* `src/pcap_doctor/data/cipher_names.tsv` and `data/cipher_suites.json`
   Cipher-suite names and ids are derived from Wireshark's value table
   (`tshark -G values`). Wireshark is distributed under the GPL-2.0-or-later;
   the extracted *name/id table* is a factual list of IANA-assigned numbers and

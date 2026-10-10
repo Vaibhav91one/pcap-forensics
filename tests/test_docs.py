@@ -11,8 +11,8 @@ from pathlib import Path
 import pytest
 import typer
 
-from pcapforensics import TOOL_VERSION
-from pcapforensics.cli import app
+from pcap_doctor import TOOL_VERSION
+from pcap_doctor.cli import app
 
 ROOT = Path(__file__).resolve().parents[1]
 DOCS = [ROOT / "README.md", ROOT / "CONTRIBUTING.md", ROOT / "AGENTS.md", ROOT / "CHANGELOG.md",

@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from pcapforensics.cli import app
-from pcapforensics.models import CaptureInfo, Evidence, Finding, Report, Stats
-from pcapforensics.prompts import FENCE_LABEL
+from pcap_doctor.cli import app
+from pcap_doctor.models import CaptureInfo, Evidence, Finding, Report, Stats
+from pcap_doctor.prompts import FENCE_LABEL
 
 
 def _finding(code: str, frame: int, scope: str) -> Finding:

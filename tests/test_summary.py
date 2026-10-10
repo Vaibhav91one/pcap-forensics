@@ -7,9 +7,9 @@ import re
 from rich.console import Console
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.cli._summary import render
-from pcapforensics.models import CaptureInfo, Finding, Report, Stats
+from pcap_doctor.cli import app
+from pcap_doctor.cli._summary import render
+from pcap_doctor.models import CaptureInfo, Finding, Report, Stats
 
 
 def _finding(code: str, severity: str = "medium", title: str = "t", scope: str = "s") -> Finding:

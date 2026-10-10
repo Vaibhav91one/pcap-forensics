@@ -6,7 +6,7 @@ import json
 import re
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
+from pcap_doctor.cli import app
 from test_capture_text_sanitised import _hostile_capture
 
 SEVERITIES = {"critical", "high", "medium", "low", "info"}

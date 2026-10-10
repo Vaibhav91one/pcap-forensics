@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
+from pcap_doctor.cli import app
 
 # rsa_kx.key is the server private key for rsa_kx.pcap, so a firmware tree that contains it is
 # exactly the white-box case: the key protecting the wire session ships in the image.
@@ -51,7 +51,7 @@ def test_no_firmware_no_finding(cli_runner, tmp_path, cache_dir) -> None:
 def test_unrelated_firmware_key_does_not_fire(cli_runner, tmp_path, cache_dir) -> None:
     import subprocess
 
-    from pcapforensics.certificates import openssl_path
+    from pcap_doctor.certificates import openssl_path
 
     if openssl_path() is None:
         return
@@ -83,8 +83,8 @@ def test_firmware_key_material_never_reaches_an_artifact(cli_runner, tmp_path, c
 def test_rule_is_catalogued() -> None:
     from pathlib import Path
 
-    from pcapforensics.rules import RULES
+    from pcap_doctor.rules import RULES
 
     assert "TLS_KEY_IN_FIRMWARE" in RULES
-    doc = Path(__file__).parent.parent / "src/pcapforensics/rule_docs/TLS_KEY_IN_FIRMWARE.md"
+    doc = Path(__file__).parent.parent / "src/pcap_doctor/rule_docs/TLS_KEY_IN_FIRMWARE.md"
     assert doc.exists()

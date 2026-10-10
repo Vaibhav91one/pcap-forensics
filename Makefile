@@ -17,7 +17,7 @@ setup: ## Create the virtualenv and install the package with dev extras
 	uv pip install -e '.[dev]'
 
 doctor: ## Check that tshark, openssl and the package are usable
-	$(PY) -m pcapforensics.cli doctor
+	$(PY) -m pcap_doctor.cli doctor
 
 fixtures: ## Regenerate the synthetic test fixtures
 	$(PY) scripts/make_fixtures.py
@@ -40,19 +40,19 @@ test: ## Run the test suite
 verify: lint typecheck test ## Everything CI runs
 
 analyze: ## Full report for CAPTURE=... (default: a Wireshark sample)
-	$(PY) -m pcapforensics.cli analyze $(CAPTURE) --out $(OUT)
+	$(PY) -m pcap_doctor.cli analyze $(CAPTURE) --out $(OUT)
 
 ciphers: ## Crypto matrix for CAPTURE=...
-	$(PY) -m pcapforensics.cli ciphers $(CAPTURE)
+	$(PY) -m pcap_doctor.cli ciphers $(CAPTURE)
 
 flows: ## Top conversations for CAPTURE=...
-	$(PY) -m pcapforensics.cli flows $(CAPTURE)
+	$(PY) -m pcap_doctor.cli flows $(CAPTURE)
 
 suites: ## Dump the cipher-suite registry
-	$(PY) -m pcapforensics.cli suites
+	$(PY) -m pcap_doctor.cli suites
 
 detectors: ## List detectors
-	$(PY) -m pcapforensics.cli detectors
+	$(PY) -m pcap_doctor.cli detectors
 
 regenerate: ## Rebuild data/cipher_suites.json from the vendored name table
 	$(PY) scripts/gen_cipher_suites.py

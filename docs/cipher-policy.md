@@ -1,7 +1,7 @@
 # Cipher policy
 
 How this project decides that a cipher suite is weak, and why. The implementation is
-`scripts/gen_cipher_suites.py`; the output is `src/pcapforensics/data/cipher_suites.json`; the
+`scripts/gen_cipher_suites.py`; the output is `src/pcap_doctor/data/cipher_suites.json`; the
 tests are `tests/test_cipher_registry.py`.
 
 ## 1. Names and ids come from tshark, never from a human

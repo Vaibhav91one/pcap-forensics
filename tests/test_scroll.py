@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from rich.console import Console
 
-from pcapforensics.cli._browse import DOWN, END, ENTER, HOME, PGDN, PGUP, UP, Browser, split_keys
-from pcapforensics.models import Report
+from pcap_doctor.cli._browse import DOWN, END, ENTER, HOME, PGDN, PGUP, UP, Browser, split_keys
+from pcap_doctor.models import Report
 from test_browse import _browser, _finding, _press, _report
 
 

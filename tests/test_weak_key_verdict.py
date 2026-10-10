@@ -16,9 +16,9 @@ from pathlib import Path
 
 import pytest
 
-from pcapforensics.certificates import openssl_path
-from pcapforensics.data_ciphers import DEPRECATED_EC_CURVE_BITS, MIN_EC_CURVE_BITS
-from pcapforensics.detectors.tls_cipher import weak_key_verdict
+from pcap_doctor.certificates import openssl_path
+from pcap_doctor.data_ciphers import DEPRECATED_EC_CURVE_BITS, MIN_EC_CURVE_BITS
+from pcap_doctor.detectors.tls_cipher import weak_key_verdict
 
 
 def _dsa_key(tmp_path, bits: int = 1024) -> bool:

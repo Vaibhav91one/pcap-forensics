@@ -79,7 +79,7 @@ make fixtures  # synthetic fixtures
 
 ## Adding a detector
 
-Copy `src/pcapforensics/detectors/_template.py`, follow `docs/detector-authoring.md`, and you are
+Copy `src/pcap_doctor/detectors/_template.py`, follow `docs/detector-authoring.md`, and you are
 done. No registration step: `registry.py` discovers the file.
 
 ## Changing the schema
@@ -93,7 +93,7 @@ Schema changes are a merge event, not a parallel event. Open an issue that says:
 ## Adding a tshark field
 
 1. Prove it exists in the target build: `tshark -G fields | rg <field>`.
-2. Add it to the pass in `src/pcapforensics/tshark.py` and record it in `docs/tshark-fields.md`.
+2. Add it to the pass in `src/pcap_doctor/tshark.py` and record it in `docs/tshark-fields.md`.
 3. Add it to `REQUIRED_FIELDS` in `tests/test_tshark_layer.py` if the project cannot work without it.
 
 If a field is not available in some builds, the runner drops it and notes it. That is the designed

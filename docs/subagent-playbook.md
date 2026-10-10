@@ -91,7 +91,7 @@ Working directory: <worktree path>. Base commit: <sha>.
 Read, in order: AGENTS.md, docs/detector-authoring.md, and the README section for your detector.
 
 Your allowlist (edit nothing else):
-  src/pcapforensics/detectors/<yourfile>.py
+  src/pcap_doctor/detectors/<yourfile>.py
   tests/fixtures/<yourfixture>.pcap and its generator block in scripts/make_fixtures.py
   tests/test_detectors.py   (only the tests you add)
   README.md                 (only the one detector-table row for your detector)

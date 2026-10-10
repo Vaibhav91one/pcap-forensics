@@ -86,7 +86,7 @@ def check_corpus_hostile(verbose: bool) -> tuple[bool, str]:
     if "0 problem(s)" not in baseline.stdout:
         return False, "baseline is not clean; fix that first"
 
-    target = ROOT / "src" / "pcapforensics" / "cli" / "keys.py"
+    target = ROOT / "src" / "pcap_doctor" / "cli" / "keys.py"
     try:
         head = run(["git", "log", "--format=%H", "-20", "--", str(target)], timeout=60)
         commits = [line for line in head.stdout.split() if line]
@@ -190,12 +190,12 @@ def check_corpus_sweep(verbose: bool) -> tuple[bool, str]:
 def _detector_file_for(code: str):
     """The detector module that emits a code, so the mutation is aimed by code rather than guessed."""
     sys.path.insert(0, str(ROOT / "src"))
-    from pcapforensics.rules import RULES
+    from pcap_doctor.rules import RULES
 
     rule = RULES.get(code)
     if rule is None:
         return None
-    return ROOT / "src" / "pcapforensics" / "detectors" / (rule.detector.split(".", 1)[1] + ".py")
+    return ROOT / "src" / "pcap_doctor" / "detectors" / (rule.detector.split(".", 1)[1] + ".py")
 
 
 def _first_finding(document):

@@ -5,9 +5,9 @@ from __future__ import annotations
 import json
 
 from conftest import FIXTURES, requires_tshark
-from pcapforensics.cli import app
-from pcapforensics.models import SCHEMA_VERSION, CaptureInfo, Finding, Report, Stats
-from pcapforensics.output import json_envelope
+from pcap_doctor.cli import app
+from pcap_doctor.models import SCHEMA_VERSION, CaptureInfo, Finding, Report, Stats
+from pcap_doctor.output import json_envelope
 
 
 def _report() -> Report:
