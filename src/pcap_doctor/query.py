@@ -307,6 +307,7 @@ SOURCES: dict[str, Callable[[Any], list[Row]]] = {
     "ssh": lambda ix: _dump(ix.ssh),
     "quic": lambda ix: _dump(ix.quic),
     "services": lambda ix: _dump(ix.services),
+    "smb": lambda ix: _dump(ix.smb),
     "findings": _finding_rows,
 }
 

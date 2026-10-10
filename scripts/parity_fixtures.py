@@ -426,3 +426,36 @@ def smb2_close(*, tree: int = 1, msg_id: int = 6, session: int = 0x100, fid: byt
 def smb2_close_response(*, tree: int = 1, msg_id: int = 6, session: int = 0x100) -> bytes:
     return smb2_message(6, struct.pack("<HHIQQQQQQI", 60, 0, 0, 0, 0, 0, 0, 0, 0, 0x80), response=True, msg_id=msg_id,
                         tree=tree, session=session)
+
+
+def smb1_negotiate_request() -> bytes:
+    header = b"\xffSMB" + bytes([0x72]) + struct.pack("<IBHH", 0, 0x18, 0xC853, 0) + bytes(8) + struct.pack("<HHHHH", 0, 0, 1, 0, 1)
+    dialects = b"\x02NT LM 0.12\x00\x02SMB 2.002\x00"
+    body = b"\x00" + struct.pack("<H", len(dialects)) + dialects
+    pdu = header + body
+    return b"\x00" + struct.pack(">I", len(pdu))[1:] + pdu
+
+
+@fixture("smb_attack.pcap")
+def fixture_smb_attack() -> bytes:
+    """SMBv1 negotiation, then an anonymous SMB2 session that reaches ADMIN$ and writes a service binary (#204)."""
+    w = Wire(start=1_700_300_000.0)
+    c, s = "10.2.0.9", "10.2.0.40"
+    Tcp(w, c, s, 46000, 445).open().send(True, smb1_negotiate_request()).close()
+    t = Tcp(w, c, s, 46100, 445).open()
+    t.send(True, smb2_negotiate_request())
+    t.send(False, smb2_negotiate_response())
+    t.send(True, smb2_session_setup(ntlm_negotiate(), msg_id=1))
+    t.send(False, smb2_session_setup(ntlm_challenge(bytes(8)), response=True, msg_id=1, session=0x100, status=0xC0000016))
+    t.send(True, smb2_session_setup(ntlm_authenticate("", "", "", b"", lm_response=b"\x00"), msg_id=2, session=0x100))
+    t.send(False, smb2_session_setup(b"", response=True, msg_id=2, session=0x100))
+    t.send(True, smb2_tree_connect("\\\\10.2.0.40\\ADMIN$"))
+    t.send(False, smb2_tree_connect_response())
+    t.send(True, smb2_create("PSEXESVC.exe"))
+    t.send(False, smb2_create_response())
+    t.send(True, smb2_tree_connect("\\\\10.2.0.40\\IPC$", msg_id=7))
+    t.send(False, smb2_tree_connect_response(tree=2, msg_id=7))
+    t.send(True, smb2_create("svcctl", tree=2, msg_id=8))
+    t.send(False, smb2_create_response(tree=2, msg_id=8))
+    t.close()
+    return w.write()

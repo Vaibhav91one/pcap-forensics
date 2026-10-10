@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import NamedTuple
 
 #: Display order of categories in summaries. "Other" catches codes missing from the catalog.
-CATEGORIES: tuple[str, ...] = ("Crypto", "Credentials", "Cleartext", "DNS", "SSH & QUIC", "Voice", "Network", "Signatures", "Other")
+CATEGORIES: tuple[str, ...] = ("Crypto", "Credentials", "Cleartext", "DNS", "SSH & QUIC", "Voice", "Network", "Signatures", "SMB", "Other")
 
 
 class Rule(NamedTuple):
@@ -24,6 +24,7 @@ _TRANSPORT = "d2.transport_exposure"
 _VOICE = "d3.sip_rtp"
 _DNS_QUIC_SSH = "d4.dns_quic_ssh"
 _SIGNATURES = "d9.user_signatures"
+_SMB = "d10.smb"
 
 RULES: dict[str, Rule] = {
     rule.code: rule
@@ -67,6 +68,12 @@ RULES: dict[str, Rule] = {
         Rule("SSH_WEAK_MAC", _DNS_QUIC_SSH, "SSH & QUIC", "Weak SSH MAC offered"),
         Rule("SSH_WEAK_HOSTKEY", _DNS_QUIC_SSH, "SSH & QUIC", "Weak SSH host-key algorithm offered"),
         Rule("SSH_TERRAPIN_EXPOSED", _DNS_QUIC_SSH, "SSH & QUIC", "Terrapin (CVE-2023-48795) exposure"),
+        Rule("SMB1_IN_USE", _SMB, "SMB", "SMBv1 in use"),
+        Rule("SMB_SIGNING_NOT_REQUIRED", _SMB, "SMB", "SMB signing not required by the server"),
+        Rule("SMB_NULL_SESSION", _SMB, "SMB", "Anonymous (null) SMB session"),
+        Rule("SMB_ADMIN_SHARE_ACCESS", _SMB, "SMB", "Administrative share accessed"),
+        Rule("SMB_REMOTE_EXEC_PIPE", _SMB, "SMB", "Remote execution pipe opened over SMB"),
+        Rule("SMB_EXECUTABLE_ON_SHARE", _SMB, "SMB", "Executable opened on an SMB share"),
         Rule("SIGNATURE_MATCH", _SIGNATURES, "Signatures", "User-supplied signature matched"),
     )
 }
@@ -82,6 +89,7 @@ CATEGORY_IMPACT: dict[str, str] = {
     "Voice": "Calls and call signalling can be listened to or hijacked.",
     "Network": "The traffic shape suggests scanning, beaconing, or services exposed where they should not be.",
     "Signatures": "Traffic matched a detection rule you supplied; what is at stake is whatever that rule encodes.",
+    "SMB": "Windows file sharing is exposed to relay, enumeration or remote execution from the network.",
     "Other": "A finding the rule catalog does not classify yet.",
 }
 

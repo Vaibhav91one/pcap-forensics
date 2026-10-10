@@ -76,7 +76,8 @@ def test_smtp_dhcp_smb_and_weird_logs(logs_dir) -> None:
 @requires_tshark
 def test_notice_log_carries_the_findings(logs_dir) -> None:
     _, notice = _tsv(logs_dir / "notice.log")
-    assert [r["note"] for r in notice] == ["CLEARTEXT_SERVICE"]
+    assert sorted(r["note"] for r in notice) == [
+        "CLEARTEXT_SERVICE", "SMB_ADMIN_SHARE_ACCESS", "SMB_EXECUTABLE_ON_SHARE", "SMB_SIGNING_NOT_REQUIRED"]
 
 
 @requires_tshark
