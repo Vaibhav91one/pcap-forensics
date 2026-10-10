@@ -1,14 +1,8 @@
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-light.svg">
-  <img alt="pcap-doctor" src="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo-light.svg" width="360" height="56">
-</picture>
+<p align="center"><img src="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/hero.svg" alt="pcap-doctor illustration" width="100%"></p>
 
-[![CI](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/python-3.11%2B-000000?style=flat&logo=python&logoColor=white)](https://github.com/doctor-labs/pcap-doctor/blob/main/pyproject.toml)
-[![tshark](https://img.shields.io/badge/tshark-4.2%20%E2%80%93%204.6-000000?style=flat&logo=wireshark&logoColor=white)](https://www.wireshark.org/docs/man-pages/tshark.html)
-[![License: MIT](https://img.shields.io/badge/license-MIT-000000?style=flat)](https://github.com/doctor-labs/pcap-doctor/blob/main/LICENSE)
-[![Telemetry: none](https://img.shields.io/badge/telemetry-none-000000?style=flat)](#privacy-and-telemetry)
+<h1><img src="https://raw.githubusercontent.com/doctor-labs/pcap-doctor/main/docs/assets/logo.svg" width="36" height="36" alt="" align="absmiddle"> pcap-doctor</h1>
+
+[![CI](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml/badge.svg)](https://github.com/doctor-labs/pcap-doctor/actions/workflows/ci.yml) [![PyPI](https://img.shields.io/pypi/v/pcap-doctor)](https://pypi.org/project/pcap-doctor/) [![npm](https://img.shields.io/npm/v/pcap-doctor)](https://www.npmjs.com/package/pcap-doctor) [![Python](https://img.shields.io/badge/python-3.11%2B-blue?style=flat&logo=python&logoColor=white)](https://github.com/doctor-labs/pcap-doctor/blob/main/pyproject.toml) [![tshark](https://img.shields.io/badge/tshark-4.2%20%E2%80%93%204.6-blue?style=flat&logo=wireshark&logoColor=white)](https://www.wireshark.org/docs/man-pages/tshark.html) [![license](https://img.shields.io/badge/license-MIT-blue)](https://github.com/doctor-labs/pcap-doctor/blob/main/LICENSE) [![contract](https://img.shields.io/badge/contract-doctor%2F1-19c3ab)](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/doctor-contract.md) [![telemetry](https://img.shields.io/badge/telemetry-none-2fd27a)](#privacy-and-telemetry)
 
 **Hand it a capture. It scores it, tells you who talked to whom, what crypto they negotiated, what is weak or leaking, and how to fix it.**
 
@@ -18,12 +12,27 @@ six report files you can paste into a ticket. Every claim points at a frame numb
 Wireshark. It gates CI on *new* findings only, and hands a finding to Claude Code, Codex or Cursor
 with a fix prompt when you want help.
 
+```text
+$ pcap-doctor analyze tests/fixtures/weak_tls.pcap
+capture weak_tls.pcap: 5 packets, 1 flows, 2 hosts
+Score 68/100 · needs work
+
+Crypto  4 finding(s) · worst high
+  high     TLS_CIPHER_WEAK  TLS_RSA_WITH_AES_128_CBC_SHA negotiated on tcp:10.0.0.10:40000<->10.0.0.20:443
+  high     TLS_NO_FORWARD_SECRECY  No forward secrecy on tcp:10.0.0.10:40000<->10.0.0.20:443
+  high     TLS_VERSION_DEPRECATED  TLS 1.0 negotiated on tcp:10.0.0.10:40000<->10.0.0.20:443
+  +1 more (--verbose shows all)
+
+  wrote weak_tls.pf-report/01-flows.md
+  wrote weak_tls.pf-report/02-ciphers.md
+  wrote weak_tls.pf-report/03-findings.md
+```
+
 No network access during analysis. No telemetry. Secrets it finds are reported, never repeated.
 (`pf` still works as a short alias of `pcap-doctor`.)
 
-## Get started
 
-### 1. Install
+## Install
 
 You need [`tshark`](https://www.wireshark.org/docs/man-pages/tshark.html) on `PATH` (and, optionally,
 `openssl` to read certificates exactly):
@@ -43,28 +52,28 @@ pip install pcap-doctor                # or pipx install pcap-doctor
 
 `pcap-doctor doctor` checks that tshark works and knows the fields the detectors need.
 
-### 2. Run your first audit
+## Use
 
 ```bash
 pcap-doctor analyze traffic.pcap
 ```
 
-```text
-capture traffic.pcap: 5 packets, 1 flows, 2 hosts
-Score 68/100 · needs work
-
-Crypto  4 finding(s) · worst high
-  high     TLS_CIPHER_WEAK  TLS_RSA_WITH_AES_128_CBC_SHA negotiated on tcp:10.0.0.10:40000<->10.0.0.20:443
-  high     TLS_NO_FORWARD_SECRECY  No forward secrecy on tcp:10.0.0.10:40000<->10.0.0.20:443
-  high     TLS_VERSION_DEPRECATED  TLS 1.0 negotiated on tcp:10.0.0.10:40000<->10.0.0.20:443
-  +1 more (--verbose shows all)
-
-  wrote traffic.pf-report/01-flows.md
-  ...
-```
-
 The full report lands in `traffic.pf-report/` (`--out DIR` to choose); start with `index.md`. No
 capture to hand? `make captures` fetches the Wireshark project's public samples.
+
+| Command | Does |
+|---|---|
+| `analyze CAPTURE` | score, findings and the six report files (`--json`, `--sarif FILE`, `--baseline OLD.json`, `--fail-on LEVEL`) |
+| `why QUERY` | explain one finding; `--prompt` prints a fix prompt for an AI agent |
+| `rules list` / `rules explain CODE` | browse and read detector rules |
+| `flows` / `ciphers` | conversation and negotiated-crypto views of one capture |
+| `keys scan DIR` | inventory key material in an extracted firmware tree |
+| `watch -i IFACE` | capture live and analyze rolling files |
+| `install` / `ci install` | add agent instructions / a CI workflow |
+| `mcp` | MCP server on stdio |
+| `doctor` | check that tshark works |
+
+Full flags are under [CLI reference](#cli-reference).
 
 ### 3. Understand a finding
 
@@ -797,3 +806,7 @@ Stated plainly, because a triage tool that hides its limits is worse than useles
 
 [MIT](https://github.com/doctor-labs/pcap-doctor/blob/main/LICENSE). The captures under `captures/` belong to the Wireshark project (BSD-2-Clause) and
 are fetched, not authored.
+
+---
+
+Part of [doctor·labs](https://github.com/doctor-labs) — offline security doctors.
