@@ -261,6 +261,7 @@ class CaptureIndex:
         self.dropped_fields: list[str] = []
         self.pass_stats: dict[str, dict[str, int | float | str]] = {}
         self._flow_by_pair: dict[tuple[str, int], str] = {}
+        self.runner: TsharkRunner | None = None  # set by IndexBuilder; the on-demand log tables read more passes through it
 
     # -- lookups -----------------------------------------------------------
     def flow(self, key: str) -> Flow | None:
@@ -352,6 +353,7 @@ class IndexBuilder:
             tshark_version=tshark_version(),
         )
         index = CaptureIndex(capture)
+        index.runner = runner
         self.index = index
 
         self._build_flows(index, runner.run("base"))

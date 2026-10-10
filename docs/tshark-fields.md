@@ -31,6 +31,12 @@ token against `tshark -G protocols`, drops what a build does not know, and recor
 | `quic` | `quic` | versions, long header type, inner SNI/ciphers/ALPN |
 | `services` | `ntp \|\| tftp \|\| ftp \|\| ftp-data \|\| telnet \|\| snmp \|\| ldap \|\| smtp \|\| imap \|\| pop \|\| resp \|\| mysql` | per-protocol detail that can contain credentials |
 | `ipv6` | `ipv6` | hop limit, payload length |
+| `conn` | `tcp \|\| udp` | per-packet flags, TCP/UDP payload length, IP length; **only** for `logs` (`conn.log`) |
+| `dhcp` | `dhcp` | transaction id, message type, MAC, addresses, hostname, lease; only for `logs` |
+| `ftp` | `ftp` | command, argument, reply code and text; only for `logs` |
+| `smtp` | `smtp \|\| imf` | commands, reply, IMF From/To/Subject/Date/Message-ID; only for `logs` |
+| `smb` | `smb \|\| smb2` | command, status, tree, file name, session/tree id, NTLMSSP user/domain/host; only for `logs` |
+| `weird` | `_ws.expert && frame` | expert message, severity, group; only for `logs` (`weird.log`) |
 
 ## Fields with traps
 
