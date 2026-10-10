@@ -13,6 +13,11 @@ All notable changes to this project are documented here. The format follows
   unchanged. All GitHub URLs, badges and the Action reference now point to `doctor-labs/pcap-doctor`
   (`uses: doctor-labs/pcap-doctor@v...`). `PCAP_FORENSICS_CACHE` is still honoured.
 
+### Added
+
+- `pcap-doctor packets` and `pcap-doctor packet`: a per-packet explorer over the capture. `packets` lists frames (number, time, source, destination, protocol, length, info) and takes a Wireshark display filter with `-Y`; `packet CAPTURE FRAME` prints the full dissection tree and the hex view of one frame (`--json` for the nested tree, `--no-hex` to drop the dump). Read-only: tshark is asked for exactly what was requested.
+- `pcap-doctor follow CAPTURE PROTO STREAM` (PROTO: tcp, udp, tls, dtls, http, http2, quic, sip): the reassembled payload of one stream, per direction, as text or hex, or written to a file with `-o` (`--direction client|server` writes one side). TLS and HTTP-over-TLS streams decrypt with `--tls-key` or `--keylog`. `pcap-doctor streams CAPTURE` lists the TCP/UDP stream numbers with their endpoints.
+
 ## [0.8.0] — 2026-10-09
 
 Machine output now follows the shared **doctor/1** contract (`docs/doctor-contract.md`). This is a
