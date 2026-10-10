@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import NamedTuple
 
 #: Display order of categories in summaries. "Other" catches codes missing from the catalog.
-CATEGORIES: tuple[str, ...] = ("Crypto", "Credentials", "Cleartext", "DNS", "SSH & QUIC", "Voice", "Network", "Other")
+CATEGORIES: tuple[str, ...] = ("Crypto", "Credentials", "Cleartext", "DNS", "SSH & QUIC", "Voice", "Network", "Signatures", "Other")
 
 
 class Rule(NamedTuple):
@@ -23,6 +23,7 @@ _TLS = "d1.tls_cipher"
 _TRANSPORT = "d2.transport_exposure"
 _VOICE = "d3.sip_rtp"
 _DNS_QUIC_SSH = "d4.dns_quic_ssh"
+_SIGNATURES = "d9.user_signatures"
 
 RULES: dict[str, Rule] = {
     rule.code: rule
@@ -66,6 +67,7 @@ RULES: dict[str, Rule] = {
         Rule("SSH_WEAK_MAC", _DNS_QUIC_SSH, "SSH & QUIC", "Weak SSH MAC offered"),
         Rule("SSH_WEAK_HOSTKEY", _DNS_QUIC_SSH, "SSH & QUIC", "Weak SSH host-key algorithm offered"),
         Rule("SSH_TERRAPIN_EXPOSED", _DNS_QUIC_SSH, "SSH & QUIC", "Terrapin (CVE-2023-48795) exposure"),
+        Rule("SIGNATURE_MATCH", _SIGNATURES, "Signatures", "User-supplied signature matched"),
     )
 }
 
@@ -79,6 +81,7 @@ CATEGORY_IMPACT: dict[str, str] = {
     "SSH & QUIC": "Remote access or transport security can be downgraded or attacked.",
     "Voice": "Calls and call signalling can be listened to or hijacked.",
     "Network": "The traffic shape suggests scanning, beaconing, or services exposed where they should not be.",
+    "Signatures": "Traffic matched a detection rule you supplied; what is at stake is whatever that rule encodes.",
     "Other": "A finding the rule catalog does not classify yet.",
 }
 

@@ -67,6 +67,12 @@ capture to hand? `make captures` fetches the Wireshark project's public samples.
 | `why QUERY` | explain one finding; `--prompt` prints a fix prompt for an AI agent |
 | `rules list` / `rules explain CODE` | browse and read detector rules |
 | `flows` / `ciphers` | conversation and negotiated-crypto views of one capture |
+| `packets` / `packet` | per-packet explorer: the packet list (`-Y` display filter) and one frame's dissection tree plus hex view |
+| `follow` / `streams` | follow one TCP/UDP/TLS/HTTP stream (reassembled payload as text, hex or a file); list stream numbers |
+| `query CAPTURE EXPR` | filter flows, hosts, TLS/HTTP/DNS/SSH rows or findings with one expression (`flows -f` too); `packets -Y` for raw frames |
+| `logs CAPTURE` | Zeek-style per-protocol logs (conn, dns, http, ssl, x509, files, notice, weird, dhcp, ftp, smtp, ssh, smb) as TSV or JSON; see [docs/zeek-logs.md](https://github.com/doctor-labs/pcap-doctor/blob/main/docs/zeek-logs.md) |
+| `eve CAPTURE` | Suricata EVE-compatible JSON events (alert, flow, dns, http, tls, fileinfo), one per line, for SIEM ingest |
+| `extract CAPTURE` | write the files a capture carries (HTTP, FTP, SMB, TFTP, SMTP/IMAP/POP3 mail and attachments) to a directory with a manifest |
 | `keys scan DIR` | inventory key material in an extracted firmware tree |
 | `watch -i IFACE` | capture live and analyze rolling files |
 | `install` / `ci install` | add agent instructions / a CI workflow |
@@ -490,6 +496,7 @@ non-underscore module in `detectors/`, so adding one needs no registration.
 | `d1.tls_cipher` | `detectors/tls_cipher.py` | negotiated version, chosen suite, offered-but-unused weak suites, forward secrecy, certificate expiry/key/signature/self-signed, alerts, truncated handshakes, JA3 fleet clustering |
 | `d2.transport_exposure` | `detectors/transport_exposure.py` | plain HTTP (firmware-like downloads rated high; query strings never reported), HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries, Telnet logins; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
 | `d3.sip_rtp` | `detectors/sip_rtp.py` | SIP call graph, cleartext REGISTER/INVITE with auth headers, SDP offered without `a=crypto` (no SRTP possible), RTP media in the clear, media volume anomalies |
+| `d9.user_signatures` | `detectors/user_signatures.py` | matches of Suricata-style rules / Zeek signatures you pass with `analyze --signatures` (`SIGNATURE_MATCH`) |
 | `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers (IPv4 and IPv6), QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key offers, Terrapin exposure (CVE-2023-48795) |
 
 Every code a detector can emit is listed in the rule catalog (`rules.py`, `pcap-doctor rules list`)
@@ -692,8 +699,17 @@ pcap-doctor ci install [--captures GLOBS] [--fail-on LEVEL] [--ref REF] [--force
 pcap-doctor mcp                                          # MCP server on stdio: analyze, why, rules_*, keys_scan, flows, ...
 pcap-doctor watch -i IFACE [--seconds N] [--files K] [--dir DIR]
 pcap-doctor keys scan DIR [--json] [--out KEYS_DIR]   # inventory key material in an extracted firmware tree
-pcap-doctor flows CAPTURE [--top N]
 pcap-doctor ciphers CAPTURE
+pcap-doctor packets CAPTURE [-Y FILTER] [-n LIMIT] [--json]   # packet list (Wireshark display filter)
+pcap-doctor packet CAPTURE FRAME [--hex|--no-hex] [--json]   # dissection tree + hex view of one frame
+pcap-doctor streams CAPTURE [--proto tcp|udp]
+pcap-doctor follow CAPTURE PROTO STREAM [--as ascii|hex] [--direction both|client|server] [-o FILE] [--json] [--tls-key KEY | --keylog FILE]
+pcap-doctor query CAPTURE EXPR [-s flows|hosts|tls|http|dns|sip|rtp|ssh|quic|services|findings] [-n N] [--json]
+pcap-doctor flows CAPTURE [--top N] [-f EXPR]
+pcap-doctor logs CAPTURE [-o DIR] [--format tsv|json|both] [--only conn,dns,...]   # Zeek-style logs
+pcap-doctor eve CAPTURE [-o FILE] [--types alert,flow,dns,http,tls,fileinfo]   # Suricata EVE JSON
+pcap-doctor analyze CAPTURE --signatures FILE.rules|FILE.sig [--sig-var HOME_NET=10.0.0.0/8]   # your own detections
+pcap-doctor extract CAPTURE [-o DIR] [--protocols http,ftp-data,smb,tftp,dicom,smtp,pop3,imap] [--tls-key KEY | --keylog FILE]
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```

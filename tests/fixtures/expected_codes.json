@@ -10,6 +10,11 @@
     "DNS_CLEARTEXT",
     "DNS_TUNNEL_SHAPE"
   ],
+  "files_mix.pcap": [
+    "CLEARTEXT_CREDENTIAL",
+    "CLEARTEXT_SERVICE",
+    "HTTP_CLEARTEXT"
+  ],
   "ftp_ldap_creds.pcap": [
     "CLEARTEXT_CREDENTIAL",
     "CLEARTEXT_SERVICE"
@@ -28,6 +33,9 @@
   ],
   "http_firmware_headers.pcap": [
     "HTTP_CLEARTEXT"
+  ],
+  "logs_mix.pcap": [
+    "CLEARTEXT_SERVICE"
   ],
   "mixed_ciphers.pcap": [
     "TLS_OFFERS_WEAK_CIPHERS",
