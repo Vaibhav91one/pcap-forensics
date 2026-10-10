@@ -495,6 +495,7 @@ non-underscore module in `detectors/`, so adding one needs no registration.
 | `d1.tls_cipher` | `detectors/tls_cipher.py` | negotiated version, chosen suite, offered-but-unused weak suites, forward secrecy, certificate expiry/key/signature/self-signed, alerts, truncated handshakes, JA3 fleet clustering |
 | `d2.transport_exposure` | `detectors/transport_exposure.py` | plain HTTP (firmware-like downloads rated high; query strings never reported), HTTP Basic/Digest over cleartext, Basic inside TLS, cookies without `Secure`, cleartext FTP/Telnet/NTP/SNMP/LDAP/SMTP/POP/MySQL/TFTP, leaked credentials (SNMP community, FTP `PASS`, LDAP simple bind, MySQL queries, Telnet logins; always redacted), services on odd ports (lower-port side, low confidence), unanswered-SYN scan shapes, beaconing (regular gaps between bursts) |
 | `d3.sip_rtp` | `detectors/sip_rtp.py` | SIP call graph, cleartext REGISTER/INVITE with auth headers, SDP offered without `a=crypto` (no SRTP possible), RTP media in the clear, media volume anomalies |
+| `d9.user_signatures` | `detectors/user_signatures.py` | matches of Suricata-style rules / Zeek signatures you pass with `analyze --signatures` (`SIGNATURE_MATCH`) |
 | `d4.dns_quic_ssh` | `detectors/dns_quic_ssh.py` | plaintext DNS leakage, DNS tunnelling heuristics (label depth + entropy + TXT/NULL volume), external resolvers (IPv4 and IPv6), QUIC version inventory and payload opacity, weak SSH kex/cipher/MAC/host-key offers, Terrapin exposure (CVE-2023-48795) |
 
 Every code a detector can emit is listed in the rule catalog (`rules.py`, `pcap-doctor rules list`)
@@ -706,6 +707,7 @@ pcap-doctor query CAPTURE EXPR [-s flows|hosts|tls|http|dns|sip|rtp|ssh|quic|ser
 pcap-doctor flows CAPTURE [--top N] [-f EXPR]
 pcap-doctor logs CAPTURE [-o DIR] [--format tsv|json|both] [--only conn,dns,...]   # Zeek-style logs
 pcap-doctor eve CAPTURE [-o FILE] [--types alert,flow,dns,http,tls,fileinfo]   # Suricata EVE JSON
+pcap-doctor analyze CAPTURE --signatures FILE.rules|FILE.sig [--sig-var HOME_NET=10.0.0.0/8]   # your own detections
 pcap-doctor detectors | suites | doctor | schema
 pcap-doctor --version
 ```

@@ -452,6 +452,22 @@ WEIRD_PASS = PassSpec(
     )),
 )
 
+#: Every TCP/UDP payload, for the user-supplied signature engine (#201). Only run when signatures are given.
+PAYLOAD_PASS = PassSpec(
+    name="payload",
+    display_filter="tcp.len > 0 || udp.length > 8",
+    fields=with_addr((
+        "tcp.srcport",
+        "tcp.dstport",
+        "udp.srcport",
+        "udp.dstport",
+        "tcp.stream",
+        "tcp.flags",
+        "tcp.payload",
+        "udp.payload",
+    )),
+)
+
 PASSES: dict[str, PassSpec] = {
     p.name: p
     for p in (
@@ -473,6 +489,7 @@ PASSES: dict[str, PassSpec] = {
         SMTP_PASS,
         SMB_PASS,
         WEIRD_PASS,
+        PAYLOAD_PASS,
     )
 }
 

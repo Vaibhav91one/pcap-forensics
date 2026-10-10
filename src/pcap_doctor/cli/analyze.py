@@ -76,6 +76,13 @@ def analyze_cmd(
         help="TLS key-log file (SSLKEYLOGFILE format) to decrypt forward-secret sessions",
     ),
     psk: str = typer.Option("", "--psk", envvar="PCAP_DOCTOR_PSK", help="TLS/DTLS pre-shared key, hex"),
+    signatures: list[Path] = typer.Option(
+        None, "--signatures", exists=True, dir_okay=False,
+        help="Suricata rules (*.rules) or Zeek signatures (*.sig) to match against the payloads (repeatable)",
+    ),
+    sig_var: list[str] = typer.Option(
+        None, "--sig-var", help="rule variable NAME=VALUE, e.g. HOME_NET=10.0.0.0/8 (repeatable)",
+    ),
     no_handoff: bool = typer.Option(False, "--no-handoff", help="never offer to hand a finding to an AI agent"),
     safe: bool = typer.Option(
         False, "--safe", help="launch AI agents with their approval prompts (also PCAP_DOCTOR_HANDOFF_SAFE=1)"
@@ -94,6 +101,7 @@ def analyze_cmd(
     except PolicyError as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
+    sig_vars = dict(v.split("=", 1) for v in (sig_var or []) if "=" in v)
     # Flags win over the config, which wins over its profile.
     category = category or list(config.categories)
     fail_on = fail_on or config.fail_on or "none"
@@ -125,6 +133,8 @@ def analyze_cmd(
                 config=config,
                 keys=keys,
                 firmware_keys=firmware_keys,
+                signatures=tuple(signatures or ()),
+                signature_vars=sig_vars,
                 progress=(lambda stage: status.update(f"{stage}…")) if status is not None else None,
             )
     except KeyboardInterrupt:
