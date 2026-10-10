@@ -22,6 +22,7 @@ from email.parser import BytesParser
 from pathlib import Path
 from urllib.parse import unquote
 
+from .filetypes import FileInfo, describe
 from .follow import follow
 from .ondemand import run_text
 from .tshark import TsharkRunError
@@ -40,10 +41,13 @@ class ExtractedFile:
     size: int
     source: str = ""  # e.g. the HTTP host, the mail message it came from
     extra: dict[str, str] = field(default_factory=dict)
+    info: FileInfo | None = None
 
     def as_dict(self, base: Path) -> dict[str, object]:
+        hashes = {"md5": self.info.md5, "sha1": self.info.sha1, "sha256": self.info.sha256,
+                  "mime_type": self.info.mime_type} if self.info else {}
         return {"protocol": self.protocol, "name": self.name, "path": str(self.path.relative_to(base)),
-                "size": self.size, "source": self.source, **self.extra}
+                "size": self.size, "source": self.source, **hashes, **self.extra}
 
 
 def safe_name(name: str, fallback: str = "file") -> str:
@@ -198,4 +202,6 @@ def extract(pcap: Path, outdir: Path, protocols: tuple[str, ...] = PROTOCOLS,
             found += _tshark_objects(pcap, protocol, outdir, decrypt_args)
         else:
             found += _mail(pcap, protocol, outdir, decrypt_args)
+    for item in found:
+        item.info = describe(item.path, item.name)
     return found

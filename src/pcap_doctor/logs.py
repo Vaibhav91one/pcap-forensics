@@ -315,20 +315,31 @@ def _ssh_log(ctx: _Ctx) -> LogTable:
 
 
 def _files_log(ctx: _Ctx) -> LogTable:
-    """HTTP bodies the capture delivers. ``pcap-doctor extract`` (when present) adds the hashes and the bytes."""
+    """Every file the extractor recovers (HTTP, FTP, SMB, TFTP, mail), hashed and typed by magic bytes."""
+    import tempfile
+
+    from .extract import extract, safe_name
+
     table = LogTable("files", [
         ("ts", "time"), ("fuid", "string"), ("tx_hosts", "set[addr]"), ("rx_hosts", "set[addr]"),
-        ("conn_uids", "set[string]"), ("source", "string"), ("mime_type", "string"), ("filename", "string")])
-    for h in ctx.index.http:
-        if not (h.status and (h.content_types or h.download_names)):
-            continue
-        ids = ctx.ids(h.key)
-        table.rows.append({
-            "ts": ctx.ts(h.frame), "fuid": _fuid("http", h.key, h.frame), "tx_hosts": [ids["id.resp_h"]],
-            "rx_hosts": [ids["id.orig_h"]], "conn_uids": [ids["uid"]], "source": "HTTP",
-            "mime_type": h.content_types[0] if h.content_types else None,
-            "filename": h.download_names[0] if h.download_names else None,
-        })
+        ("conn_uids", "set[string]"), ("source", "string"), ("mime_type", "string"), ("filename", "string"),
+        ("seen_bytes", "count"), ("md5", "string"), ("sha1", "string"), ("sha256", "string")])
+    exchanges = {safe_name((h.uri or "").split("?", 1)[0]): h for h in ctx.index.http if h.status and h.uri}
+    with tempfile.TemporaryDirectory() as tmp:
+        for f in extract(ctx.index.capture_path, Path(tmp)):
+            if f.info is None:
+                continue
+            row: dict[str, Any] = {
+                "ts": None, "fuid": _fuid(f.protocol, f.info.sha256, f.name), "source": f.protocol.upper(),
+                "mime_type": f.info.mime_type, "filename": f.name, "seen_bytes": f.info.size, "md5": f.info.md5,
+                "sha1": f.info.sha1, "sha256": f.info.sha256,
+            }
+            h = exchanges.get(safe_name(f.name)) if f.protocol == "http" else None
+            if h:
+                ids = ctx.ids(h.key)
+                row.update(ts=ctx.ts(h.frame), tx_hosts=[ids["id.resp_h"]], rx_hosts=[ids["id.orig_h"]],
+                           conn_uids=[ids["uid"]])
+            table.rows.append(row)
     return table
 
 

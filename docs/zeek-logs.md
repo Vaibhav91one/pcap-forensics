@@ -31,5 +31,5 @@ per line with unset fields left out. Every table is also a query source: `pcap-d
 - `uid` is `C` plus 16 hex characters derived from the flow key, stable across runs, not Zeek's random id.
 - Secrets are never written: FTP `PASS` is `<hidden>`, no HTTP Authorization or cookie values, no SMTP AUTH data.
 - `weird` names are slugs of tshark's own expert messages, not Zeek's weird names (a catalog is tracked in #210).
-- The pcap-doctor `ssl` log has no `validation_status` yet (#260) and `files` has no hashes yet (#203).
+- The pcap-doctor `ssl` log has no `validation_status` yet (#260). `files` lists the files `extract` recovers, with `seen_bytes`, `md5`, `sha1`, `sha256` and a magic-byte `mime_type`; only HTTP files carry hosts and a connection uid.
 - `#open` / `#close` carry the capture's first and last packet time, so two runs give identical files.

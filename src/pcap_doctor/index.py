@@ -268,6 +268,10 @@ class CaptureIndex:
         self.runner: TsharkRunner | None = None  # set by IndexBuilder; the on-demand log tables read more passes through it
 
     # -- lookups -----------------------------------------------------------
+    @property
+    def capture_path(self) -> Path:
+        return Path(self.capture.path)
+
     def flow(self, key: str) -> Flow | None:
         return self.flows.get(key)
 

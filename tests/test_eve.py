@@ -23,9 +23,9 @@ def test_signature_id_is_stable_and_in_the_private_range() -> None:
 @requires_tshark
 def test_every_event_has_the_eve_envelope_and_is_time_ordered(cli_runner) -> None:
     events = _events(cli_runner, "logs_mix.pcap")
-    assert {e["event_type"] for e in events} == {"flow", "alert"}
+    assert {e["event_type"] for e in events} == {"flow", "alert", "fileinfo"}  # fileinfo: the SMTP message
     assert [e["timestamp"] for e in events] == sorted(e["timestamp"] for e in events)
-    for e in events:
+    for e in (e for e in events if e["event_type"] != "fileinfo"):  # SMTP/POP3/FTP/TFTP files carry no flow yet
         assert e["timestamp"].endswith("+0000") and isinstance(e["flow_id"], int)
         assert {"src_ip", "src_port", "dest_ip", "dest_port", "proto"} <= set(e)
     smtp = next(e for e in events if e["event_type"] == "flow" and e["dest_port"] == 25)

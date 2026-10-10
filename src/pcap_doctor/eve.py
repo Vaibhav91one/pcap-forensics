@@ -107,13 +107,15 @@ def build_eve(index: CaptureIndex, types: tuple[str, ...] = EVENT_TYPES) -> list
             events.append(ev)
     if "fileinfo" in types:
         for r in t["files"].rows:
-            uid = (r["conn_uids"] or [None])[0]
-            ev = _base({"ts": r["ts"], "uid": uid}, "fileinfo", fallback, protos.get(uid or "", "tcp"))
+            uid = (r.get("conn_uids") or [None])[0]
+            ev = _base({"ts": r.get("ts"), "uid": uid}, "fileinfo", fallback, protos.get(uid or "", "tcp"))
             ev["app_proto"] = (r["source"] or "").lower()
             info = {"filename": r["filename"], "magic": r["mime_type"], "state": "CLOSED", "stored": False}
-            for key in ("md5", "sha1", "sha256", "size"):
+            for key in ("md5", "sha1", "sha256"):
                 if r.get(key) is not None:
                     info[key] = r[key]
+            if r.get("seen_bytes") is not None:
+                info["size"] = r["seen_bytes"]
             ev["fileinfo"] = {k: v for k, v in info.items() if v is not None}
             events.append(ev)
     if "alert" in types:
